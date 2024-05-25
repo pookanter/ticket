@@ -49,8 +49,11 @@
 	{/each}
 	<Button
 		variant="outline"
-		class="box-content p-6"
+		class="box-content p-4"
 		style="height: fit-content"
-		on:click={() => addStatus()}><PlusIcon class="size-[18px] " /></Button
+		on:click={() => addStatus()}
+		><div class="flex items-center justify-center size-10">
+			<PlusIcon class=" size-5" />
+		</div></Button
 	>
 </div>
