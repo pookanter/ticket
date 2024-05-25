@@ -1,5 +1,5 @@
 <script>
-	import Board from '$lib/components/board/Board.svelte';
+	import Board from '$lib/components/board-tab/BoardTab.svelte';
 </script>
 
 <section>
