@@ -1,6 +1,7 @@
 <script>
 	import Header from './Header.svelte';
 	import './styles.css';
+	import '../app.css';
 	export const ssr = false;
 </script>
 
