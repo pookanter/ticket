@@ -8,21 +8,21 @@
 </svelte:head>
 
 <section class=" dark:bg-gray-900">
-	<div class="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:grid-cols-12">
+	<div class="mx-auto grid max-w-screen-xl px-4 py-8 lg:grid-cols-12 lg:gap-8 lg:py-16 xl:gap-0">
 		<div class="mr-auto place-self-center lg:col-span-7">
 			<h1
-				class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl dark:text-white"
+				class="mb-4 max-w-2xl text-4xl font-extrabold leading-none tracking-tight md:text-5xl xl:text-6xl dark:text-white"
 			>
 				Streamline Your Support Tickets with Ease
 			</h1>
 			<p
-				class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl dark:text-gray-400"
+				class="mb-6 max-w-2xl font-light text-gray-500 md:text-lg lg:mb-8 lg:text-xl dark:text-gray-400"
 			>
 				Transform the way you manage customer support. Our Kanban-style ticketing system simplifies
 				workflows, boosts productivity, and ensures nothing slips through the cracks.
 			</p>
 		</div>
-		<div class="mt-8 lg:mt-0 lg:col-span-5 flex justify-center lg:justify-end">
+		<div class="mt-8 flex justify-center lg:col-span-5 lg:mt-0 lg:justify-end">
 			<SignIn />
 		</div>
 	</div>

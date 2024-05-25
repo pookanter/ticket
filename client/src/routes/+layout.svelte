@@ -13,21 +13,21 @@
 	</main>
 
 	<footer class="bg-white shadow dark:bg-gray-800">
-		<div class="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
+		<div class="mx-auto w-full max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
 			<span class="text-sm text-gray-500 sm:text-center dark:text-gray-400"
 				>Made by <b>Sippakorn Phuakpong</b> with SvelteKit and TailwindCSS.
 			</span>
 			<ul
-				class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 dark:text-gray-400 sm:mt-0"
+				class="mt-3 flex flex-wrap items-center text-sm font-medium text-gray-500 sm:mt-0 dark:text-gray-400"
 			>
 				<li>
 					<a
 						href="https://github.com/sippakorn-phuakpong"
 						target="_blank"
-						class="hover:underline me-4 md:me-6 flex items-end"
+						class="me-4 flex items-end hover:underline md:me-6"
 					>
 						<svg
-							class="w-6 h-6 text-gray-800 dark:text-white"
+							class="h-6 w-6 text-gray-800 dark:text-white"
 							aria-hidden="true"
 							xmlns="http://www.w3.org/2000/svg"
 							width="24"
@@ -49,10 +49,10 @@
 					<a
 						href="https://www.linkedin.com/in/sippakorn-phuakpong-758031295/"
 						target="_blank"
-						class="hover:underline flex items-end"
+						class="flex items-end hover:underline"
 					>
 						<svg
-							class="w-6 h-6 text-gray-800 dark:text-white"
+							class="h-6 w-6 text-gray-800 dark:text-white"
 							aria-hidden="true"
 							xmlns="http://www.w3.org/2000/svg"
 							width="24"
