@@ -4,16 +4,18 @@
 	import { EditOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { fromEvent, type Subscription } from 'rxjs';
+	import { onDestroy } from 'svelte';
 
 	export let activate: boolean;
-	export let board: Board;
-	export let onSelect: (board: Board) => void;
-	export let onDelete: (board: Board) => void;
+	export let data: Board;
+	export let onSelect: (data: Board) => void;
+	export let onDelete: (data: Board) => void;
 
 	let click$: Subscription;
 
 	let inputElement: any;
 	let isRenaming = false;
+
 	function rename() {
 		if (click$) {
 			click$.unsubscribe();
@@ -44,6 +46,12 @@
 			isRenaming = false;
 		}
 	}
+
+	onDestroy(() => {
+		if (click$) {
+			click$.unsubscribe();
+		}
+	});
 </script>
 
 <li class="me-2">
@@ -53,27 +61,27 @@
 				{#if isRenaming}
 					<Input
 						bind:nativeElement={inputElement}
-						bind:value={board.name}
+						bind:value={data.name}
 						on:keydown={handleKeydown}
-						style="width: {board.name.length + 3}ch"
+						style="width: {data.name.length + 3}ch"
 						class="mt-[6px]"
 					/>
 				{:else}
 					<div
-						class="active border-primary-600 text-primary-600 dark:border-primary-500 dark:text-blprimaryue-500 relative inline-block cursor-pointer rounded-t-lg border-b-2 p-4"
+						class="relative inline-block p-4 border-b-2 rounded-t-lg cursor-pointer active border-primary-600 text-primary-600 dark:border-primary-500 dark:text-blprimaryue-500"
 						aria-current="page"
 					>
-						{board.name}
+						{data.name}
 					</div>
 				{/if}
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content>
 				<DropdownMenu.Item class="cursor-pointer" on:click={() => rename()}>
-					<EditOutline class="mr-2 h-4 w-4" />
+					<EditOutline class="w-4 h-4 mr-2" />
 					<span>Rename</span>
 				</DropdownMenu.Item>
-				<DropdownMenu.Item class="cursor-pointer" on:click={() => onDelete(board)}>
-					<TrashBinOutline class="mr-2 h-4 w-4" />
+				<DropdownMenu.Item class="cursor-pointer" on:click={() => onDelete(data)}>
+					<TrashBinOutline class="w-4 h-4 mr-2" />
 					<span>Delete</span>
 				</DropdownMenu.Item>
 			</DropdownMenu.Content>
@@ -81,8 +89,8 @@
 	{:else}
 		<a
 			href={null}
-			class="inline-block cursor-pointer rounded-t-lg border-b-2 border-transparent p-4 hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
-			on:click={() => onSelect(board)}>{board.name}</a
+			class="inline-block p-4 border-b-2 border-transparent rounded-t-lg cursor-pointer hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300"
+			on:click={() => onSelect(data)}>{data.name}</a
 		>
 	{/if}
 </li>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Tab from './Tab.svelte';
+	import BoardTab from './BoardTab.svelte';
 	import type { Board } from './types';
 	import { PlusOutline } from 'flowbite-svelte-icons';
 
@@ -45,7 +45,7 @@
 >
 	<ul class="flex flex-wrap -mb-px">
 		{#each boards as board}
-			<Tab activate={board.id === target.id} {board} {onSelect} {onDelete} />
+			<BoardTab activate={board.id === target.id} data={board} {onSelect} {onDelete} />
 		{/each}
 		<a
 			href={null}

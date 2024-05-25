@@ -8,7 +8,7 @@
 <div class="app">
 	<!-- <Header /> -->
 
-	<main class="max-w-5xl m-auto">
+	<main class="m-auto max-w-7xl">
 		<slot />
 	</main>
 
