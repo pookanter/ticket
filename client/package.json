@@ -25,6 +25,7 @@
 		"eslint": "^8.56.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.35.1",
+		"flowbite-svelte-icons": "^1.6.1",
 		"postcss": "^8.4.38",
 		"prettier": "^3.2.5",
 		"prettier-plugin-svelte": "^3.1.2",
@@ -39,6 +40,12 @@
 	"type": "module",
 	"dependencies": {
 		"@popperjs/core": "^2.11.8",
-		"flowbite": "^2.3.0"
+		"bits-ui": "^0.21.9",
+		"clsx": "^2.1.1",
+		"flowbite": "^2.3.0",
+		"lucide-svelte": "^0.379.0",
+		"rxjs": "^7.8.1",
+		"tailwind-merge": "^2.3.0",
+		"tailwind-variants": "^0.2.1"
 	}
 }
