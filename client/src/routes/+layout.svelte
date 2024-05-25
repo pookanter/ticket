@@ -8,26 +8,26 @@
 <div class="app">
 	<!-- <Header /> -->
 
-	<main>
+	<main class="max-w-5xl m-auto">
 		<slot />
 	</main>
 
-	<footer class="bg-white shadow dark:bg-gray-800">
-		<div class="mx-auto w-full max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
+	<footer class="fixed bottom-0 left-0 w-full bg-white shadow dark:bg-gray-800">
+		<div class="w-full max-w-screen-xl p-4 mx-auto md:flex md:items-center md:justify-between">
 			<span class="text-sm text-gray-500 sm:text-center dark:text-gray-400"
 				>Made by <b>Sippakorn Phuakpong</b> with SvelteKit and TailwindCSS.
 			</span>
 			<ul
-				class="mt-3 flex flex-wrap items-center text-sm font-medium text-gray-500 sm:mt-0 dark:text-gray-400"
+				class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 sm:mt-0 dark:text-gray-400"
 			>
 				<li>
 					<a
 						href="https://github.com/sippakorn-phuakpong"
 						target="_blank"
-						class="me-4 flex items-end hover:underline md:me-6"
+						class="flex items-end me-4 hover:underline md:me-6"
 					>
 						<svg
-							class="h-6 w-6 text-gray-800 dark:text-white"
+							class="w-6 h-6 text-gray-800 dark:text-white"
 							aria-hidden="true"
 							xmlns="http://www.w3.org/2000/svg"
 							width="24"
@@ -52,7 +52,7 @@
 						class="flex items-end hover:underline"
 					>
 						<svg
-							class="h-6 w-6 text-gray-800 dark:text-white"
+							class="w-6 h-6 text-gray-800 dark:text-white"
 							aria-hidden="true"
 							xmlns="http://www.w3.org/2000/svg"
 							width="24"
@@ -76,22 +76,6 @@
 </div>
 
 <style>
-	.app {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-	}
-
-	main {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		padding: 1rem;
-		width: 100%;
-		margin: 0 auto;
-		box-sizing: border-box;
-	}
-
 	footer {
 		display: flex;
 		flex-direction: column;
