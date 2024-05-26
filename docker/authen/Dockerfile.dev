@@ -2,11 +2,17 @@ FROM cosmtrek/air AS builder
 
 WORKDIR /app
 
-COPY cmd/authen cmd/authen
+COPY . .
 
-COPY api api
-COPY go.mod ./
-COPY go.sum ./
+# delete unnecessary files
+RUN rm -rf client
+RUN rm -rf docker
+
+FROM cosmtrek/air AS runtime
+
+WORKDIR /app
+
+COPY --from=builder /app .
 
 RUN go mod download
 

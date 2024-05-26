@@ -3,13 +3,16 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"ticket/api/authen"
+	"ticket/config"
 
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
+	config.Initialize()
+
+	cf := config.GetConfig()
 	e := echo.New()
 
 	e.GET("/health", func(c echo.Context) error {
@@ -19,5 +22,5 @@ func main() {
 	fmt.Println("Starting Authen service...")
 	authen.UseRouter(e)
 
-	e.Logger.Fatal(e.Start(os.Getenv("HOST") + ":" + os.Getenv("PORT")))
+	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%d", cf.Services.Authen.Host, cf.Services.Authen.Port)))
 }

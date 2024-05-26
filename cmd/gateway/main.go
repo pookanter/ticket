@@ -5,13 +5,16 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
+	"ticket/config"
 
 	"github.com/labstack/echo/v4"
 	"github.com/valyala/fasthttp"
 )
 
 func main() {
+	config.Initialize()
+
+	cf := config.GetConfig()
 	e := echo.New()
 
 	e.Any("/:service/:path", handler)
@@ -22,10 +25,11 @@ func main() {
 
 	fmt.Println("Starting Gateway service...")
 
-	e.Logger.Fatal(e.Start(os.Getenv("HOST") + ":" + os.Getenv("PORT")))
+	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%d", cf.Services.Gateway.Host, cf.Services.Gateway.Port)))
 }
 
 func handler(c echo.Context) error {
+	cf := config.GetConfig()
 	req := fasthttp.AcquireRequest()
 	req.Header.SetContentType("application/json")
 	res := fasthttp.AcquireResponse()
@@ -37,14 +41,12 @@ func handler(c echo.Context) error {
 
 	fmt.Println("service:", service == "authen")
 
-	port := ""
+	url := ""
 	if service == "authen" {
-		port = os.Getenv("AUTHEN_PORT")
+		url = cf.Services.Authen.URL
 	}
 
-	fmt.Println("port:", port)
-
-	if port != "" {
+	if url != "" {
 		req.Header.SetContentType("application/json; charset=UTF-8")
 		req.Header.SetMethod(c.Request().Method)
 		bodyBytes, err := io.ReadAll(c.Request().Body)
@@ -55,11 +57,7 @@ func handler(c echo.Context) error {
 
 		req.SetBody(bodyBytes)
 
-		uri := "http://authen:" + port + "/" + path
-
-		fmt.Println("request uri:", uri)
-
-		req.SetRequestURI(uri)
+		req.SetRequestURI(fmt.Sprintf("%s/%s", url, path))
 
 		err = fasthttp.Do(req, res)
 		if err != nil {
