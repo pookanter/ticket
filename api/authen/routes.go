@@ -2,12 +2,8 @@ package authen
 
 import (
 	"ticket/api"
-	"ticket/api/authen/internal/controller"
+	"ticket/api/authen/controller"
 )
-
-type AuthenAPI struct {
-	*api.API
-}
 
 func Router(a *api.API) {
 	a.App.Group("/authen")
