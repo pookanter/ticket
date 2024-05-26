@@ -9,8 +9,8 @@ services:
     ports:
       - "4000:4000"
     volumes:
-      - ./cmd:/app/cmd
-      - ./api:/app/api
+      - ./cmd/authen:/app/cmd
+      - ./api/authen:/app/api/authen
 
     # command: "air -c .air.toml"
   # ticket:
