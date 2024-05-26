@@ -22,7 +22,7 @@ func main() {
 
 	api.Start(e, api.Config{
 		APIConfig: api.APIConfig{
-			Label: "Authen",
+			Label: "Gateway",
 			Host:  cf.Services.Authen.Host,
 			Port:  cf.Services.Authen.Port,
 		},

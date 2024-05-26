@@ -71,6 +71,8 @@ func Start(e *echo.Echo, cf Config) *API {
 		cf.Ctx.Router(e)
 	}
 
+	fmt.Printf("Starting API %s...\n", cf.APIConfig.Label)
+
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%d", cf.APIConfig.Host, cf.APIConfig.Port)))
 
 	return a
