@@ -17,6 +17,7 @@ func Index(a *api.API) *echo.Echo {
 		PrivateKey: a.GetGlobalConfig().PrivateKey,
 		PublicKey:  a.GetGlobalConfig().PublicKey,
 	})
+	cf := api.GetAPI().GetGlobalConfig()
 
 	g.POST("/sign-in", func(c echo.Context) error {
 		var body struct {
@@ -55,8 +56,6 @@ func Index(a *api.API) *echo.Echo {
 			UserID: user.ID,
 		}
 
-		cf := api.GetAPI().GetGlobalConfig()
-
 		tokens, err := authen.GenerateTokens(payload, auth.GenerateTokensConfig{
 			AccessTokenExpire:  cf.AccessTokenExpire,
 			RefreshTokenExpire: cf.RefreshTokenExpire,
@@ -65,7 +64,7 @@ func Index(a *api.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(200, tokens)
+		return c.JSON(http.StatusOK, tokens)
 	})
 
 	g.POST("/sign-up", func(c echo.Context) error {
@@ -120,10 +119,38 @@ func Index(a *api.API) *echo.Echo {
 	})
 
 	g.POST("/refresh-token", func(c echo.Context) error {
-		return c.JSON(200, map[string]interface{}{
-			"error":   false,
-			"message": "refresh-token",
+		var body struct {
+			RefreshToken string `json:"refresh_token" validate:"required"`
+		}
+
+		err := c.Bind(&body)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		err = c.Validate(&body)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		claims, err := authen.ParseToken(body.RefreshToken)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+		}
+
+		payload := auth.TokenPayload{
+			UserID: claims.UserID,
+		}
+
+		tokens, err := authen.GenerateTokens(payload, auth.GenerateTokensConfig{
+			AccessTokenExpire:  cf.AccessTokenExpire,
+			RefreshTokenExpire: cf.RefreshTokenExpire,
 		})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		return c.JSON(http.StatusOK, tokens)
 	})
 
 	return g
