@@ -9,5 +9,5 @@ sql:
       - "migration/tickets.sql"
     gen:
       go:
-        package: "database"
-        out: "pkg/database"
+        package: "db"
+        out: "pkg/db"
