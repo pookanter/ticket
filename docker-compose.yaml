@@ -2,15 +2,16 @@ services:
   authen:
     build:
       context: .
-      dockerfile: ./build/authen/Dockerfile
+      dockerfile: ./docker/authen/Dockerfile
     environment:
+      HOST: "0.0.0.0"
       PORT: 5000
     ports:
       - "5000:5000"
   ticket:
     build:
       context: .
-      dockerfile: ./build/ticket/Dockerfile
+      dockerfile: ./docker/ticket/Dockerfile
     environment:
       PORT: 5001
     ports:
@@ -18,7 +19,7 @@ services:
   client:
     build:
       context: .
-      dockerfile: ./build/client/Dockerfile
+      dockerfile: ./docker/client/Dockerfile
     command: "pnpm run dev"
     environment:
       PORT: 3000
