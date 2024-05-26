@@ -1,13 +1,16 @@
+
 FROM cosmtrek/air AS builder
 
 WORKDIR /app
 
-COPY . .
-COPY air/authen ./
-
-# delete unnecessary files
-RUN rm -rf client
-RUN rm -rf docker
+COPY cmd cmd
+COPY api/gateway api/gateway
+COPY api/api.go api
+COPY pkg pkg
+COPY go.mod go.sum ./
+COPY config config
+COPY certs certs
+COPY build/gateway ./
 
 FROM cosmtrek/air AS runtime
 
@@ -15,9 +18,5 @@ WORKDIR /app
 
 COPY --from=builder /app .
 COPY --from=builder /app/.air.toml .
-
-RUN go mod download
-
-EXPOSE 4000
 
 CMD ["air", "-c", ".air.toml"]
