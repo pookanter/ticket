@@ -29,8 +29,10 @@ var privateKey string
 
 func Initialize() {
 	fmt.Println("Initializing config...")
+
+	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
-	viper.AddConfigPath("/app/config")
+	viper.AddConfigPath("./config")
 
 	err := viper.ReadInConfig()
 	if err != nil {

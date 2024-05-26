@@ -3,6 +3,7 @@ FROM cosmtrek/air AS builder
 WORKDIR /app
 
 COPY . .
+COPY air/authen ./
 
 # delete unnecessary files
 RUN rm -rf client
@@ -13,12 +14,9 @@ FROM cosmtrek/air AS runtime
 WORKDIR /app
 
 COPY --from=builder /app .
+COPY --from=builder /app/.air.toml .
 
 RUN go mod download
-
-WORKDIR /app/cmd/authen
-
-RUN air init
 
 EXPOSE 4000
 

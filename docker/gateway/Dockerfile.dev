@@ -4,6 +4,7 @@ FROM cosmtrek/air AS builder
 WORKDIR /app
 
 COPY . .
+COPY air/gateway ./
 
 # delete unnecessary files
 RUN rm -rf client
@@ -14,11 +15,6 @@ FROM cosmtrek/air AS runtime
 WORKDIR /app
 
 COPY --from=builder /app .
-
-RUN go mod download
-
-WORKDIR /app/cmd/gateway
-
-RUN air init
+COPY --from=builder /app/.air.toml .
 
 CMD ["air", "-c", ".air.toml"]
