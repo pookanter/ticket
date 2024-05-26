@@ -20,8 +20,10 @@ type Config struct {
 			URL  string `mapstructure:"url"`
 		} `mapstructure:"authen"`
 	} `mapstructure:"services"`
-	PrivateKey string `mapstructure:"private_key"`
-	PublicKey  string `mapstructure:"public_key"`
+	PrivateKey         string `mapstructure:"private_key"`
+	PublicKey          string `mapstructure:"public_key"`
+	AccessTokenExpire  int    `mapstructure:"access_token_expire"`
+	RefreshTokenExpire int    `mapstructure:"refresh_token_expire"`
 }
 
 var config Config

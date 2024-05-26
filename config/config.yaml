@@ -9,3 +9,5 @@ services:
     url: http://authen:4000
 private_key: "/app/certs/jwtRS256.key"
 public_key: "/app/certs/jwtRS256.key.pub"
+access_token_expire: 3600
+refresh_token_expire: 86400
