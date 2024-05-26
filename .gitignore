@@ -11,4 +11,7 @@ client/package
 .output
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+# ignore the cache directory
 tmp
+# ignore the private key directory
+certs
