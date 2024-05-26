@@ -1,26 +1,30 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"ticket/api"
 	"ticket/api/authen"
 	"ticket/config"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
 	config.Initialize()
-
 	cf := config.GetConfig()
-	e := echo.New()
 
-	e.GET("/health", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Authen, OK!")
+	api.Start(echo.New(), api.Config{
+		APIConfig: api.APIConfig{
+			Label: "Authen",
+			Host:  cf.Services.Authen.Host,
+			Port:  cf.Services.Authen.Port,
+		},
+		DBConfig: &api.DBConfig{
+			Host:     cf.Services.Database.Host,
+			Name:     cf.Services.Database.Dbname,
+			User:     cf.Services.Database.User,
+			Password: cf.Services.Database.Password,
+		},
+		Ctx: authen.New(),
 	})
-
-	fmt.Println("Starting Authen service...")
-	authen.UseRouter(e)
-
-	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%d", cf.Services.Authen.Host, cf.Services.Authen.Port)))
 }

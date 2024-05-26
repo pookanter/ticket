@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (a *Auth) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		bearer := c.Request().Header["Authorization"]
 
@@ -16,7 +16,7 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.ErrUnauthorized
 		}
 
-		claims, err := ParseToken(s[1])
+		claims, err := a.ParseToken(s[1])
 		if err != nil || claims == nil {
 			return echo.ErrUnauthorized
 		}

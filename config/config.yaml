@@ -7,6 +7,11 @@ services:
     host: 0.0.0.0
     port: 4000
     url: http://authen:4000
+  database:
+    host: "mysql"
+    dbname: "ticket_dev"
+    user: "root"
+    password: "randomrootpassword"
 private_key: "/app/certs/jwtRS256.key"
 public_key: "/app/certs/jwtRS256.key.pub"
 access_token_expire: 3600

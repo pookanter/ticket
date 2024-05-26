@@ -30,8 +30,6 @@ func Index(g *echo.Group) *echo.Group {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		// database.Queries
-
 		return c.JSON(200, map[string]interface{}{
 			"error":   false,
 			"message": "sign-up",

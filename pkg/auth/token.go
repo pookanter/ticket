@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"ticket/config"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -22,14 +21,18 @@ type Tokens struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-func GenerateTokens(tokenPayload TokenPayload) (Tokens, error) {
-	cf := config.GetConfig()
-	accessToken, err := GenerateTokenString(tokenPayload, cf.AccessTokenExpire)
+type GenerateTokensConfig struct {
+	AccessTokenExpire  int
+	RefreshTokenExpire int
+}
+
+func (a *Auth) GenerateTokens(tokenPayload TokenPayload, cf GenerateTokensConfig) (Tokens, error) {
+	accessToken, err := a.GenerateTokenString(tokenPayload, cf.AccessTokenExpire)
 	if err != nil {
 		return Tokens{}, err
 	}
 
-	refreshToken, err := GenerateTokenString(tokenPayload, cf.RefreshTokenExpire)
+	refreshToken, err := a.GenerateTokenString(tokenPayload, cf.RefreshTokenExpire)
 	if err != nil {
 		return Tokens{}, err
 	}
@@ -40,8 +43,7 @@ func GenerateTokens(tokenPayload TokenPayload) (Tokens, error) {
 	}, nil
 }
 
-func GenerateTokenString(tokenPayload TokenPayload, unixDuration int) (string, error) {
-	cf := config.GetConfig()
+func (a *Auth) GenerateTokenString(tokenPayload TokenPayload, unixDuration int) (string, error) {
 	claims := Claims{
 		tokenPayload.UserID,
 		jwt.RegisteredClaims{
@@ -51,13 +53,12 @@ func GenerateTokenString(tokenPayload TokenPayload, unixDuration int) (string, e
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(cf.PrivateKey)
+	return token.SignedString(a.config.PrivateKey)
 }
 
-func ParseToken(tokenString string) (*Claims, error) {
-	cf := config.GetConfig()
+func (a *Auth) ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwt.ParseECPublicKeyFromPEM([]byte(cf.PublicKey))
+		return jwt.ParseECPublicKeyFromPEM([]byte(a.config.PublicKey))
 	})
 
 	if err != nil {

@@ -19,6 +19,12 @@ type Config struct {
 			Port int    `mapstructure:"port"`
 			URL  string `mapstructure:"url"`
 		} `mapstructure:"authen"`
+		Database struct {
+			Host     string `mapstructure:"host"`
+			Dbname   string `mapstructure:"dbname"`
+			User     string `mapstructure:"user"`
+			Password string `mapstructure:"password"`
+		}
 	} `mapstructure:"services"`
 	PrivateKey         string `mapstructure:"private_key"`
 	PublicKey          string `mapstructure:"public_key"`

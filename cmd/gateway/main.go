@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"ticket/api"
 	"ticket/config"
 
 	"github.com/labstack/echo/v4"
@@ -19,13 +20,14 @@ func main() {
 
 	e.Any("/:service/:path", handler)
 
-	e.GET("/health", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Gateway, OK!")
+	api.Start(e, api.Config{
+		APIConfig: api.APIConfig{
+			Label: "Authen",
+			Host:  cf.Services.Authen.Host,
+			Port:  cf.Services.Authen.Port,
+		},
 	})
 
-	fmt.Println("Starting Gateway service...")
-
-	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%d", cf.Services.Gateway.Host, cf.Services.Gateway.Port)))
 }
 
 func handler(c echo.Context) error {
