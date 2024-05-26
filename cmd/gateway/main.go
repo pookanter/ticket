@@ -66,11 +66,17 @@ func handler(c echo.Context) error {
 			log.Println("fashttp failed to do request")
 			log.Print(err)
 
-			return c.String(http.StatusInternalServerError, "Internal Server Error")
+			return c.JSON(http.StatusInternalServerError, "Internal Server Error")
 		}
 
-		return c.String(res.StatusCode(), string(res.Body()))
+		if res.StatusCode() == http.StatusInternalServerError {
+			log.Printf("Internal Server Error: %s", string(res.Body()))
+
+			return c.JSON(http.StatusInternalServerError, "Internal Server Error")
+		}
+
+		return c.JSON(res.StatusCode(), string(res.Body()))
 	}
 
-	return c.String(http.StatusNotFound, "Not Found")
+	return c.JSON(http.StatusNotFound, "Not Found")
 }
