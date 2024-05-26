@@ -24,7 +24,13 @@ func Index(g *echo.Group) *echo.Group {
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
-		c.Validate(&body)
+
+		err = c.Validate(&body)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		// database.Queries
 
 		return c.JSON(200, map[string]interface{}{
 			"error":   false,

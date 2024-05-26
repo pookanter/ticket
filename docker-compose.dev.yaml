@@ -1,5 +1,6 @@
 services:
   gateway:
+    image: gateway:development
     build:
       context: .
       dockerfile: ./docker/gateway/Dockerfile.dev
@@ -10,6 +11,7 @@ services:
       - ./api/gateway:/app/api/gateway
       - ./pkg:/app/pkg
   authen:
+    image: authen:development
     build:
       context: .
       dockerfile: ./docker/authen/Dockerfile.dev
@@ -19,21 +21,15 @@ services:
       - ./cmd/authen:/app/cmd/authen
       - ./api/authen:/app/api/authen
       - ./pkg:/app/pkg
-    # command: "air -c .air.toml"
-  # ticket:
-  #   build:
-  #     context: .
-  #     dockerfile: ./docker/ticket/Dockerfile
-  #   environment:
-  #     PORT: 5001
-  #   ports:
-  #     - "5001:5001"
-  # client:
-  #   build:
-  #     context: .
-  #     dockerfile: ./docker/client/Dockerfile
-  #   command: "pnpm run dev"
-  #   environment:
-  #     PORT: 3000
-  #   ports:
-  #     - "3000:3000"
+    depends_on:
+      - mysql
+  mysql:
+    build:
+      context: .
+      dockerfile: ./docker/mysql/Dockerfile
+    environment:
+      MYSQL_DATABASE: ticket_dev
+      MYSQL_ROOT_USERNAME: root
+      MYSQL_ROOT_PASSWORD: randomrootpassword
+    ports:
+      - "3306:3306"
