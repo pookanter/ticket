@@ -1,19 +1,16 @@
-FROM cosmtrek/air AS builder
+FROM cosmtrek/air
 
 WORKDIR /app
 
-COPY cmd/authen cmd/authen
-
+COPY cmd/gateway cmd/gateway
 COPY api api
 COPY go.mod ./
 COPY go.sum ./
 
 RUN go mod download
 
-WORKDIR /app/cmd/authen
+WORKDIR /app/cmd/gateway
 
 RUN air init
-
-EXPOSE 4000
 
 CMD ["air", "-c", ".air.toml"]

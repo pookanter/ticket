@@ -1,4 +1,17 @@
 services:
+  gateway:
+    build:
+      context: .
+      dockerfile: ./docker/gateway/Dockerfile.dev
+    environment:
+      HOST: "0.0.0.0"
+      PORT: 3999
+      AUTHEN_PORT: 4000
+    ports:
+      - "3999:3999"
+    volumes:
+      - ./cmd/gateway:/app/cmd/gateway
+      - ./api/gateway:/app/api/gateway
   authen:
     build:
       context: .
@@ -7,9 +20,9 @@ services:
       HOST: "0.0.0.0"
       PORT: 4000
     ports:
-      - "4000:4000"
+      - "4000"
     volumes:
-      - ./cmd/authen:/app/cmd
+      - ./cmd/authen:/app/cmd/authen
       - ./api/authen:/app/api/authen
 
     # command: "air -c .air.toml"

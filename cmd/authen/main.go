@@ -12,11 +12,11 @@ import (
 func main() {
 	e := echo.New()
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, Authen!")
+	e.GET("/health", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Authen, OK!")
 	})
 
-	fmt.Println("Starting Authen service..sssssss.")
+	fmt.Println("Starting Authen service...")
 	authen.UseRouter(e)
 
 	e.Logger.Fatal(e.Start(os.Getenv("HOST") + ":" + os.Getenv("PORT")))
