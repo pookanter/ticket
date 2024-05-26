@@ -29,14 +29,9 @@ type DBConfig struct {
 	Password string
 }
 
-type APITX interface {
-	Router(e *echo.Echo)
-}
-
 type Config struct {
 	APIConfig APIConfig
 	DBConfig  *DBConfig
-	Ctx       APITX
 }
 
 type API struct {
@@ -67,10 +62,6 @@ func Start(e *echo.Echo, cf Config) *API {
 		return c.String(http.StatusOK, fmt.Sprintf("%s, OK!", cf.APIConfig.Label))
 	})
 
-	if cf.Ctx != nil {
-		cf.Ctx.Router(e)
-	}
-
 	fmt.Printf("Starting API %s...\n", cf.APIConfig.Label)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%d", cf.APIConfig.Host, cf.APIConfig.Port)))
@@ -84,4 +75,8 @@ func (a *API) GetConfig() Config {
 
 func (a *API) GetGlobalConfig() config.Config {
 	return *a.globalConfig
+}
+
+func GetAPI() *API {
+	return a
 }

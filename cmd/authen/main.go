@@ -13,7 +13,7 @@ func main() {
 	config.Initialize()
 	cf := config.GetConfig()
 
-	api.Start(echo.New(), api.Config{
+	authen.Router(api.Start(echo.New(), api.Config{
 		APIConfig: api.APIConfig{
 			Label: "Authen",
 			Host:  cf.Services.Authen.Host,
@@ -25,6 +25,5 @@ func main() {
 			User:     cf.Services.Database.User,
 			Password: cf.Services.Database.Password,
 		},
-		Ctx: authen.New(),
-	})
+	}))
 }

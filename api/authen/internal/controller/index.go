@@ -1,12 +1,15 @@
-package handler
+package controller
 
 import (
 	"net/http"
+	"ticket/api"
 
 	"github.com/labstack/echo/v4"
 )
 
-func Index(g *echo.Group) *echo.Group {
+func Index(a *api.API) *echo.Echo {
+	g := a.App
+
 	g.POST("/sign-in", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{
 			"error":   false,
