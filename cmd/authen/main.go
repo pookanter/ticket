@@ -4,6 +4,7 @@ import (
 	"ticket/api"
 	"ticket/api/authen"
 	"ticket/config"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo/v4"
@@ -24,6 +25,7 @@ func main() {
 			Name:     cf.Services.Database.Dbname,
 			User:     cf.Services.Database.User,
 			Password: cf.Services.Database.Password,
+			TimeOut:  5 * time.Second,
 		},
 	}))
 }

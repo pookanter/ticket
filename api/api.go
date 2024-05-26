@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"ticket/config"
 	"ticket/pkg/db"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -27,6 +28,7 @@ type DBConfig struct {
 	Name     string
 	User     string
 	Password string
+	TimeOut  time.Duration
 }
 
 type Config struct {
@@ -69,8 +71,12 @@ func Start(e *echo.Echo, cf Config) *API {
 	return a
 }
 
-func (a *API) GetConfig() Config {
-	return *a.config
+func (a *API) GetAPIConfig() APIConfig {
+	return a.config.APIConfig
+}
+
+func (a *API) GetDBConfig() DBConfig {
+	return *a.config.DBConfig
 }
 
 func (a *API) GetGlobalConfig() config.Config {
