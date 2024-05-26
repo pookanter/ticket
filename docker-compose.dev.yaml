@@ -1,0 +1,32 @@
+services:
+  authen:
+    build:
+      context: .
+      dockerfile: ./docker/authen/Dockerfile.dev
+    environment:
+      HOST: "0.0.0.0"
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./cmd:/app/cmd
+      - ./api:/app/api
+
+    # command: "air -c .air.toml"
+  # ticket:
+  #   build:
+  #     context: .
+  #     dockerfile: ./docker/ticket/Dockerfile
+  #   environment:
+  #     PORT: 5001
+  #   ports:
+  #     - "5001:5001"
+  # client:
+  #   build:
+  #     context: .
+  #     dockerfile: ./docker/client/Dockerfile
+  #   command: "pnpm run dev"
+  #   environment:
+  #     PORT: 3000
+  #   ports:
+  #     - "3000:3000"

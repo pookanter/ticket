@@ -16,7 +16,7 @@ func main() {
 		return c.String(http.StatusOK, "Hello, Authen!")
 	})
 
-	fmt.Println("Starting Authen service...")
+	fmt.Println("Starting Authen service..ssss.")
 	authen.UseRouter(e)
 
 	e.Logger.Fatal(e.Start(os.Getenv("HOST") + ":" + os.Getenv("PORT")))

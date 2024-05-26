@@ -11,14 +11,12 @@ COPY api api
 COPY go.mod ./
 COPY go.sum ./
 
-# RUN go install github.com/cosmtrek/air@latest
-# COPY .air.toml ./
-
 RUN go build -v -o ./dist/authen
 
 FROM runtime
 
 ARG timezone=Asia/Bangkok
+ARG hotreload=false
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV TZ $timezone
