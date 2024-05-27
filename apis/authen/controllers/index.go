@@ -31,7 +31,7 @@ func NewIndexController(api *apis.API) *IndexController {
 		DBConfig: api.GetDBConfig(),
 	}
 
-	ctrl.SignIn()
+	ctrl.App.POST("/sign-in", ctrl.SignIn())
 
 	ctrl.SignUp()
 
@@ -40,8 +40,8 @@ func NewIndexController(api *apis.API) *IndexController {
 	return ctrl
 }
 
-func (ctrl *IndexController) SignIn() *echo.Route {
-	return ctrl.App.POST("/sign-in", func(c echo.Context) error {
+func (ctrl *IndexController) SignIn() echo.HandlerFunc {
+	return func(c echo.Context) error {
 		var body struct {
 			Email    string `json:"email" validate:"required,email"`
 			Password string `json:"password" validate:"required,min=8,max=32"`
@@ -84,11 +84,11 @@ func (ctrl *IndexController) SignIn() *echo.Route {
 		}
 
 		return c.JSON(http.StatusOK, tokens)
-	})
+	}
 }
 
-func (ctrl *IndexController) SignUp() *echo.Route {
-	return ctrl.App.POST("/sign-up", func(c echo.Context) error {
+func (ctrl *IndexController) SignUp() echo.HandlerFunc {
+	return func(c echo.Context) error {
 		var body struct {
 			Name     string `json:"name" validate:"required,min=3,max=100"`
 			Lastname string `json:"lastname" validate:"required,min=3,max=100"`
@@ -137,11 +137,11 @@ func (ctrl *IndexController) SignUp() *echo.Route {
 			Error:   false,
 			Message: "user created",
 		})
-	})
+	}
 }
 
-func (ctrl *IndexController) RefreshToken() *echo.Route {
-	return ctrl.App.POST("/refresh-token", func(c echo.Context) error {
+func (ctrl *IndexController) RefreshToken() echo.HandlerFunc {
+	return func(c echo.Context) error {
 		var body struct {
 			RefreshToken string `json:"refresh_token" validate:"required"`
 		}
@@ -171,5 +171,5 @@ func (ctrl *IndexController) RefreshToken() *echo.Route {
 		}
 
 		return c.JSON(http.StatusOK, tokens)
-	})
+	}
 }
