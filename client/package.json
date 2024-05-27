@@ -40,6 +40,7 @@
 	"type": "module",
 	"dependencies": {
 		"@popperjs/core": "^2.11.8",
+		"axios": "^1.7.2",
 		"bits-ui": "^0.21.9",
 		"clsx": "^2.1.1",
 		"lucide-svelte": "^0.379.0",
