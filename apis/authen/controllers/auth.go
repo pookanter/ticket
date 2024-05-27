@@ -32,7 +32,6 @@ func NewAuthController(g *echo.Group, api *apis.API) *AuthController {
 	}
 
 	g.POST("/sign-in", ctrl.SignIn())
-
 	g.POST("/sign-up", ctrl.SignUp())
 
 	g.POST("/refresh-token", ctrl.RefreshToken())
