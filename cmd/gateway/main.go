@@ -19,7 +19,7 @@ func main() {
 	}
 
 	apikit.NewAPI(apikit.WithAPI(apikit.APIConfig{
-		Label: "Authen",
+		Label: "Gateway",
 		Host:  cf.Services.Gateway.Host,
 		Port:  cf.Services.Gateway.Port,
 	}), apikit.WithGlobal(cf)).UseRouter(func(api *apikit.API) {
