@@ -44,8 +44,10 @@ func handler(c echo.Context) error {
 	fmt.Println("service:", service == "authen")
 
 	url := ""
-	if service == "authen" {
+	if service == "authen-service" {
 		url = cf.Services.Authen.URL
+	} else if service == "ticket-service" {
+		url = cf.Services.Ticket.URL
 	}
 
 	if url != "" {

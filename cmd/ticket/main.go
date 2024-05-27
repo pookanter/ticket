@@ -1,17 +1,29 @@
 package main
 
 import (
-	"net/http"
-	"os"
+	"ticket/apis"
+	"ticket/config"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, Ticket!")
-	})
+	config.Initialize()
+	cf := config.GetConfig()
 
-	e.Logger.Fatal(e.Start(":" + os.Getenv("PORT")))
+	apis.Start(echo.New(), apis.Config{
+		APIConfig: apis.APIConfig{
+			Label: "Authen",
+			Host:  cf.Services.Authen.Host,
+			Port:  cf.Services.Authen.Port,
+		},
+		DBConfig: &apis.DBConfig{
+			Host:     cf.Services.Database.Host,
+			Name:     cf.Services.Database.Dbname,
+			User:     cf.Services.Database.User,
+			Password: cf.Services.Database.Password,
+			TimeOut:  5 * time.Second,
+		},
+	})
 }
