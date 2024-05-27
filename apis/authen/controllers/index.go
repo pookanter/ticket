@@ -11,15 +11,37 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func Index(api *apis.API) *echo.Echo {
-	g := api.App
-	authentication := auth.New(auth.AuthConfig{
-		PrivateKey: api.GetGlobalConfig().PrivateKey,
-		PublicKey:  api.GetGlobalConfig().PublicKey,
-	})
-	cf := apis.GetAPI().GetGlobalConfig()
+type IndexController struct {
+	App      *echo.Echo
+	Auth     *auth.Auth
+	DB       *db.Queries
+	DBConfig apis.DBConfig
+}
 
-	g.POST("/sign-in", func(c echo.Context) error {
+func NewIndexController(api *apis.API) *IndexController {
+	ctrl := &IndexController{
+		App: api.App,
+		Auth: auth.New(auth.AuthConfig{
+			RSAKey: api.GetPrivateKey(),
+		}),
+		DB:       api.Db,
+		DBConfig: api.GetDBConfig(),
+	}
+
+	gcf := api.GetGlobalConfig()
+	tkncf := auth.GenerateTokensConfig{
+		AccessTokenExpire:  gcf.AccessTokenExpire,
+		RefreshTokenExpire: gcf.RefreshTokenExpire,
+	}
+	ctrl.SignUp(tkncf)
+
+	ctrl.RefreshToken(tkncf)
+
+	return ctrl
+}
+
+func (ctrl *IndexController) SignIn(cf auth.GenerateTokensConfig) *echo.Route {
+	return ctrl.App.POST("/sign-in", func(c echo.Context) error {
 		var body struct {
 			Email    string `json:"email" validate:"required,email"`
 			Password string `json:"password" validate:"required,min=8,max=32"`
@@ -35,10 +57,10 @@ func Index(api *apis.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request().Context(), api.GetDBConfig().TimeOut)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), ctrl.DBConfig.TimeOut)
 		defer cancel()
 
-		user, err := api.Db.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
+		user, err := ctrl.DB.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -47,7 +69,7 @@ func Index(api *apis.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusNotFound, "user not found")
 		}
 
-		err = authentication.ComparePassword(user.Password.String, body.Password)
+		err = ctrl.Auth.ComparePassword(user.Password.String, body.Password)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized, "invalid password")
 		}
@@ -56,7 +78,7 @@ func Index(api *apis.API) *echo.Echo {
 			UserID: user.ID,
 		}
 
-		tokens, err := authentication.GenerateTokens(payload, auth.GenerateTokensConfig{
+		tokens, err := ctrl.Auth.GenerateTokens(payload, auth.GenerateTokensConfig{
 			AccessTokenExpire:  cf.AccessTokenExpire,
 			RefreshTokenExpire: cf.RefreshTokenExpire,
 		})
@@ -66,8 +88,10 @@ func Index(api *apis.API) *echo.Echo {
 
 		return c.JSON(http.StatusOK, tokens)
 	})
+}
 
-	g.POST("/sign-up", func(c echo.Context) error {
+func (ctrl *IndexController) SignUp(tkncf auth.GenerateTokensConfig) *echo.Route {
+	return ctrl.App.POST("/sign-up", func(c echo.Context) error {
 		var body struct {
 			Name     string `json:"name" validate:"required,min=3,max=100"`
 			Lastname string `json:"lastname" validate:"required,min=3,max=100"`
@@ -85,10 +109,10 @@ func Index(api *apis.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request().Context(), api.GetDBConfig().TimeOut)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), ctrl.DBConfig.TimeOut)
 		defer cancel()
 
-		user, err := api.Db.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
+		user, err := ctrl.DB.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -97,12 +121,12 @@ func Index(api *apis.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusConflict, "user already exists")
 		}
 
-		hash, err := authentication.HashPassword(body.Password)
+		hash, err := ctrl.Auth.HashPassword(body.Password)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
-		err = api.Db.CreateUser(ctx, db.CreateUserParams{
+		err = ctrl.DB.CreateUser(ctx, db.CreateUserParams{
 			Name:     sql.NullString{String: body.Name, Valid: true},
 			Lastname: sql.NullString{String: body.Lastname, Valid: true},
 			Email:    sql.NullString{String: body.Email, Valid: true},
@@ -117,8 +141,10 @@ func Index(api *apis.API) *echo.Echo {
 			Message: "user created",
 		})
 	})
+}
 
-	g.POST("/refresh-token", func(c echo.Context) error {
+func (ctrl *IndexController) RefreshToken(tkncf auth.GenerateTokensConfig) *echo.Route {
+	return ctrl.App.POST("/refresh-token", func(c echo.Context) error {
 		var body struct {
 			RefreshToken string `json:"refresh_token" validate:"required"`
 		}
@@ -133,7 +159,7 @@ func Index(api *apis.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		claims, err := authentication.ParseToken(body.RefreshToken)
+		claims, err := ctrl.Auth.ParseToken(body.RefreshToken)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 		}
@@ -142,9 +168,9 @@ func Index(api *apis.API) *echo.Echo {
 			UserID: claims.UserID,
 		}
 
-		tokens, err := authentication.GenerateTokens(payload, auth.GenerateTokensConfig{
-			AccessTokenExpire:  cf.AccessTokenExpire,
-			RefreshTokenExpire: cf.RefreshTokenExpire,
+		tokens, err := ctrl.Auth.GenerateTokens(payload, auth.GenerateTokensConfig{
+			AccessTokenExpire:  tkncf.AccessTokenExpire,
+			RefreshTokenExpire: tkncf.RefreshTokenExpire,
 		})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -152,6 +178,4 @@ func Index(api *apis.API) *echo.Echo {
 
 		return c.JSON(http.StatusOK, tokens)
 	})
-
-	return g
 }

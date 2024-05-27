@@ -83,6 +83,10 @@ func (a *API) GetGlobalConfig() config.Config {
 	return *a.globalConfig
 }
 
+func (a *API) GetPrivateKey() string {
+	return config.GetPrivateKey()
+}
+
 func GetAPI() *API {
 	return a
 }

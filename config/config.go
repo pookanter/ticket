@@ -34,6 +34,7 @@ type Config struct {
 
 var config Config
 var privateKey string
+var publicKey string
 
 func Initialize() {
 	fmt.Println("Initializing config...")
