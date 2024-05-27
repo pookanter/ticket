@@ -44,7 +44,7 @@ func main() {
 			}
 
 			if url != "" {
-				req.Header.SetContentType("application/json; charset=UTF-8")
+				req.Header.SetContentType("application/json")
 				req.Header.SetMethod(c.Request().Method)
 				bodyBytes, err := io.ReadAll(c.Request().Body)
 				defer c.Request().Body.Close()
@@ -70,7 +70,9 @@ func main() {
 					return c.JSON(http.StatusInternalServerError, "Internal Server Error")
 				}
 
-				return c.JSON(res.StatusCode(), string(res.Body()))
+				fmt.Println("res.StatusCode():", res.StatusCode())
+
+				return c.JSONBlob(res.StatusCode(), res.Body())
 			}
 
 			return c.JSON(http.StatusNotFound, "Not Found")
