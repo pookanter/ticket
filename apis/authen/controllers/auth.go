@@ -11,16 +11,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type IndexController struct {
+type AuthController struct {
 	App      *echo.Echo
 	Auth     *auth.Auth
 	DB       *db.Queries
 	DBConfig apis.DBConfig
 }
 
-func NewIndexController(api *apis.API) *IndexController {
+func NewAuthController(g *echo.Group, api *apis.API) *AuthController {
 	gcf := api.GetGlobalConfig()
-	ctrl := &IndexController{
+	ctrl := &AuthController{
 		App: api.App,
 		Auth: auth.New(auth.AuthConfig{
 			RSAKey:             api.GetPrivateKey(),
@@ -31,15 +31,16 @@ func NewIndexController(api *apis.API) *IndexController {
 		DBConfig: api.GetDBConfig(),
 	}
 
-	ctrl.App.POST("/sign-in", ctrl.SignIn())
-	ctrl.App.POST("/sign-up", ctrl.SignUp())
+	g.POST("/sign-in", ctrl.SignIn())
 
-	ctrl.App.POST("/refresh-token", ctrl.RefreshToken())
+	g.POST("/sign-up", ctrl.SignUp())
+
+	g.POST("/refresh-token", ctrl.RefreshToken())
 
 	return ctrl
 }
 
-func (ctrl *IndexController) SignIn() echo.HandlerFunc {
+func (ctrl *AuthController) SignIn() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var body struct {
 			Email    string `json:"email" validate:"required,email"`
@@ -86,7 +87,7 @@ func (ctrl *IndexController) SignIn() echo.HandlerFunc {
 	}
 }
 
-func (ctrl *IndexController) SignUp() echo.HandlerFunc {
+func (ctrl *AuthController) SignUp() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var body struct {
 			Name     string `json:"name" validate:"required,min=3,max=100"`
@@ -139,7 +140,7 @@ func (ctrl *IndexController) SignUp() echo.HandlerFunc {
 	}
 }
 
-func (ctrl *IndexController) RefreshToken() echo.HandlerFunc {
+func (ctrl *AuthController) RefreshToken() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var body struct {
 			RefreshToken string `json:"refresh_token" validate:"required"`

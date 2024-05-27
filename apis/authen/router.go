@@ -6,6 +6,5 @@ import (
 )
 
 func Router(api *apis.API) {
-	api.App.Group("/authen")
-	controllers.NewIndexController(api)
+	controllers.NewAuthController(api.App.Group("/auth"), api)
 }
