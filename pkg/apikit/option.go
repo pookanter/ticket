@@ -40,8 +40,8 @@ func WithGlobal(c config.Config) Option {
 }
 
 type Certs struct {
-	PrivateKey string
-	PublicKey  string
+	PrivateKey []byte
+	PublicKey  []byte
 }
 
 func WithCerts(c Certs) Option {

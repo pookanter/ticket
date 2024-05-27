@@ -27,11 +27,11 @@ func (cf *Configuration) Certs() Certs {
 	return cf.certs
 }
 
-func (cf *Configuration) PrivateKey() string {
+func (cf *Configuration) PrivateKey() []byte {
 	return cf.certs.PrivateKey
 }
 
-func (cf *Configuration) PublicKey() string {
+func (cf *Configuration) PublicKey() []byte {
 	return cf.certs.PublicKey
 }
 

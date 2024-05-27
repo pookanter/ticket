@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -13,20 +14,25 @@ type AuthContext struct {
 
 func (a *Auth) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		bearer := c.Request().Header["Authorization"]
+		bearer := c.Request().Header.Get("Authorization")
 
-		s := strings.Split(bearer[0], " ")
+		s := strings.Split(bearer, " ")
 
 		if len(s) != 2 {
 			return echo.ErrUnauthorized
 		}
 
-		claims, err := a.ParseToken(s[1])
+		token := s[1]
+
+		claims, err := a.ParseToken(token)
 		if err != nil || claims == nil {
+			fmt.Println("err:", err)
 			return echo.ErrUnauthorized
 		}
 
 		c.Set("claims", claims)
+
+		fmt.Println("Authrized")
 
 		return next(c)
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 func ConnectDBContext(ctx context.Context, cf DBConfig) (*sql.DB, error) {
-	dsname := fmt.Sprintf("%s:%s@tcp(%s)/%s", cf.User, cf.Password, cf.Host, cf.Name)
+	dsname := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", cf.User, cf.Password, cf.Host, cf.Name)
 	fmt.Printf("\nDatasource is %s\n", dsname)
 	db, err := sql.Open("mysql", dsname)
 	if err != nil {

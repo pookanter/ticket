@@ -1,7 +1,8 @@
 package auth
 
 type AuthConfig struct {
-	PrivateKey         string
+	PrivateKey         []byte
+	PublicKey          []byte
 	AccessTokenExpire  int
 	RefreshTokenExpire int
 }
@@ -11,7 +12,8 @@ type Auth struct {
 }
 
 type Configurer interface {
-	PrivateKey() string
+	PrivateKey() []byte
+	PublicKey() []byte
 	AccessTokenExpire() int
 	RefreshTokenExpire() int
 }
@@ -20,6 +22,7 @@ func New(c Configurer) *Auth {
 	return &Auth{
 		config: AuthConfig{
 			PrivateKey:         c.PrivateKey(),
+			PublicKey:          c.PublicKey(),
 			AccessTokenExpire:  c.AccessTokenExpire(),
 			RefreshTokenExpire: c.RefreshTokenExpire(),
 		},

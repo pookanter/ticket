@@ -28,6 +28,7 @@ type GenerateTokensConfig struct {
 
 func (a *Auth) GenerateTokens(tokenPayload TokenPayload) (Tokens, error) {
 	accessToken, err := a.GenerateTokenString(tokenPayload, a.config.AccessTokenExpire)
+	fmt.Println(err)
 	if err != nil {
 		return Tokens{}, err
 	}
@@ -51,14 +52,23 @@ func (a *Auth) GenerateTokenString(tokenPayload TokenPayload, unixDuration int) 
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	rsaPrivatekey, err := jwt.ParseRSAPrivateKeyFromPEM(a.config.PrivateKey)
+	if err != nil {
+		return "", err
+	}
 
-	return token.SignedString(a.config.PrivateKey)
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+
+	return token.SignedString(rsaPrivatekey)
 }
 
 func (a *Auth) ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwt.ParseECPublicKeyFromPEM([]byte(a.config.PrivateKey))
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return jwt.ParseRSAPublicKeyFromPEM(a.config.PublicKey)
 	})
 
 	if err != nil {
@@ -69,5 +79,5 @@ func (a *Auth) ParseToken(tokenString string) (*Claims, error) {
 		return claims, nil
 	}
 
-	return nil, fmt.Errorf("invalid claims")
+	return nil, fmt.Errorf("invalid token claims")
 }

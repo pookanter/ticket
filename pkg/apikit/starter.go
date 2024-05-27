@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -57,16 +58,20 @@ func (api *API) Start() {
 		ctx, cancel := context.WithTimeout(context.Background(), dbcf.TimeOut)
 		defer cancel()
 
-		db, err := ConnectDBContext(ctx, dbcf)
-		if err != nil {
+		var db *sql.DB
+		var err error
+		maxRetries := 5
+		for i := 0; i < maxRetries; i++ {
+			db, err = ConnectDBContext(ctx, dbcf)
+			if err == nil {
+				break
+			}
 			fmt.Printf("\nError connecting to database: %v\n", err.Error())
-
-			return
+			fmt.Printf("Retrying in 5 seconds...\n")
+			time.Sleep(5 * time.Second)
 		}
 
 		fmt.Printf("\nConnected to database %s\n", dbcf.Name)
-
-		fmt.Println(db)
 
 		api.DB = db
 	}

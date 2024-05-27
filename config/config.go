@@ -55,20 +55,20 @@ func ReadConfig() (Config, error) {
 	return config, nil
 }
 
-func ReadPrivateKey(config Config) (string, error) {
+func ReadPrivateKey(config Config) ([]byte, error) {
 	b, err := os.ReadFile(config.PrivateKey)
 	if err != nil {
-		return "", fmt.Errorf("\nunable to decode into struct: %s", err)
+		return []byte{}, fmt.Errorf("\nunable to decode into struct: %s", err)
 	}
 
-	return string(b), nil
+	return b, nil
 }
 
-func ReadPublicKey(config Config) (string, error) {
+func ReadPublicKey(config Config) ([]byte, error) {
 	b, err := os.ReadFile(config.PublicKey)
 	if err != nil {
-		return "", fmt.Errorf("\nunable to decode into struct: %s", err)
+		return []byte{}, fmt.Errorf("\nunable to decode into struct: %s", err)
 	}
 
-	return string(b), nil
+	return b, nil
 }
