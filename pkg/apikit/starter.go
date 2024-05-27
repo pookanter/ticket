@@ -70,18 +70,19 @@ func (api *API) UseRouter(routers ...Router) *API {
 func (api *API) Start() {
 	if isDBConfigValid(api.cf.db) {
 		go func() {
+			fmt.Printf("\nConnecting to database...\n")
 			dbcf := api.cf.db
 			ctx, cancel := context.WithTimeout(context.Background(), dbcf.TimeOut)
 			defer cancel()
 
 			db, err := ConnectDBContext(ctx, dbcf)
 			if err != nil {
-				fmt.Printf("Error connecting to database: %v\n", err.Error())
+				fmt.Printf("\nError connecting to database: %v\n", err.Error())
 
 				return
 			}
 
-			fmt.Printf("Connected to database %s\n", dbcf.Name)
+			fmt.Printf("\nConnected to database %s\n", dbcf.Name)
 
 			api.DB = db
 		}()

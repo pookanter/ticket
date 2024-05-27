@@ -17,8 +17,9 @@ type DBConfig struct {
 }
 
 func ConnectDBContext(ctx context.Context, cf DBConfig) (*db.Queries, error) {
-	dsname := fmt.Sprintf("%s:%s@%s?parseTime=true", cf.User, cf.Password, cf.Name)
-	sqldb, err := sql.Open(cf.Host, dsname)
+	dsname := fmt.Sprintf("%s:%s@tcp(%s)/%s", cf.User, cf.Password, cf.Host, cf.Name)
+	fmt.Printf("\nDatasource is %s\n", dsname)
+	sqldb, err := sql.Open("mysql", dsname)
 	if err != nil {
 		return nil, err
 	}
