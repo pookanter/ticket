@@ -9,7 +9,6 @@ services:
     volumes:
       - ./cmd/gateway:/app/cmd/gateway
       - ./api/gateway:/app/api/gateway
-      - ./api/api.go:/app/api/api.go
       - ./pkg:/app/pkg
   authen:
     image: authen:development
@@ -21,7 +20,6 @@ services:
     volumes:
       - ./cmd/authen:/app/cmd/authen
       - ./api/authen:/app/api/authen
-      - ./api/api.go:/app/api/api.go
       - ./pkg:/app/pkg
     depends_on:
       - mysql
