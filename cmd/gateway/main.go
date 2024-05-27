@@ -44,8 +44,12 @@ func main() {
 			}
 
 			if url != "" {
-				req.Header.SetContentType("application/json")
 				req.Header.SetMethod(c.Request().Method)
+				for name, values := range c.Request().Header {
+					for _, value := range values {
+						req.Header.Add(name, value)
+					}
+				}
 				bodyBytes, err := io.ReadAll(c.Request().Body)
 				defer c.Request().Body.Close()
 				if err != nil {

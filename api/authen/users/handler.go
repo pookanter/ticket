@@ -20,8 +20,8 @@ func NewHandler(api *apikit.API) *Handler {
 }
 
 func (h *Handler) GetMe(c echo.Context) error {
-	ac := c.(auth.AuthContext)
-	user, err := h.DB.FindUserByID(c.Request().Context(), ac.Claims.UserID)
+	claims := c.Get("claims").(*auth.Claims)
+	user, err := h.DB.FindUserByID(c.Request().Context(), claims.UserID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}

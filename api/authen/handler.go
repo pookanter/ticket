@@ -3,6 +3,7 @@ package authen
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
@@ -94,12 +95,14 @@ func (h *Handler) SignUp(c echo.Context) error {
 	defer cancel()
 
 	user, err := h.DB.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
+	fmt.Printf("user: %+v\n", user)
+
 	if user.ID != 0 {
-		return echo.NewHTTPError(http.StatusConflict, "user already exists")
+		return echo.NewHTTPError(http.StatusConflict, "email already exists")
 	}
 
 	hash, err := h.Auth.HashPassword(body.Password)
@@ -137,20 +140,20 @@ func (h *Handler) RefreshToken(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+	return nil
+	// claims, err := h.Auth.ParseToken(body.RefreshToken)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+	// }
 
-	claims, err := h.Auth.ParseToken(body.RefreshToken)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
-	}
+	// payload := auth.TokenPayload{
+	// 	UserID: claims.UserID,
+	// }
 
-	payload := auth.TokenPayload{
-		UserID: claims.UserID,
-	}
+	// tokens, err := h.Auth.GenerateTokens(payload)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	// }
 
-	tokens, err := h.Auth.GenerateTokens(payload)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(http.StatusOK, tokens)
+	// return c.JSON(http.StatusOK, tokens)
 }

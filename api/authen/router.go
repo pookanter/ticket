@@ -1,11 +1,13 @@
 package authen
 
 import (
+	"fmt"
 	"ticket/api/authen/users"
 	"ticket/pkg/apikit"
 )
 
 func Router(api *apikit.API) {
+	fmt.Println(api.DB)
 	h := NewHandler(api)
 
 	api.App.POST("/sign-in", h.SignIn)
