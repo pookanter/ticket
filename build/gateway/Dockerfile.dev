@@ -5,12 +5,13 @@ WORKDIR /app
 
 COPY cmd cmd
 COPY api/gateway api/gateway
-COPY api/api.go api
 COPY pkg pkg
 COPY go.mod go.sum ./
 COPY config config
 COPY certs certs
 COPY build/gateway ./
+
+RUN go mod tidy
 
 FROM cosmtrek/air AS runtime
 
