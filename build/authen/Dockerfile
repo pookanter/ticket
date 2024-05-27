@@ -26,8 +26,5 @@ WORKDIR /app
 # copy app release
 COPY --from=builder /app/dist/authen ./authen
 
-# expose default port
-EXPOSE 5000
-
 # default run entrypoint
 CMD ["./authen"]

@@ -19,6 +19,4 @@ WORKDIR /app
 COPY --from=builder /app .
 COPY --from=builder /app/.air.toml .
 
-EXPOSE 4000
-
 CMD ["air", "-c", ".air.toml"]
