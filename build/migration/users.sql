@@ -18,6 +18,14 @@ WHERE
 LIMIT
   1;
 
+-- name: FindUserByID :one
+SELECT
+  *
+FROM
+  users
+WHERE
+  id = ?;
+
 -- name: CreateUser :exec
 INSERT INTO
   users (name, lastname, email, password, created_at)

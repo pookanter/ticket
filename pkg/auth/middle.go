@@ -6,6 +6,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type AuthContext struct {
+	Claims *Claims
+	echo.Context
+}
+
 func (a *Auth) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		bearer := c.Request().Header["Authorization"]
@@ -24,6 +29,5 @@ func (a *Auth) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Set("claims", claims)
 
 		return next(c)
-
 	}
 }

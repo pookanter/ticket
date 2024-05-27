@@ -32,7 +32,6 @@ func NewHandler(api *apikit.API) *Handler {
 }
 
 func (h *Handler) SignIn(c echo.Context) error {
-
 	var body struct {
 		Email    string `json:"email" validate:"required,email"`
 		Password string `json:"password" validate:"required,min=8,max=32"`

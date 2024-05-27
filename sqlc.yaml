@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "mysql"
-    schema: "migration/schema.sql"
+    schema: "build/migration/schema.sql"
     queries:
-      - "migration/users.sql"
-      - "migration/boards.sql"
-      - "migration/statuses.sql"
-      - "migration/tickets.sql"
+      - "build/migration/users.sql"
+      - "build/migration/boards.sql"
+      - "build/migration/statuses.sql"
+      - "build/migration/tickets.sql"
     gen:
       go:
         package: "db"
