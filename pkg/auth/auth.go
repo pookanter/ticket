@@ -1,8 +1,7 @@
 package auth
 
 type AuthConfig struct {
-	PrivateKey string
-	PublicKey  string
+	RSAKey string
 }
 
 type Auth struct {

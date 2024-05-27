@@ -53,12 +53,12 @@ func (a *Auth) GenerateTokenString(tokenPayload TokenPayload, unixDuration int) 
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(a.config.PrivateKey)
+	return token.SignedString(a.config.RSAKey)
 }
 
 func (a *Auth) ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwt.ParseECPublicKeyFromPEM([]byte(a.config.PublicKey))
+		return jwt.ParseECPublicKeyFromPEM([]byte(a.config.RSAKey))
 	})
 
 	if err != nil {
