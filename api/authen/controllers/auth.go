@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
-	"ticket/apis"
+	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
 
@@ -15,19 +15,19 @@ type AuthController struct {
 	App      *echo.Echo
 	Auth     *auth.Auth
 	DB       *db.Queries
-	DBConfig apis.DBConfig
+	DBConfig apikit.DBConfig
 }
 
-func NewAuthController(g *echo.Group, api *apis.API) *AuthController {
+func NewAuthController(g *echo.Group, api *apikit.API) *AuthController {
 	gcf := api.GetGlobalConfig()
 	ctrl := &AuthController{
 		App: api.App,
 		Auth: auth.New(auth.AuthConfig{
-			RSAKey:             api.GetPrivateKey(),
+			RSAKey:             api.GetCerts().PrivateKey,
 			AccessTokenExpire:  gcf.AccessTokenExpire,
 			RefreshTokenExpire: gcf.RefreshTokenExpire,
 		}),
-		DB:       api.Db,
+		DB:       api.DB,
 		DBConfig: api.GetDBConfig(),
 	}
 
@@ -35,6 +35,8 @@ func NewAuthController(g *echo.Group, api *apis.API) *AuthController {
 	g.POST("/sign-up", ctrl.SignUp())
 
 	g.POST("/refresh-token", ctrl.RefreshToken())
+
+	// var m echo.MiddlewareFunc
 
 	return ctrl
 }
@@ -132,7 +134,7 @@ func (ctrl *AuthController) SignUp() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(http.StatusCreated, apis.GenericResponse{
+		return c.JSON(http.StatusCreated, apikit.GenericResponse[any]{
 			Error:   false,
 			Message: "user created",
 		})

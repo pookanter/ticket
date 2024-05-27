@@ -37,41 +37,38 @@ type Config struct {
 	RefreshTokenExpire int    `mapstructure:"refresh_token_expire"`
 }
 
-var config Config
-var privateKey string
-var publicKey string
-
-func Initialize() {
-	fmt.Println("Initializing config...")
-
+func ReadConfig() (Config, error) {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
 	viper.AddConfigPath("./config")
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("\nfatal error config file: %s", err))
+		return Config{}, err
 	}
-
+	var config Config
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		panic(fmt.Errorf("\nunable to decode into struct: %s", err))
+		return Config{}, fmt.Errorf("\nunable to decode into struct: %s", err)
 	}
 
+	return config, nil
+}
+
+func ReadPrivateKey(config Config) (string, error) {
 	b, err := os.ReadFile(config.PrivateKey)
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("\nunable to decode into struct: %s", err)
 	}
 
-	privateKey = string(b)
-
-	fmt.Println("Initializing config completed!")
+	return string(b), nil
 }
 
-func GetConfig() Config {
-	return config
-}
+func ReadPublicKey(config Config) (string, error) {
+	b, err := os.ReadFile(config.PublicKey)
+	if err != nil {
+		return "", fmt.Errorf("\nunable to decode into struct: %s", err)
+	}
 
-func GetPrivateKey() string {
-	return privateKey
+	return string(b), nil
 }
