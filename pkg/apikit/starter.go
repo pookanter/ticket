@@ -7,6 +7,7 @@ import (
 	"ticket/config"
 	"ticket/pkg/db"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -40,6 +41,10 @@ type API struct {
 	cf  Configuration
 	DB  *db.Queries
 	App *echo.Echo
+}
+
+type CustomValidator struct {
+	Validate *validator.Validate
 }
 
 func NewAPI(configs ...Config) *API {
@@ -81,6 +86,10 @@ func (api *API) Start() {
 			api.DB = db
 		}()
 	}
+
+	api.App.Validator = NewValidator()
+
+	fmt.Println("Setting up health check endpoint...")
 
 	api.App.GET("/health", func(c echo.Context) error {
 		return c.String(http.StatusOK, fmt.Sprintf("%s, OK!", api.cf.api.Label))
