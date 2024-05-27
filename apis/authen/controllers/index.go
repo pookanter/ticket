@@ -1,23 +1,23 @@
-package controller
+package controllers
 
 import (
 	"context"
 	"database/sql"
 	"net/http"
-	"ticket/api"
+	"ticket/apis"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
 
 	"github.com/labstack/echo/v4"
 )
 
-func Index(a *api.API) *echo.Echo {
-	g := a.App
-	authen := auth.New(auth.AuthConfig{
-		PrivateKey: a.GetGlobalConfig().PrivateKey,
-		PublicKey:  a.GetGlobalConfig().PublicKey,
+func Index(api *apis.API) *echo.Echo {
+	g := api.App
+	authentication := auth.New(auth.AuthConfig{
+		PrivateKey: api.GetGlobalConfig().PrivateKey,
+		PublicKey:  api.GetGlobalConfig().PublicKey,
 	})
-	cf := api.GetAPI().GetGlobalConfig()
+	cf := apis.GetAPI().GetGlobalConfig()
 
 	g.POST("/sign-in", func(c echo.Context) error {
 		var body struct {
@@ -35,10 +35,10 @@ func Index(a *api.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request().Context(), a.GetDBConfig().TimeOut)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), api.GetDBConfig().TimeOut)
 		defer cancel()
 
-		user, err := a.Db.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
+		user, err := api.Db.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -47,7 +47,7 @@ func Index(a *api.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusNotFound, "user not found")
 		}
 
-		err = authen.ComparePassword(user.Password.String, body.Password)
+		err = authentication.ComparePassword(user.Password.String, body.Password)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized, "invalid password")
 		}
@@ -56,7 +56,7 @@ func Index(a *api.API) *echo.Echo {
 			UserID: user.ID,
 		}
 
-		tokens, err := authen.GenerateTokens(payload, auth.GenerateTokensConfig{
+		tokens, err := authentication.GenerateTokens(payload, auth.GenerateTokensConfig{
 			AccessTokenExpire:  cf.AccessTokenExpire,
 			RefreshTokenExpire: cf.RefreshTokenExpire,
 		})
@@ -85,10 +85,10 @@ func Index(a *api.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request().Context(), a.GetDBConfig().TimeOut)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), api.GetDBConfig().TimeOut)
 		defer cancel()
 
-		user, err := a.Db.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
+		user, err := api.Db.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -97,12 +97,12 @@ func Index(a *api.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusConflict, "user already exists")
 		}
 
-		hash, err := authen.HashPassword(body.Password)
+		hash, err := authentication.HashPassword(body.Password)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
-		err = a.Db.CreateUser(ctx, db.CreateUserParams{
+		err = api.Db.CreateUser(ctx, db.CreateUserParams{
 			Name:     sql.NullString{String: body.Name, Valid: true},
 			Lastname: sql.NullString{String: body.Lastname, Valid: true},
 			Email:    sql.NullString{String: body.Email, Valid: true},
@@ -112,7 +112,7 @@ func Index(a *api.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(http.StatusCreated, api.GenericResponse{
+		return c.JSON(http.StatusCreated, apis.GenericResponse{
 			Error:   false,
 			Message: "user created",
 		})
@@ -133,7 +133,7 @@ func Index(a *api.API) *echo.Echo {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		claims, err := authen.ParseToken(body.RefreshToken)
+		claims, err := authentication.ParseToken(body.RefreshToken)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 		}
@@ -142,7 +142,7 @@ func Index(a *api.API) *echo.Echo {
 			UserID: claims.UserID,
 		}
 
-		tokens, err := authen.GenerateTokens(payload, auth.GenerateTokensConfig{
+		tokens, err := authentication.GenerateTokens(payload, auth.GenerateTokensConfig{
 			AccessTokenExpire:  cf.AccessTokenExpire,
 			RefreshTokenExpire: cf.RefreshTokenExpire,
 		})

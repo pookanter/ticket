@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ticket/api"
-	"ticket/api/authen"
+	"ticket/apis"
+	"ticket/apis/authen"
 	"ticket/config"
 	"time"
 
@@ -14,13 +14,13 @@ func main() {
 	config.Initialize()
 	cf := config.GetConfig()
 
-	authen.Router(api.Start(echo.New(), api.Config{
-		APIConfig: api.APIConfig{
+	authen.Router(apis.Start(echo.New(), apis.Config{
+		APIConfig: apis.APIConfig{
 			Label: "Authen",
 			Host:  cf.Services.Authen.Host,
 			Port:  cf.Services.Authen.Port,
 		},
-		DBConfig: &api.DBConfig{
+		DBConfig: &apis.DBConfig{
 			Host:     cf.Services.Database.Host,
 			Name:     cf.Services.Database.Dbname,
 			User:     cf.Services.Database.User,

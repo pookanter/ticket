@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"ticket/api"
+	"ticket/apis"
 	"ticket/config"
 
 	"github.com/labstack/echo/v4"
@@ -20,8 +20,8 @@ func main() {
 
 	e.Any("/:service/:path", handler)
 
-	api.Start(e, api.Config{
-		APIConfig: api.APIConfig{
+	apis.Start(e, apis.Config{
+		APIConfig: apis.APIConfig{
 			Label: "Gateway",
 			Host:  cf.Services.Authen.Host,
 			Port:  cf.Services.Authen.Port,
