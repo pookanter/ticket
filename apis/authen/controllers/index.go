@@ -27,20 +27,22 @@ func NewIndexController(api *apis.API) *IndexController {
 		DB:       api.Db,
 		DBConfig: api.GetDBConfig(),
 	}
-
 	gcf := api.GetGlobalConfig()
 	tkncf := auth.GenerateTokensConfig{
 		AccessTokenExpire:  gcf.AccessTokenExpire,
 		RefreshTokenExpire: gcf.RefreshTokenExpire,
 	}
-	ctrl.SignUp(tkncf)
+
+	ctrl.SignIn(tkncf)
+
+	ctrl.SignUp()
 
 	ctrl.RefreshToken(tkncf)
 
 	return ctrl
 }
 
-func (ctrl *IndexController) SignIn(cf auth.GenerateTokensConfig) *echo.Route {
+func (ctrl *IndexController) SignIn(tkncf auth.GenerateTokensConfig) *echo.Route {
 	return ctrl.App.POST("/sign-in", func(c echo.Context) error {
 		var body struct {
 			Email    string `json:"email" validate:"required,email"`
@@ -79,8 +81,8 @@ func (ctrl *IndexController) SignIn(cf auth.GenerateTokensConfig) *echo.Route {
 		}
 
 		tokens, err := ctrl.Auth.GenerateTokens(payload, auth.GenerateTokensConfig{
-			AccessTokenExpire:  cf.AccessTokenExpire,
-			RefreshTokenExpire: cf.RefreshTokenExpire,
+			AccessTokenExpire:  tkncf.AccessTokenExpire,
+			RefreshTokenExpire: tkncf.RefreshTokenExpire,
 		})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -90,7 +92,7 @@ func (ctrl *IndexController) SignIn(cf auth.GenerateTokensConfig) *echo.Route {
 	})
 }
 
-func (ctrl *IndexController) SignUp(tkncf auth.GenerateTokensConfig) *echo.Route {
+func (ctrl *IndexController) SignUp() *echo.Route {
 	return ctrl.App.POST("/sign-up", func(c echo.Context) error {
 		var body struct {
 			Name     string `json:"name" validate:"required,min=3,max=100"`
