@@ -33,9 +33,9 @@ func NewIndexController(api *apis.API) *IndexController {
 
 	ctrl.App.POST("/sign-in", ctrl.SignIn())
 
-	ctrl.SignUp()
+	ctrl.App.POST("/sign-up", ctrl.SignUp())
 
-	ctrl.RefreshToken()
+	ctrl.App.POST("/refresh-token", ctrl.RefreshToken())
 
 	return ctrl
 }
