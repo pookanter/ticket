@@ -53,7 +53,7 @@ func NewAPI(configs ...Config) *API {
 	return api
 }
 
-func (api *API) Use(routers ...Router) *API {
+func (api *API) UseRouter(routers ...Router) *API {
 	api.rt = append(api.rt, routers...)
 
 	return api

@@ -22,7 +22,7 @@ func main() {
 		Label: "Authen",
 		Host:  cf.Services.Gateway.Host,
 		Port:  cf.Services.Gateway.Port,
-	}), apikit.WithGlobal(cf)).Use(func(api *apikit.API) {
+	}), apikit.WithGlobal(cf)).UseRouter(func(api *apikit.API) {
 		api.App.Any("/:service/:path", func(c echo.Context) error {
 			cf := api.GetGlobalConfig()
 			req := fasthttp.AcquireRequest()

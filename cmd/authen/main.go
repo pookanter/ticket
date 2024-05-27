@@ -39,5 +39,5 @@ func main() {
 	}), apikit.WithGlobal(cf), apikit.WithCerts(apikit.Certs{
 		PrivateKey: pri,
 		PublicKey:  pub,
-	})).Use(authen.Router).Start(echo.New())
+	})).UseRouter(authen.Router).Start(echo.New())
 }
