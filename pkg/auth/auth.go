@@ -1,7 +1,7 @@
 package auth
 
 type AuthConfig struct {
-	RSAKey             string
+	PrivateKey         string
 	AccessTokenExpire  int
 	RefreshTokenExpire int
 }
@@ -10,6 +10,18 @@ type Auth struct {
 	config AuthConfig
 }
 
-func New(config AuthConfig) *Auth {
-	return &Auth{config}
+type Configurer interface {
+	PrivateKey() string
+	AccessTokenExpire() int
+	RefreshTokenExpire() int
+}
+
+func New(c Configurer) *Auth {
+	return &Auth{
+		config: AuthConfig{
+			PrivateKey:         c.PrivateKey(),
+			AccessTokenExpire:  c.AccessTokenExpire(),
+			RefreshTokenExpire: c.RefreshTokenExpire(),
+		},
+	}
 }

@@ -24,7 +24,7 @@ func main() {
 		Port:  cf.Services.Gateway.Port,
 	}), apikit.WithGlobal(cf)).UseRouter(func(api *apikit.API) {
 		api.App.Any("/:service/:path", func(c echo.Context) error {
-			cf := api.GetGlobalConfig()
+			cf := api.Config.GLobal()
 			req := fasthttp.AcquireRequest()
 			req.Header.SetContentType("application/json")
 			res := fasthttp.AcquireResponse()

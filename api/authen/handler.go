@@ -7,27 +7,22 @@ import (
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
-	App      *echo.Echo
-	Auth     *auth.Auth
-	DB       *db.Queries
-	DBConfig apikit.DBConfig
+	DB        *db.Queries
+	DBTimeOut time.Duration
+	Auth      *auth.Auth
 }
 
 func NewHandler(api *apikit.API) *Handler {
 	return &Handler{
-		App: api.App,
-		Auth: auth.New(auth.AuthConfig{
-			RSAKey:             api.GetCerts().PrivateKey,
-			AccessTokenExpire:  api.GetGlobalConfig().AccessTokenExpire,
-			RefreshTokenExpire: api.GetGlobalConfig().RefreshTokenExpire,
-		}),
-		DB:       api.DB,
-		DBConfig: api.GetDBConfig(),
+		DB:        db.New(api.DB),
+		DBTimeOut: api.Config.DB().TimeOut,
+		Auth:      auth.New(api.Config),
 	}
 }
 
@@ -47,7 +42,7 @@ func (h *Handler) SignIn(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request().Context(), h.DBConfig.TimeOut)
+	ctx, cancel := context.WithTimeout(c.Request().Context(), h.DBTimeOut)
 	defer cancel()
 
 	user, err := h.DB.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
@@ -95,7 +90,7 @@ func (h *Handler) SignUp(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request().Context(), h.DBConfig.TimeOut)
+	ctx, cancel := context.WithTimeout(c.Request().Context(), h.DBTimeOut)
 	defer cancel()
 
 	user, err := h.DB.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})

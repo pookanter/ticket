@@ -10,22 +10,12 @@ import (
 )
 
 type Handler struct {
-	App      *echo.Echo
-	Auth     *auth.Auth
-	DB       *db.Queries
-	DBConfig apikit.DBConfig
+	DB *db.Queries
 }
 
 func NewHandler(api *apikit.API) *Handler {
 	return &Handler{
-		App: api.App,
-		Auth: auth.New(auth.AuthConfig{
-			RSAKey:             api.GetCerts().PrivateKey,
-			AccessTokenExpire:  api.GetGlobalConfig().AccessTokenExpire,
-			RefreshTokenExpire: api.GetGlobalConfig().RefreshTokenExpire,
-		}),
-		DB:       api.DB,
-		DBConfig: api.GetDBConfig(),
+		DB: db.New(api.DB),
 	}
 }
 
