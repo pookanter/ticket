@@ -1,7 +1,9 @@
 package auth
 
 type AuthConfig struct {
-	RSAKey string
+	RSAKey             string
+	AccessTokenExpire  int
+	RefreshTokenExpire int
 }
 
 type Auth struct {

@@ -26,13 +26,13 @@ type GenerateTokensConfig struct {
 	RefreshTokenExpire int
 }
 
-func (a *Auth) GenerateTokens(tokenPayload TokenPayload, cf GenerateTokensConfig) (Tokens, error) {
-	accessToken, err := a.GenerateTokenString(tokenPayload, cf.AccessTokenExpire)
+func (a *Auth) GenerateTokens(tokenPayload TokenPayload) (Tokens, error) {
+	accessToken, err := a.GenerateTokenString(tokenPayload, a.config.AccessTokenExpire)
 	if err != nil {
 		return Tokens{}, err
 	}
 
-	refreshToken, err := a.GenerateTokenString(tokenPayload, cf.RefreshTokenExpire)
+	refreshToken, err := a.GenerateTokenString(tokenPayload, a.config.RefreshTokenExpire)
 	if err != nil {
 		return Tokens{}, err
 	}

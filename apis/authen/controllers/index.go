@@ -19,30 +19,28 @@ type IndexController struct {
 }
 
 func NewIndexController(api *apis.API) *IndexController {
+	gcf := api.GetGlobalConfig()
 	ctrl := &IndexController{
 		App: api.App,
 		Auth: auth.New(auth.AuthConfig{
-			RSAKey: api.GetPrivateKey(),
+			RSAKey:             api.GetPrivateKey(),
+			AccessTokenExpire:  gcf.AccessTokenExpire,
+			RefreshTokenExpire: gcf.RefreshTokenExpire,
 		}),
 		DB:       api.Db,
 		DBConfig: api.GetDBConfig(),
 	}
-	gcf := api.GetGlobalConfig()
-	tkncf := auth.GenerateTokensConfig{
-		AccessTokenExpire:  gcf.AccessTokenExpire,
-		RefreshTokenExpire: gcf.RefreshTokenExpire,
-	}
 
-	ctrl.SignIn(tkncf)
+	ctrl.SignIn()
 
 	ctrl.SignUp()
 
-	ctrl.RefreshToken(tkncf)
+	ctrl.RefreshToken()
 
 	return ctrl
 }
 
-func (ctrl *IndexController) SignIn(tkncf auth.GenerateTokensConfig) *echo.Route {
+func (ctrl *IndexController) SignIn() *echo.Route {
 	return ctrl.App.POST("/sign-in", func(c echo.Context) error {
 		var body struct {
 			Email    string `json:"email" validate:"required,email"`
@@ -80,10 +78,7 @@ func (ctrl *IndexController) SignIn(tkncf auth.GenerateTokensConfig) *echo.Route
 			UserID: user.ID,
 		}
 
-		tokens, err := ctrl.Auth.GenerateTokens(payload, auth.GenerateTokensConfig{
-			AccessTokenExpire:  tkncf.AccessTokenExpire,
-			RefreshTokenExpire: tkncf.RefreshTokenExpire,
-		})
+		tokens, err := ctrl.Auth.GenerateTokens(payload)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -145,7 +140,7 @@ func (ctrl *IndexController) SignUp() *echo.Route {
 	})
 }
 
-func (ctrl *IndexController) RefreshToken(tkncf auth.GenerateTokensConfig) *echo.Route {
+func (ctrl *IndexController) RefreshToken() *echo.Route {
 	return ctrl.App.POST("/refresh-token", func(c echo.Context) error {
 		var body struct {
 			RefreshToken string `json:"refresh_token" validate:"required"`
@@ -170,10 +165,7 @@ func (ctrl *IndexController) RefreshToken(tkncf auth.GenerateTokensConfig) *echo
 			UserID: claims.UserID,
 		}
 
-		tokens, err := ctrl.Auth.GenerateTokens(payload, auth.GenerateTokensConfig{
-			AccessTokenExpire:  tkncf.AccessTokenExpire,
-			RefreshTokenExpire: tkncf.RefreshTokenExpire,
-		})
+		tokens, err := ctrl.Auth.GenerateTokens(payload)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
