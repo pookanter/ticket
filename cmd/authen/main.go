@@ -7,7 +7,6 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/labstack/echo/v4"
 )
 
 func main() {
@@ -39,5 +38,5 @@ func main() {
 	}), apikit.WithGlobal(cf), apikit.WithCerts(apikit.Certs{
 		PrivateKey: pri,
 		PublicKey:  pub,
-	})).UseRouter(authen.Router).Start(echo.New())
+	})).UseRouter(authen.Router).Start()
 }

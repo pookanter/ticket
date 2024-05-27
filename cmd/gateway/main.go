@@ -76,5 +76,5 @@ func main() {
 			return c.JSON(http.StatusNotFound, "Not Found")
 		})
 
-	}).Start(echo.New())
+	}).Start()
 }

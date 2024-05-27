@@ -38,13 +38,14 @@ type Router func(api *API)
 
 type API struct {
 	cf  Configuration
-	rt  []Router
 	DB  *db.Queries
 	App *echo.Echo
 }
 
 func NewAPI(configs ...Config) *API {
-	api := &API{}
+	api := &API{
+		App: echo.New(),
+	}
 
 	for _, c := range configs {
 		c(api)
@@ -54,12 +55,14 @@ func NewAPI(configs ...Config) *API {
 }
 
 func (api *API) UseRouter(routers ...Router) *API {
-	api.rt = append(api.rt, routers...)
+	for _, r := range routers {
+		r(api)
+	}
 
 	return api
 }
 
-func (api *API) Start(e *echo.Echo) {
+func (api *API) Start() {
 	if isDBConfigValid(api.cf.db) {
 		go func() {
 			dbcf := api.cf.db
@@ -79,17 +82,13 @@ func (api *API) Start(e *echo.Echo) {
 		}()
 	}
 
-	e.GET("/health", func(c echo.Context) error {
+	api.App.GET("/health", func(c echo.Context) error {
 		return c.String(http.StatusOK, fmt.Sprintf("%s, OK!", api.cf.api.Label))
 	})
 
-	for _, r := range api.rt {
-		r(api)
-	}
-
 	fmt.Printf("Starting API %s...\n", api.cf.api.Label)
 
-	e.Logger.Fatal(e.Start(fmt.Sprintf("%s:%d", api.cf.api.Host, api.cf.api.Port)))
+	api.App.Logger.Fatal(api.App.Start(fmt.Sprintf("%s:%d", api.cf.api.Host, api.cf.api.Port)))
 }
 
 func isDBConfigValid(dbcf DBConfig) bool {
