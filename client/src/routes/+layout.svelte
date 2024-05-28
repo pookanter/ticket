@@ -15,7 +15,7 @@
 	<footer class="fixed bottom-0 left-0 w-full bg-white shadow dark:bg-gray-800">
 		<div class="w-full max-w-screen-xl p-4 mx-auto md:flex md:items-center md:justify-between">
 			<span class="text-sm text-gray-500 sm:text-center dark:text-gray-400"
-				>Made by <b>Sippakorn Phuakpong</b> with SvelteKit and TailwindCSS.
+				>Made by <b>Sippakorn Phuakpong</b> with SvelteKit and TailwindCSS with back-end write in Go.
 			</span>
 			<ul
 				class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 sm:mt-0 dark:text-gray-400"
