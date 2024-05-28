@@ -52,11 +52,19 @@ func (api *API) UseRouter(routers ...Router) *API {
 	return api
 }
 
+func (api *API) Use(middleware ...echo.MiddlewareFunc) *API {
+	api.App.Use(middleware...)
+
+	return api
+}
+
 func (api *API) Start() {
 	if isDBConfigValid(api.Config.db) {
+		fmt.Printf("Start connect in 5 seconds...\n")
+		time.Sleep(5 * time.Second)
 		fmt.Printf("\nConnecting to database...\n")
 		dbcf := api.Config.db
-		ctx, cancel := context.WithTimeout(context.Background(), dbcf.TimeOut)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		var err error

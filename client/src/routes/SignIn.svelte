@@ -68,21 +68,7 @@
 		</div>
 		<Button class="w-full">Sign in</Button>
 		<p class="text-sm font-light text-gray-500 dark:text-gray-400">
-			Don’t have an account yet?
-			<Dialog.Trigger
-				><a href={null} class="font-medium text-primary-600 dark:text-primary-500 hover:underline"
-					>Sign up</a
-				></Dialog.Trigger
-			>
-			<Dialog.Content class="sm:max-w-[425px]">
-				<Dialog.Header>
-					<Dialog.Title>Sign up</Dialog.Title>
-				</Dialog.Header>
-				<SignUp />
-				<DialogFooter>
-					<Button class="w-full">Sign up</Button>
-				</DialogFooter>
-			</Dialog.Content>
+			Don’t have an account yet? <SignUp />
 		</p>
 	</form>
 </div>

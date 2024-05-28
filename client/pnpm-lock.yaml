@@ -20,6 +20,9 @@ dependencies:
   lucide-svelte:
     specifier: ^0.379.0
     version: 0.379.0(svelte@4.2.17)
+  nanostores:
+    specifier: ^0.10.3
+    version: 0.10.3
   rxjs:
     specifier: ^7.8.1
     version: 7.8.1
@@ -1979,6 +1982,11 @@ packages:
     resolution: {integrity: sha512-oLxFY2gd2IqnjcYyOXD8XGCftpGtZP2AbHbOkthDkvRywH5ayNtPVy9YlOPcHckXzbLTCHpkb7FB+yuxKV13pQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
+    dev: false
+
+  /nanostores@0.10.3:
+    resolution: {integrity: sha512-Nii8O1XqmawqSCf9o2aWqVxhKRN01+iue9/VEd1TiJCr9VT5XxgPFbF1Edl1XN6pwJcZRsl8Ki+z01yb/T/C2g==}
+    engines: {node: ^18.0.0 || >=20.0.0}
     dev: false
 
   /natural-compare@1.4.0:

@@ -9,6 +9,7 @@ import (
 	"ticket/pkg/apikit"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/valyala/fasthttp"
 )
 
@@ -22,7 +23,7 @@ func main() {
 		Label: "Gateway",
 		Host:  cf.Services.Gateway.Host,
 		Port:  cf.Services.Gateway.Port,
-	}), apikit.WithGlobal(cf)).UseRouter(func(api *apikit.API) {
+	}), apikit.WithGlobal(cf)).Use(middleware.CORS()).UseRouter(func(api *apikit.API) {
 		api.App.Any("/:service/:path", func(c echo.Context) error {
 			cf := api.Config.GLobal()
 			req := fasthttp.AcquireRequest()
@@ -33,8 +34,6 @@ func main() {
 
 			service := c.Param("service")
 			path := c.Param("path")
-
-			fmt.Println("service:", service == "authen")
 
 			url := ""
 			if service == "authen-service" {

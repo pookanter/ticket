@@ -4,6 +4,10 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { AuthenService } from '$lib/services/authen-service';
 	import { goto } from '$app/navigation';
+	import type { FocusProp } from 'bits-ui';
+	import Input from '$lib/components/ui/input/input.svelte';
+	import Spinner from '$lib/components/spinner/Spinner.svelte';
+	import { setAlert } from '$lib/store/app';
 
 	const signupData = {
 		email: '',
@@ -13,96 +17,116 @@
 		confirm_password: ''
 	};
 
+	let open = false;
+	let loading = false;
+
+	function onOpenChange(isOpen: boolean) {
+		if (loading) return false;
+		open = isOpen;
+	}
+
 	async function handleSignup(event: Event) {
 		event.preventDefault();
+		loading = true;
+
 		try {
 			const { data } = await AuthenService.signUp(signupData);
 
 			AuthenService.setAuthorization(data);
 
 			goto('/app');
-		} catch (error) {
-			console.error(error);
-
-			// Dialog.show({
-			//   title: 'Error',
-			//   description: error.message
-			// });
+		} catch ({ error, message }: any) {
+			loading = false;
+			setAlert({
+				title: 'Error',
+				message: error ? error.message : message
+			});
 		}
 	}
 </script>
 
-<div class="p-4 md:p-5">
-	<form class="space-y-4 md:space-y-6" action="#">
-		<div>
-			<label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-				>Email</label
-			>
-			<input
-				type="email"
-				name="email"
-				id="email"
-				bind:value={signupData.email}
-				class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
-				placeholder="name@company.com"
-				required
-			/>
+<Dialog.Root closeOnOutsideClick={false} {open} {onOpenChange}>
+	<Dialog.Trigger>
+		<a href={null} class="font-medium text-primary-600 dark:text-primary-500 hover:underline">
+			Sign up
+		</a>
+	</Dialog.Trigger>
+	<Dialog.Content class="sm:max-w-[425px]" disableClosing={loading}>
+		<Dialog.Header>
+			<Dialog.Title>Sign up</Dialog.Title>
+		</Dialog.Header>
+		<div class="p-4 md:p-5">
+			<form class="space-y-4 md:space-y-6" action="#">
+				<div>
+					<label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+						>Email</label
+					>
+					<Input
+						type="text"
+						placeholder="name@company.com"
+						class="block w-full"
+						disabled={loading}
+						bind:value={signupData.email}
+					/>
+				</div>
+				<div>
+					<label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+						>Name</label
+					>
+					<Input
+						type="text"
+						placeholder="John"
+						class="block w-full"
+						disabled={loading}
+						bind:value={signupData.name}
+					/>
+				</div>
+				<div>
+					<label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+						>Last name</label
+					>
+					<Input
+						type="text"
+						placeholder="Doe"
+						class="block w-full"
+						disabled={loading}
+						bind:value={signupData.lastname}
+					/>
+				</div>
+				<div>
+					<label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+						>Password</label
+					>
+					<Input
+						type="password"
+						placeholder="••••••••"
+						class="block w-full"
+						disabled={loading}
+						bind:value={signupData.password}
+					/>
+				</div>
+				<div>
+					<label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+						>Confirm password</label
+					>
+					<Input
+						type="confirm_password"
+						placeholder="••••••••"
+						class="block w-full"
+						disabled={loading}
+						bind:value={signupData.confirm_password}
+					/>
+				</div>
+			</form>
 		</div>
-		<div>
-			<label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-				>Name</label
-			>
-			<input
-				type="text"
-				name="name"
-				id="name"
-				bind:value={signupData.name}
-				class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
-				placeholder="John"
-				required
-			/>
-		</div>
-		<div>
-			<label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-				>Last name</label
-			>
-			<input
-				type="text"
-				name="lastname"
-				id="lastname"
-				bind:value={signupData.lastname}
-				class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
-				placeholder="Doe"
-				required
-			/>
-		</div>
-		<div>
-			<label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-				>Password</label
-			>
-			<input
-				type="password"
-				name="password"
-				id="password"
-				placeholder="••••••••"
-				bind:value={signupData.password}
-				class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
-				required
-			/>
-		</div>
-		<div>
-			<label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-				>Confirm password</label
-			>
-			<input
-				type="password"
-				name="password"
-				id="password"
-				placeholder="••••••••"
-				bind:value={signupData.confirm_password}
-				class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400"
-				required
-			/>
-		</div>
-	</form>
-</div>
+		<DialogFooter>
+			<Button class="w-full" on:click={(e) => handleSignup(e)}>
+				{#if loading}
+					<Spinner class="w-4 h-4 mr-2" /> Signing up
+				{:else}
+					Sign up
+				{/if}
+			</Button>
+		</DialogFooter>
+	</Dialog.Content>
+</Dialog.Root>
