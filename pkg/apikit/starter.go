@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -58,11 +59,10 @@ func (api *API) Start() {
 		ctx, cancel := context.WithTimeout(context.Background(), dbcf.TimeOut)
 		defer cancel()
 
-		var db *sql.DB
 		var err error
 		maxRetries := 5
 		for i := 0; i < maxRetries; i++ {
-			db, err = ConnectDBContext(ctx, dbcf)
+			api.DB, err = ConnectDBContext(ctx, dbcf)
 			if err == nil {
 				break
 			}
@@ -71,9 +71,12 @@ func (api *API) Start() {
 			time.Sleep(5 * time.Second)
 		}
 
+		if api.DB == nil {
+			log.Fatalf("\nFailed to connect to database %s\n", dbcf.Name)
+		}
+
 		fmt.Printf("\nConnected to database %s\n", dbcf.Name)
 
-		api.DB = db
 	}
 
 	api.App.Validator = NewValidator()
