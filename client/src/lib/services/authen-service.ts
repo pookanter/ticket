@@ -5,6 +5,13 @@ export namespace IAuthenService {
 		access_token: string;
 		refresh_token: string;
 	}
+
+	export interface SignUpRequest {
+		name: string;
+		lastname: string;
+		email: string;
+		password: string;
+	}
 }
 
 export const AuthenService = {
@@ -50,10 +57,7 @@ export const AuthenService = {
 		});
 	},
 
-	signUp(email: string, password: string) {
-		return httpService().post<{ message: string; user_id: number }>('/authen-service/sign-up', {
-			email,
-			password
-		});
+	signUp(data: IAuthenService.SignUpRequest) {
+		return httpService().post<IAuthenService.Authorization>('/authen-service/sign-up', data);
 	}
 };

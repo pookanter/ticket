@@ -1,15 +1,16 @@
-<script>
+<script nag="ts">
 	import './styles.css';
 	import '../app.css';
+	import * as Dialog from '$lib/components/ui/dialog/index';
 	export const ssr = false;
 	export const csr = true;
 </script>
 
 <div class="app">
-	<!-- <Header /> -->
-
 	<main class="m-auto max-w-7xl">
-		<slot />
+		<Dialog.Root>
+			<slot />
+		</Dialog.Root>
 	</main>
 
 	<footer class="fixed bottom-0 left-0 w-full bg-white shadow dark:bg-gray-800">

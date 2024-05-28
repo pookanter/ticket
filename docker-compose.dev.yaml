@@ -25,15 +25,15 @@ services:
       - ./pkg:/app/pkg
     depends_on:
       - mysql
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    command: pnpm run dev
-    # volumes:
-    #   - ./client:/app
-    ports:
-      - "3000:3000"
+  # client:
+  #   build:
+  #     context: ./client
+  #     dockerfile: Dockerfile
+  #   command: pnpm run dev
+  #   # volumes:
+  #   #   - ./client:/app
+  #   ports:
+  #     - "3000:3000"
   mysql:
     build:
       context: .
