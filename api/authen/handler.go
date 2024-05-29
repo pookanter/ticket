@@ -30,7 +30,7 @@ func NewHandler(api *apikit.API) *Handler {
 func (h *Handler) SignIn(c echo.Context) error {
 	var body struct {
 		Email    string `json:"email" validate:"required,email"`
-		Password string `json:"password" validate:"required,min=8,max=32"`
+		Password string `json:"password" validate:"required"`
 	}
 
 	err := c.Bind(&body)
@@ -48,6 +48,9 @@ func (h *Handler) SignIn(c echo.Context) error {
 
 	user, err := h.DB.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 

@@ -1,17 +1,71 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import Spinner from '$lib/components/spinner/Spinner.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import DialogFooter from '$lib/components/ui/dialog/dialog-footer.svelte';
+	import type { FormInputEvent } from '$lib/components/ui/input';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
+	import { AuthenService } from '$lib/services/authen-service';
+	import { AxiosError } from 'axios';
+	import { Subject, from } from 'rxjs';
+	import { onDestroy } from 'svelte';
 
 	let loading = false;
+	const alertState = {
+		open: false,
+		title: '',
+		message: ''
+	};
+	const alertSubject = new Subject();
+	const alert$ = alertSubject.subscribe((e: any) => {
+		if (e instanceof AxiosError) {
+			const { message } = e;
+			alertState.open = true;
+			alertState.title = 'Error';
+			alertState.message = message;
+		} else {
+			alertState.open = true;
+			alertState.title = e.title;
+			alertState.message = e.message;
+		}
+	});
+
+	onDestroy(() => {
+		alert$.unsubscribe();
+	});
+
+	function disableWhitespace(e: FormInputEvent<KeyboardEvent>) {
+		if (e?.code === 'Space') {
+			e.preventDefault();
+		}
+	}
+
+	function noWhitespaceFuncs<Key extends PropertyKey>(src: { [K in Key]: string }, key: Key) {
+		return (e: any) => {
+			src[key] = (src[key] as string).replaceAll(' ', '');
+		};
+	}
+
+	function clear(data: { [key: string]: string }) {
+		let key: keyof typeof data;
+
+		for (key in signUpValidation) {
+			data[key] = '';
+		}
+	}
+
 	const signInData = {
 		email: '',
 		password: ''
 	};
+	const signInValidation = {
+		email: '',
+		password: ''
+	};
+	let signInInvalid = false;
 	const signUpData = {
 		email: '',
 		name: '',
@@ -19,6 +73,42 @@
 		password: '',
 		confirm_password: ''
 	};
+	let signUpInvalid = false;
+
+	function handleSignIn(event: Event) {
+		event.preventDefault();
+		clear(signInValidation);
+		signInInvalid = false;
+
+		if (signInData.email === '') {
+			signInValidation.email = 'Email is required';
+			signInInvalid = true;
+		}
+
+		if (signInData.password === '') {
+			signInValidation.password = 'Password is required';
+			signInInvalid = true;
+		}
+
+		if (signInInvalid) {
+			return;
+		}
+
+		loading = true;
+		from(AuthenService.signIn(signInData)).subscribe({
+			next: ({ data }) => {
+				loading = false;
+				AuthenService.setAuthorization(data);
+
+				goto('/app');
+			},
+			error: (err) => {
+				loading = false;
+				alertSubject.next(err);
+			}
+		});
+	}
+
 	const signUpValidation = {
 		email: '',
 		name: '',
@@ -26,50 +116,65 @@
 		password: '',
 		confirm_password: ''
 	};
-	const alertData = {
-		open: false,
-		title: '',
-		message: ''
-	};
 
-	function handleSignIn(event: Event) {
-		event.preventDefault();
-	}
 	function handleSignUp(event: Event) {
 		event.preventDefault();
+		clear(signUpValidation);
+		signUpInvalid = false;
+
+		if (signUpData.email === '') {
+			signUpValidation.email = 'Email is required';
+			signUpInvalid = true;
+		}
 
 		if (signUpData.name === '') {
 			signUpValidation.name = 'Name is required';
-			return;
+			signUpInvalid = true;
 		}
-
-		signUpValidation.name = '';
-
 		if (signUpData.lastname === '') {
 			signUpValidation.lastname = 'Lastname is required';
-			return;
+			signUpInvalid = true;
 		}
-
-		signUpValidation.lastname = '';
 
 		if (signUpData.password === '') {
 			signUpValidation.password = 'Password is required';
-			return;
+			signUpInvalid = true;
 		}
 
-		signUpValidation.password = '';
+		if (signUpData.password.length < 8) {
+			signUpValidation.password = 'Password must be at least 8 characters';
+			signUpInvalid = true;
+		}
 
 		if (signUpData.confirm_password === '') {
 			signUpValidation.confirm_password = 'Confirm password is required';
-			return;
+			signUpInvalid = true;
 		}
 
 		if (signUpData.password !== signUpData.confirm_password) {
 			signUpValidation.confirm_password = 'Password and confirm password must be the same';
+			signUpInvalid = true;
+		}
+
+		if (signUpInvalid) {
 			return;
 		}
 
-		signUpValidation.confirm_password = '';
+		loading = true;
+		from(AuthenService.signUp(signUpData)).subscribe({
+			next: () => {
+				loading = false;
+				alertSubject.next({
+					title: 'Success',
+					message: 'Sign up successfully'
+				});
+				open = false;
+			},
+			error: (err) => {
+				loading = false;
+				alertSubject.next(err);
+			}
+		});
 	}
 
 	let open = false;
@@ -78,18 +183,17 @@
 		open = isOpen;
 
 		if (!isOpen) {
-			let key: keyof typeof signUpData;
-			for (key in signUpData) {
-				signUpData[key] = '';
-				signUpValidation[key] = '';
-			}
+			clear(signUpData);
+
+			signUpInvalid = false;
 		}
 	}
 </script>
 
-<AlertDialog.Root>
+<AlertDialog.Root open={alertState.open}>
 	<Dialog.Root {open} {onOpenChange}>
 		<section class="m-auto flex h-[90vh] items-center justify-center">
+			<!-- <h1>{}</h1> -->
 			<div class="flex h-full flex-shrink-[0.6] flex-col items-center justify-center">
 				<div
 					class="grid max-w-screen-xl px-4 py-8 mx-auto lg:grid-cols-12 lg:gap-8 lg:py-16 xl:gap-0"
@@ -122,6 +226,8 @@
 										type="email"
 										name="email"
 										bind:value={signInData.email}
+										invalid={signInInvalid}
+										errMsg={signInValidation.email}
 										placeholder="name@company.com"
 									/>
 								</div>
@@ -131,6 +237,8 @@
 										type="password"
 										name="password"
 										bind:value={signInData.password}
+										invalid={signInInvalid}
+										errMsg={signInValidation.password}
 										placeholder="••••••••"
 									/>
 								</div>
@@ -163,8 +271,12 @@
 						type="email"
 						name="email"
 						bind:value={signUpData.email}
+						on:keydown={disableWhitespace}
+						on:input={noWhitespaceFuncs(signUpData, 'email')}
 						disabled={loading}
 						placeholder="name@company.com"
+						invalid={signUpInvalid}
+						errMsg={signUpValidation.email}
 					/>
 				</div>
 				<div>
@@ -173,19 +285,25 @@
 						type="name"
 						name="name"
 						bind:value={signUpData.name}
+						on:keydown={disableWhitespace}
+						on:change={noWhitespaceFuncs(signUpData, 'name')}
 						disabled={loading}
 						placeholder="John"
+						invalid={signUpInvalid}
 						errMsg={signUpValidation.name}
 					/>
 				</div>
 				<div>
 					<Label class="block mb-2" for="terms">Lastname</Label>
 					<Input
-						type="name"
-						name="name"
+						type="lastname"
+						name="lastname"
 						bind:value={signUpData.lastname}
+						on:keydown={disableWhitespace}
+						on:input={noWhitespaceFuncs(signUpData, 'lastname')}
 						disabled={loading}
 						placeholder="Smith"
+						invalid={signUpInvalid}
 						errMsg={signUpValidation.lastname}
 					/>
 				</div>
@@ -197,17 +315,19 @@
 						bind:value={signUpData.password}
 						disabled={loading}
 						placeholder="••••••••"
+						invalid={signUpInvalid}
 						errMsg={signUpValidation.password}
 					/>
 				</div>
 				<div>
 					<Label class="block mb-2" for="confirm_password">Confirm password</Label>
 					<Input
-						type="confirm_password"
+						type="password"
 						name="confirm_password"
 						bind:value={signUpData.confirm_password}
 						disabled={loading}
 						placeholder="••••••••"
+						invalid={signUpInvalid}
 						errMsg={signUpValidation.confirm_password}
 					/>
 				</div>
@@ -225,9 +345,9 @@
 	</Dialog.Root>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>{alertData.title}</AlertDialog.Title>
+			<AlertDialog.Title>{alertState.title}</AlertDialog.Title>
 			<AlertDialog.Description>
-				{alertData.message}
+				{alertState.message}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
@@ -235,10 +355,3 @@
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
-
-<!-- <div class='flex items-center justify-center h-screen space-x-2 bg-white dark:invert'>
-  <span class='sr-only'>Loading...</span>
-   <div class='h-8 w-8 bg-black rounded-full animate-bounce [animation-delay:-0.3s]'></div>
- <div class='h-8 w-8 bg-black rounded-full animate-bounce [animation-delay:-0.15s]'></div>
- <div class='w-8 h-8 bg-black rounded-full animate-bounce'></div>
-</div> -->
