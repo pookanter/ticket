@@ -27,11 +27,11 @@ services:
       - mysql
   client:
     build:
-      context: ./client
+      context: ./client2
       dockerfile: Dockerfile
     command: pnpm run dev
     volumes:
-      - ./client:/app
+      - ./client2:/app
     ports:
       - "3000:3000"
   mysql:
