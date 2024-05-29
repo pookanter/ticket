@@ -17,6 +17,14 @@ export namespace AuthenService {
 		email: string;
 		password: string;
 	}
+
+	export interface Me {
+		id: string;
+		name: string;
+		lastname: string;
+		email: string;
+		creted_at: string;
+	}
 }
 
 const AUTHEN_SERVICE = 'authen-service' as const;
@@ -65,6 +73,10 @@ function signUp(data: AuthenService.SignUpRequest) {
 	return http().post(`/${AUTHEN_SERVICE}/sign-up`, data);
 }
 
+function getMe() {
+	return http().get<AuthenService.Me>(`/${AUTHEN_SERVICE}/users/me`);
+}
+
 export const AuthenService = {
 	AUTHEN_SERVICE,
 	getAuthorization,
@@ -74,5 +86,6 @@ export const AuthenService = {
 	getRefreshToken,
 	refreshToken,
 	signIn,
-	signUp
+	signUp,
+	getMe
 };

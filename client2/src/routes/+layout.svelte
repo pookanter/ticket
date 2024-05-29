@@ -1,5 +1,33 @@
-<script>
+<script lang="ts">
+	import { onMount } from 'svelte';
 	import '../app.css';
+	import { AuthenService } from '$lib/services/authen-service';
+
+	import { goto, replaceState } from '$app/navigation';
+	import { auth } from '$lib/store/authen';
+
+	let initial = true;
+
+	onMount(() => {
+		const token = AuthenService.getAuthorization();
+
+		auth.set(token);
+	});
+
+	auth.subscribe((value) => {
+		console.log('value', value);
+		if (initial) {
+			initial = false;
+			return;
+		}
+		console.log('value', value);
+		if (!value) {
+			console.log('goto');
+			goto('/');
+		} else {
+			goto('/app');
+		}
+	});
 </script>
 
 <main class="m-auto max-w-7xl">

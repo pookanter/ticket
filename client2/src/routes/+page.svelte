@@ -76,6 +76,7 @@
 	let signUpInvalid = false;
 
 	function handleSignIn(event: Event) {
+		goto('/app');
 		event.preventDefault();
 		clear(signInValidation);
 		signInInvalid = false;
