@@ -10,29 +10,29 @@ import (
 
 type Board struct {
 	ID        uint32
-	UserID    sql.NullInt64
+	UserID    uint64
 	Title     sql.NullString
-	SortOrder sql.NullInt32
+	SortOrder uint32
 	CreatedAt sql.NullTime
 	UpdatedAt sql.NullTime
 }
 
 type Status struct {
 	ID        uint32
-	BoardID   sql.NullInt32
+	BoardID   uint32
 	Title     sql.NullString
-	SortOrder sql.NullInt32
+	SortOrder uint32
 	CreatedAt sql.NullTime
 	UpdatedAt sql.NullTime
 }
 
 type Ticket struct {
 	ID          uint64
-	StatusID    sql.NullInt32
+	StatusID    uint32
 	Title       sql.NullString
 	Description sql.NullString
 	Contact     sql.NullString
-	SortOrder   sql.NullInt32
+	SortOrder   uint32
 	CreatedAt   sql.NullTime
 	UpdatedAt   sql.NullTime
 }

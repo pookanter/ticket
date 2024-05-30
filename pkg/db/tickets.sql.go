@@ -24,7 +24,7 @@ VALUES
 `
 
 type CreateTicketParams struct {
-	StatusID    sql.NullInt32
+	StatusID    uint32
 	Title       sql.NullString
 	Description sql.NullString
 	Contact     sql.NullString
@@ -49,7 +49,7 @@ WHERE
   status_id = ?
 `
 
-func (q *Queries) GetTicketsByStatusId(ctx context.Context, statusID sql.NullInt32) ([]Ticket, error) {
+func (q *Queries) GetTicketsByStatusId(ctx context.Context, statusID uint32) ([]Ticket, error) {
 	rows, err := q.db.QueryContext(ctx, getTicketsByStatusId, statusID)
 	if err != nil {
 		return nil, err

@@ -18,7 +18,7 @@ VALUES
 `
 
 type CreateBoardParams struct {
-	UserID sql.NullInt64
+	UserID uint64
 	Title  sql.NullString
 }
 
@@ -48,7 +48,7 @@ WHERE
   user_id = ?
 `
 
-func (q *Queries) GetBoardsByUserId(ctx context.Context, userID sql.NullInt64) ([]Board, error) {
+func (q *Queries) GetBoardsByUserId(ctx context.Context, userID uint64) ([]Board, error) {
 	rows, err := q.db.QueryContext(ctx, getBoardsByUserId, userID)
 	if err != nil {
 		return nil, err

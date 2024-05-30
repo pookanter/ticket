@@ -18,7 +18,7 @@ VALUES
 `
 
 type CreateStatusParams struct {
-	BoardID sql.NullInt32
+	BoardID uint32
 	Title   sql.NullString
 }
 
@@ -48,7 +48,7 @@ WHERE
   board_id = ?
 `
 
-func (q *Queries) GetStatusesByBoardId(ctx context.Context, boardID sql.NullInt32) ([]Status, error) {
+func (q *Queries) GetStatusesByBoardId(ctx context.Context, boardID uint32) ([]Status, error) {
 	rows, err := q.db.QueryContext(ctx, getStatusesByBoardId, boardID)
 	if err != nil {
 		return nil, err
