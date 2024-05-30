@@ -1,9 +1,14 @@
-import { httpService } from './http-service';
+import { http } from '$lib/http';
 
-export namespace IAuthenService {
+export namespace AuthenService {
 	export interface Authorization {
 		access_token: string;
 		refresh_token: string;
+	}
+
+	export interface SignInRequest {
+		email: string;
+		password: string;
 	}
 
 	export interface SignUpRequest {
@@ -12,52 +17,75 @@ export namespace IAuthenService {
 		email: string;
 		password: string;
 	}
+
+	export interface Me {
+		id: string;
+		name: string;
+		lastname: string;
+		email: string;
+		creted_at: string;
+	}
+}
+
+const AUTHEN_SERVICE = 'authen-service' as const;
+
+function getAuthorization() {
+	const token = localStorage.getItem('x-authorization');
+
+	if (token) {
+		return JSON.parse(token) as AuthenService.Authorization;
+	}
+
+	return null;
+}
+
+function setAuthorization(token: AuthenService.Authorization) {
+	localStorage.setItem('x-authorization', JSON.stringify(token));
+}
+
+function removeAuthorization() {
+	localStorage.removeItem('x-authorization');
+}
+
+function getAccessToken() {
+	const token = getAuthorization();
+
+	return token?.access_token;
+}
+
+function getRefreshToken() {
+	const token = getAuthorization();
+
+	return token?.refresh_token;
+}
+
+function refreshToken(refresh_token: string) {
+	return http().post<AuthenService.Authorization>(`/${AUTHEN_SERVICE}/refresh-token`, {
+		refresh_token
+	});
+}
+
+function signIn(data: AuthenService.SignInRequest) {
+	return http().post<AuthenService.Authorization>(`/${AUTHEN_SERVICE}/sign-in`, data);
+}
+
+function signUp(data: AuthenService.SignUpRequest) {
+	return http().post(`/${AUTHEN_SERVICE}/sign-up`, data);
+}
+
+function getMe() {
+	return http().get<AuthenService.Me>(`/${AUTHEN_SERVICE}/users/me`);
 }
 
 export const AuthenService = {
-	getAuthorization() {
-		const token = localStorage.getItem('x-authorization');
-
-		if (token) {
-			return JSON.parse(token) as IAuthenService.Authorization;
-		}
-
-		return null;
-	},
-	setAuthorization(token: IAuthenService.Authorization) {
-		localStorage.setItem('x-authorization', JSON.stringify(token));
-	},
-
-	removeAuthorization() {
-		localStorage.removeItem('x-authorization');
-	},
-
-	getAccessToken() {
-		const token = AuthenService.getAuthorization();
-
-		return token?.access_token;
-	},
-
-	getRefreshToken() {
-		const token = AuthenService.getAuthorization();
-
-		return token?.refresh_token;
-	},
-
-	refreshToken(refreshToken: string) {
-		return httpService().post<IAuthenService.Authorization>('/authen-service/refresh-token', {
-			refreshToken
-		});
-	},
-
-	signIn(email: string, password: string) {
-		return httpService().post<IAuthenService.Authorization>('/authen-service/sign-in', {
-			email,
-			password
-		});
-	},
-
-	signUp(data: IAuthenService.SignUpRequest) {
-		return httpService().post<IAuthenService.Authorization>('/authen-service/sign-up', data);
-	}
+	AUTHEN_SERVICE,
+	getAuthorization,
+	setAuthorization,
+	removeAuthorization,
+	getAccessToken,
+	getRefreshToken,
+	refreshToken,
+	signIn,
+	signUp,
+	getMe
 };
