@@ -4,6 +4,7 @@
 	import { from } from 'rxjs';
 	import { onMount } from 'svelte';
 	import * as BoardTabs from '$lib/components/board-tabs/index';
+	import { PlusOutline } from 'flowbite-svelte-icons';
 
 	onMount(() => {
 		// from(AuthenService.getMe()).subscribe({
@@ -22,38 +23,18 @@
 <section class="h-[90vh] w-full">
 	<BoardTabs.Root>
 		<BoardTabs.List>
-			<BoardTabs.Trigger>
-				<span>Board 1</span>
+			<BoardTabs.Trigger value="account">
+				<span>Acccount</span>
 			</BoardTabs.Trigger>
-			<BoardTabs.Trigger>
-				<span>Board 2</span>
+			<BoardTabs.Trigger value="password">
+				<span>Password</span>
 			</BoardTabs.Trigger>
 		</BoardTabs.List>
-		<!-- <BoardTabs.Content>
-			<BoardTabs.Tab>
-				<BoardTabs.TabTrigger>
-					<BoardTabs.TabIcon />
-					<BoardTabs.TabTitle>Board 1</BoardTabs.TabTitle>
-				</BoardTabs.TabTrigger>
-				<BoardTabs.TabContent>
-					<BoardTabs.TabContentTrigger>
-						<BoardTabs.TabContentIcon />
-						<BoardTabs.TabContentTitle>Board 1 Content</BoardTabs.TabContentTitle>
-					</BoardTabs.TabContentTrigger>
-				</BoardTabs.TabContent>
-			</BoardTabs.Tab>
-			<BoardTabs.Tab>
-				<BoardTabs.TabTrigger>
-					<BoardTabs.TabIcon />
-					<BoardTabs.TabTitle>Board 2</BoardTabs.TabTitle>
-				</BoardTabs.TabTrigger>
-				<BoardTabs.TabContent>
-					<BoardTabs.TabContentTrigger>
-						<BoardTabs.TabContentIcon />
-						<BoardTabs.TabContentTitle>Board 2 Content</BoardTabs.TabContentTitle>
-					</BoardTabs.TabContentTrigger>
-				</BoardTabs.TabContent>
-			</BoardTabs.Tab>
-		</BoardTabs.Content> -->
+		<BoardTabs.Content value="account">
+			<h1>HELLO</h1>
+		</BoardTabs.Content>
+		<BoardTabs.Content value="password">
+			<h1>WORLD</h1>
+		</BoardTabs.Content>
 	</BoardTabs.Root>
 </section>

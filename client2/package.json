@@ -33,6 +33,7 @@
 		"bits-ui": "^0.21.10",
 		"clsx": "^2.1.1",
 		"dotenv": "^16.4.5",
+		"flowbite-svelte-icons": "^1.6.1",
 		"lucide-svelte": "^0.379.0",
 		"rxjs": "^7.8.1",
 		"tailwind-merge": "^2.3.0",
