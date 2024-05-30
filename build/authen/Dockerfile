@@ -2,7 +2,7 @@ FROM cosmtrek/air AS development
 
 WORKDIR /app
 
-COPY cmd cmd
+COPY cmd/authen ./
 COPY api/authen api/authen
 COPY pkg pkg
 COPY go.mod go.sum ./

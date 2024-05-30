@@ -11,6 +11,32 @@ services:
       - ./cmd/gateway:/app/cmd/gateway
       - ./api/gateway:/app/api/gateway
       - ./pkg:/app/pkg
+  authen:
+    image: authen
+    build:
+      context: .
+      dockerfile: ./build/authen/Dockerfile
+      target: development
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./cmd/authen:/app/cmd/authen
+      - ./api/authen:/app/api/authen
+      - ./pkg:/app/pkg
+    depends_on:
+      - mysql
+  mysql:
+    build:
+      context: .
+      dockerfile: ./build/mysql/Dockerfile
+    environment:
+      MYSQL_DATABASE: ticket_dev
+      MYSQL_ROOT_USERNAME: root
+      MYSQL_ROOT_PASSWORD: randomrootpassword
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
   # authen:
   #   image: authen
   #   build:
