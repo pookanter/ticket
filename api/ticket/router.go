@@ -1,11 +1,10 @@
 package ticket
 
 import (
+	"ticket/api/ticket/boards"
 	"ticket/pkg/apikit"
 )
 
-func Router(api *apikit.API) apikit.Router {
-	return func(api *apikit.API) {
-		api.App.Group("/boards")
-	}
+func Router(api *apikit.API) {
+	boards.Router(api)
 }

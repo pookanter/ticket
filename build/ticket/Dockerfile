@@ -1,31 +1,32 @@
-FROM debian:bookworm as runtime
-
-RUN apt-get update && apt-get install
-
-FROM golang:latest as builder
+FROM cosmtrek/air AS development
 
 WORKDIR /app
 
 COPY cmd/ticket ./
-COPY go.mod ./
-COPY go.sum ./
+COPY api/ticket api/ticket
+COPY pkg pkg
+COPY go.mod go.sum ./
+COPY config config
+COPY certs certs
+COPY build/ticket ./
 
+RUN go mod tidy
 RUN go build -v -o ./dist/ticket
 
-FROM runtime
+CMD ["air", "-c", ".air.toml"]
+
+FROM debian:bookworm
 
 ARG timezone=Asia/Bangkok
+ARG hotreload=false
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV TZ $timezone
 
 WORKDIR /app
 
-# copy app release
-COPY --from=builder /app/dist/ticket ./ticket
+RUN apt-get update && apt-get install
 
-# expose default port
-EXPOSE 5001
+COPY --from=development /app/dist/ticket ./ticket
 
-# default run entrypoint
 CMD ["./ticket"]

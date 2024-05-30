@@ -1,6 +1,5 @@
 services:
   gateway:
-    image: gateway
     build:
       context: .
       dockerfile: ./build/gateway/Dockerfile
@@ -12,16 +11,28 @@ services:
       - ./api/gateway:/app/api/gateway
       - ./pkg:/app/pkg
   authen:
-    image: authen
     build:
       context: .
       dockerfile: ./build/authen/Dockerfile
       target: development
     ports:
-      - "4000:4000"
+      - ":4000"
     volumes:
       - ./cmd/authen:/app/cmd/authen
       - ./api/authen:/app/api/authen
+      - ./pkg:/app/pkg
+    depends_on:
+      - mysql
+  ticket:
+    build:
+      context: .
+      dockerfile: ./build/ticket/Dockerfile
+      target: development
+    ports:
+      - ":4001"
+    volumes:
+      - ./cmd/ticket:/app/cmd/ticket
+      - ./api/ticket:/app/api/ticket
       - ./pkg:/app/pkg
     depends_on:
       - mysql

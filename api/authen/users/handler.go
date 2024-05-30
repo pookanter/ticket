@@ -5,6 +5,7 @@ import (
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
+	"ticket/pkg/util"
 
 	"github.com/labstack/echo/v4"
 )
@@ -41,6 +42,6 @@ func (h *Handler) GetMe(c echo.Context) error {
 		Email:     user.Email.String,
 		Name:      user.Name.String,
 		Lastname:  user.Lastname.String,
-		CreatedAt: user.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		CreatedAt: user.CreatedAt.Time.Format(util.TimeFormat),
 	})
 }
