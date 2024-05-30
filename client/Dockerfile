@@ -1,36 +1,24 @@
-FROM node:alpine as runtime
+FROM node:18.12-alpine AS development
 
 WORKDIR /app
 
+COPY ./client .
+
 RUN npm install -g pnpm
-
-
-FROM node:alpine AS builder
-
-WORKDIR /app
-
-COPY . .
-
-# install package manager
-RUN npm install -g pnpm
-
 RUN pnpm install
-RUN pnpm run build
+RUN pnpm build
 
-FROM runtime
+CMD ["pnpm", "dev"]
 
-WORKDIR /app
+FROM node:18.12-alpine
 
 ARG timezone=Asia/Bangkok
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV TZ $timezone
 
-COPY --from=builder /app/static static
-COPY --from=builder /app/.svelte-kit .svelte-kit
-COPY --from=builder /app/build build
-COPY --from=builder /app/node_modules node_modules
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/pnpm-lock.yaml ./
+WORKDIR /app
+
+COPY --from=development /app/build build
 
 CMD [ "node", "build" ]

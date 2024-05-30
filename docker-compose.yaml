@@ -48,33 +48,12 @@ services:
       - "3306"
     ports:
       - "3306:3306"
-  # authen:
-  #   image: authen
-  #   build:
-  #     context: .
-  #     dockerfile: ./build/authen/Dockerfile
-  #   expose:
-  #     - "4000"
-  #   ports:
-  #     - "4000"
-  #   volumes:
-  #     - ./cmd/authen:/app/cmd/authen
-  #     - ./api/authen:/app/api/authen
-  #     - ./pkg:/app/pkg
-  # ticket:
-  #   build:
-  #     context: .
-  #     dockerfile: ./docker/ticket/Dockerfile
-  #   environment:
-  #     PORT: 5001
-  #   ports:
-  #     - "5001:5001"
-  # client:
-  #   build:
-  #     context: .
-  #     dockerfile: ./docker/client/Dockerfile
-  #   command: "pnpm run dev"
-  #   environment:
-  #     PORT: 3000
-  #   ports:
-  #     - "3000:3000"
+  client:
+    build:
+      context: .
+      dockerfile: ./client/Dockerfile
+      target: development
+    environment:
+      PORT: 3000
+    ports:
+      - "3000:3000"

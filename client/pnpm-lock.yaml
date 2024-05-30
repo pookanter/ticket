@@ -17,18 +17,27 @@ dependencies:
   dotenv:
     specifier: ^16.4.5
     version: 16.4.5
+  flowbite-svelte-icons:
+    specifier: ^1.6.1
+    version: 1.6.1(svelte@4.2.17)(tailwind-merge@2.3.0)(tailwindcss@3.4.3)
   lucide-svelte:
     specifier: ^0.379.0
     version: 0.379.0(svelte@4.2.17)
   rxjs:
     specifier: ^7.8.1
     version: 7.8.1
+  svelte-dnd-action:
+    specifier: ^0.9.48
+    version: 0.9.48(svelte@4.2.17)
   tailwind-merge:
     specifier: ^2.3.0
     version: 2.3.0
   tailwind-variants:
     specifier: ^0.2.1
     version: 0.2.1(tailwindcss@3.4.3)
+  uuid:
+    specifier: ^9.0.1
+    version: 9.0.1
 
 devDependencies:
   '@sveltejs/adapter-auto':
@@ -43,6 +52,9 @@ devDependencies:
   '@sveltejs/vite-plugin-svelte':
     specifier: ^3.0.0
     version: 3.1.0(svelte@4.2.17)(vite@5.2.12)
+  '@types/uuid':
+    specifier: ^9.0.1
+    version: 9.0.8
   autoprefixer:
     specifier: ^10.4.19
     version: 10.4.19(postcss@8.4.38)
@@ -699,6 +711,10 @@ packages:
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
     dev: true
 
+  /@types/uuid@9.0.8:
+    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
+    dev: true
+
   /acorn@8.11.3:
     resolution: {integrity: sha512-Y9rRfJG5jcKOE0CLisYbojUjIrIEE7AGMzA/Sm4BslANhbS+cDMpgBdcPT91oJ7OuJ9hYJBx59RjbhxVnrF8Xg==}
     engines: {node: '>=0.4.0'}
@@ -1057,6 +1073,18 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       to-regex-range: 5.0.1
+
+  /flowbite-svelte-icons@1.6.1(svelte@4.2.17)(tailwind-merge@2.3.0)(tailwindcss@3.4.3):
+    resolution: {integrity: sha512-Kw/7BzA6fqlFq7tBNudwX0KVU4cbyyXcMcgHTraMwGBtvBQan0RKMbvWwqm4JZNvLGAvRv1BM2EF7rzo/oam1Q==}
+    peerDependencies:
+      svelte: ^3.54.0 || ^4.0.0 || ^5.0.0
+      tailwind-merge: ^2.0.0
+      tailwindcss: ^3.3.2
+    dependencies:
+      svelte: 4.2.17
+      tailwind-merge: 2.3.0
+      tailwindcss: 3.4.3
+    dev: false
 
   /focus-trap@7.5.4:
     resolution: {integrity: sha512-N7kHdlgsO/v+iD/dMoJKtsSqs5Dz/dXZVebRgJw23LDk+jMi/974zyiOYDziY2JPp8xivq9BmUGwIJMiuSBi7w==}
@@ -1770,6 +1798,14 @@ packages:
       - sugarss
     dev: true
 
+  /svelte-dnd-action@0.9.48(svelte@4.2.17):
+    resolution: {integrity: sha512-1nt45nA3Fa9A7DQZCELQgcwgD3NRPmsfmIUCBSe/FoODDzTXxN175zB7AQxkeCWY9+z96aBL1ZOxZo8t/4WY1Q==}
+    peerDependencies:
+      svelte: '>=3.23.0 || ^5.0.0-next.0'
+    dependencies:
+      svelte: 4.2.17
+    dev: false
+
   /svelte-hmr@0.16.0(svelte@4.2.17):
     resolution: {integrity: sha512-Gyc7cOS3VJzLlfj7wKS0ZnzDVdv3Pn2IuVeJPk9m2skfhcu5bq3wtIZyQGggr7/Iim5rH5cncyQft/kRLupcnA==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
@@ -1950,6 +1986,11 @@ packages:
 
   /util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  /uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    hasBin: true
+    dev: false
 
   /vite@5.2.12:
     resolution: {integrity: sha512-/gC8GxzxMK5ntBwb48pR32GGhENnjtY30G4A0jemunsBkiEZFw60s8InGpN8gkhHEkjnRK1aSAxeQgwvFhUHAA==}

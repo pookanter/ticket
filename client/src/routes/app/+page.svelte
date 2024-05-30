@@ -47,11 +47,11 @@
 	const boards = [
 		{
 			id: 1,
-			title: 'Board 1111',
+			title: 'Board 11122221',
 			statuses: [
 				{
 					id: 1,
-					title: 'Status 1',
+					title: 'Status22323',
 					tickets: [
 						{
 							id: 1,
