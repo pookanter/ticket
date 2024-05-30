@@ -28,7 +28,7 @@
 
 <TabsPrimitive.Trigger
 	class={cn(
-		'inline-block p-4 border-b-2 border-transparent rounded-t-lg !cursor-pointer hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 data-[state=active]:text-blue-600  data-[state=active]:border-blue-600',
+		'inline-block py-2 px-4 border-b-2 border-transparent rounded-t-lg !cursor-pointer hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 data-[state=active]:text-blue-600  data-[state=active]:border-blue-600',
 		className
 	)}
 	{value}
@@ -42,8 +42,8 @@
 				<slot />
 			</div>
 			<DropdownMenu.Trigger>
-				<div class="ml-4 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent">
-					<DotsHorizontalOutline class="w-4 h-4" />
+				<div class="p-1 ml-4 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent">
+					<DotsHorizontalOutline class="size-4" />
 				</div>
 			</DropdownMenu.Trigger>
 		</div>
