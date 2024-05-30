@@ -11,23 +11,8 @@
 	import { onDestroy, onMount } from 'svelte';
 	import authStore from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
-	interface Ticket {
-		id: number;
-		title: string;
-		description: string;
-	}
-
-	interface Status {
-		id: number;
-		title: string;
-		tickets: Ticket[];
-	}
-
-	interface Board {
-		id: number;
-		title: string;
-		statuses: Status[];
-	}
+	import { TicketService } from '$lib/services/tircket-service';
+	import { from } from 'rxjs';
 
 	let unsubscribe: Unsubscriber;
 	onMount(() => {
@@ -37,6 +22,15 @@
 				goto('/app');
 			}
 		});
+
+		from(TicketService.getBoards()).subscribe({
+			next: ({ data }) => {
+				boards.push(...data);
+			},
+			error: (error) => {
+				console.error('getBoards', error);
+			}
+		});
 	});
 
 	onDestroy(() => {
@@ -44,55 +38,11 @@
 	});
 
 	const flipDurationMs = 200;
-	const boards = [
-		{
-			id: 1,
-			title: 'Board 11122221',
-			statuses: [
-				{
-					id: 1,
-					title: 'Status22323',
-					tickets: [
-						{
-							id: 1,
-							title: 'Task 1',
-							description: 'This is a mock task.'
-						},
-						{
-							id: 2,
-							title: 'Task 2',
-							description: 'This is a mock task.'
-						}
-					]
-				},
-				{
-					id: 2,
-					title: 'Status 2',
-					tickets: [
-						{
-							id: 3,
-							title: 'Task 3',
-							description: 'This is a mock task.'
-						},
-						{
-							id: 4,
-							title: 'Task 4',
-							description: 'This is a mock task.'
-						}
-					]
-				}
-			]
-		}
-		// {
-		// 	id: 2,
-		// 	title: 'Board 2',
-		// 	statuses: []
-		// }
-	] as Board[];
+	const boards: TicketService.Board[] = [];
 
 	let index = 0;
 
-	type ColumnEvent = CustomEvent & { detail: { items: Status[] } };
+	type ColumnEvent = CustomEvent & { detail: { items: TicketService.Status[] } };
 	function handleDndConsiderColumns(e: ColumnEvent) {
 		console.log('boards[index] before', boards[index].statuses);
 		boards[index].statuses = e.detail.items;
@@ -103,10 +53,10 @@
 		boards[index].statuses = e.detail.items;
 	}
 
-	type CardEvent = CustomEvent & { detail: { items: Ticket[] } };
+	type CardEvent = CustomEvent & { detail: { items: TicketService.Ticket[] } };
 	function handleDndConsiderCards(cid: number, e: CardEvent) {
 		console.log('handleDndConsiderCards', cid, e.detail.items);
-		const colIdx = boards[index].statuses.findIndex((c) => c.id === cid);
+		const colIdx = boards[index].statuses?.findIndex((c) => c.id === cid);
 		boards[index].statuses[colIdx].tickets = e.detail.items;
 		boards[index].statuses = [...boards[index].statuses];
 	}
@@ -132,7 +82,7 @@
 		method: Method.Create
 	};
 
-	function editTicket(ticket: Ticket) {
+	function editTicket(ticket: TicketService.Ticket) {
 		console.log('editTicket', ticket);
 		dialogState.resrc_type = Resource.Ticket;
 		dialogState.open = true;

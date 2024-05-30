@@ -7,5 +7,5 @@ type Board struct {
 	SortOrder uint32   `json:"sort_order"`
 	CreatedAt string   `json:"created_at"`
 	UpdatedAt string   `json:"updated_at"`
-	Statuses  []Status `json:"statuses,omitempty"`
+	Statuses  []Status `json:"statuses"`
 }

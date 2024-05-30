@@ -1,19 +1,14 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card/index';
 	import * as Dialog from '$lib/components/ui/dialog/index';
+	import type { TicketService } from '$lib/services/tircket-service';
 	import { EditOutline, PlusOutline } from 'flowbite-svelte-icons';
-	interface Ticket {
-		id: number;
-		title: string;
-		description: string;
-	}
-
-	export let ticket: Ticket = {
+	export let ticket = {
 		id: 0,
 		title: '',
 		description: ''
-	};
-	export let edit = (ticket: Ticket) => {};
+	} as TicketService.Ticket;
+	export let edit = (ticket: TicketService.Ticket) => {};
 </script>
 
 <Card.Root>
