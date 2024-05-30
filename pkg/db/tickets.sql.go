@@ -42,7 +42,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 
 const getTicketsByStatusId = `-- name: GetTicketsByStatusId :many
 SELECT
-  id, status_id, title, description, contact, created_at, updated_at
+  id, status_id, title, description, contact, sort_order, created_at, updated_at
 FROM
   tickets
 WHERE
@@ -64,6 +64,7 @@ func (q *Queries) GetTicketsByStatusId(ctx context.Context, statusID sql.NullInt
 			&i.Title,
 			&i.Description,
 			&i.Contact,
+			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

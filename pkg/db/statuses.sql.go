@@ -41,7 +41,7 @@ func (q *Queries) DeleteStatus(ctx context.Context, id uint32) error {
 
 const getStatusesByBoardId = `-- name: GetStatusesByBoardId :many
 SELECT
-  id, board_id, title, created_at, updated_at
+  id, board_id, title, sort_order, created_at, updated_at
 FROM
   statuses
 WHERE
@@ -61,6 +61,7 @@ func (q *Queries) GetStatusesByBoardId(ctx context.Context, boardID sql.NullInt3
 			&i.ID,
 			&i.BoardID,
 			&i.Title,
+			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

@@ -12,6 +12,7 @@ type Board struct {
 	ID        uint32
 	UserID    sql.NullInt64
 	Title     sql.NullString
+	SortOrder sql.NullInt32
 	CreatedAt sql.NullTime
 	UpdatedAt sql.NullTime
 }
@@ -20,6 +21,7 @@ type Status struct {
 	ID        uint32
 	BoardID   sql.NullInt32
 	Title     sql.NullString
+	SortOrder sql.NullInt32
 	CreatedAt sql.NullTime
 	UpdatedAt sql.NullTime
 }
@@ -30,6 +32,7 @@ type Ticket struct {
 	Title       sql.NullString
 	Description sql.NullString
 	Contact     sql.NullString
+	SortOrder   sql.NullInt32
 	CreatedAt   sql.NullTime
 	UpdatedAt   sql.NullTime
 }

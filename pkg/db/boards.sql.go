@@ -41,7 +41,7 @@ func (q *Queries) DeleteBoard(ctx context.Context, id uint32) error {
 
 const getBoardsByUserId = `-- name: GetBoardsByUserId :many
 SELECT
-  id, user_id, title, created_at, updated_at
+  id, user_id, title, sort_order, created_at, updated_at
 FROM
   boards
 WHERE
@@ -61,6 +61,7 @@ func (q *Queries) GetBoardsByUserId(ctx context.Context, userID sql.NullInt64) (
 			&i.ID,
 			&i.UserID,
 			&i.Title,
+			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

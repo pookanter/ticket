@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS boards (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED,
   title VARCHAR(100),
+  sort_order INT UNSIGNED,
   created_at DATETIME,
   updated_at DATETIME,
   FOREIGN KEY (user_id) REFERENCES users(id)
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS statuses (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   board_id INT UNSIGNED,
   title VARCHAR(50),
+  sort_order INT UNSIGNED,
   created_at DATETIME,
   updated_at DATETIME,
   FOREIGN KEY (board_id) REFERENCES boards(id)
@@ -32,6 +34,7 @@ CREATE TABLE IF NOT EXISTS tickets (
   title VARCHAR(100),
   description TEXT,
   contact VARCHAR(100),
+  sort_order INT UNSIGNED,
   created_at DATETIME,
   updated_at DATETIME,
   FOREIGN KEY (status_id) REFERENCES statuses(id)
