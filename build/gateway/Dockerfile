@@ -3,15 +3,15 @@ FROM cosmtrek/air AS development
 WORKDIR /app
 
 COPY cmd cmd
-COPY api/authen api/authen
+COPY api/gateway api/gateway
 COPY pkg pkg
 COPY go.mod go.sum ./
 COPY config config
 COPY certs certs
-COPY build/authen ./
+COPY build/gateway ./
 
 RUN go mod tidy
-RUN go build -v -o ./dist/authen
+RUN go build -v -o ./dist/gateway
 
 CMD ["air", "-c", ".air.toml"]
 
@@ -27,6 +27,6 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install
 
-COPY --from=development /app/dist/authen ./authen
+COPY --from=development /app/dist/gateway ./gateway
 
-CMD ["./authen"]
+CMD ["./gateway"]
