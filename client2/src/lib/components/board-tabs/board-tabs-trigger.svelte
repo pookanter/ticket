@@ -1,9 +1,15 @@
 <script lang="ts">
-	import { EditOutline, TrashBinOutline } from 'flowbite-svelte-icons';
+	import {
+		DotsHorizontalOutline,
+		DotsVerticalOutline,
+		EditOutline,
+		TrashBinOutline
+	} from 'flowbite-svelte-icons';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Tabs as TabsPrimitive, type CustomEventHandler } from 'bits-ui';
 	import { cn } from '$lib/utils.js';
 	import { clickOutsideAction } from '$lib/directives/click-outside';
+	import Button from '$lib/components/ui/button/button.svelte';
 
 	type $$Props = TabsPrimitive.TriggerProps;
 	type $$Events = TabsPrimitive.TriggerEvents;
@@ -14,8 +20,9 @@
 
 	let menuEnabled = false;
 	function onFocus(e: CustomEventHandler<FocusEvent, HTMLButtonElement>) {
-		console.log('focus', menuEnabled);
-		menuEnabled = true;
+		setTimeout(() => {
+			menuEnabled = true;
+		}, 0);
 	}
 </script>
 
@@ -30,18 +37,19 @@
 	on:focus={onFocus}
 >
 	<DropdownMenu.Root>
-		<div use:clickOutsideAction on:clickoutside={() => (menuEnabled = false)}>
-			{#if menuEnabled}
-				<DropdownMenu.Trigger>
-					<slot />
-				</DropdownMenu.Trigger>
-			{:else}
+		<div class="flex justify-between">
+			<div>
 				<slot />
-			{/if}
+			</div>
+			<DropdownMenu.Trigger>
+				<div class="ml-4 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent">
+					<DotsHorizontalOutline class="w-4 h-4" />
+				</div>
+			</DropdownMenu.Trigger>
 		</div>
 		<DropdownMenu.Content>
 			<DropdownMenu.Item class="cursor-pointer">
-				<EditOutline class="w-4 h-4 mr-2" />
+				<EditOutline class="mr-2 size-6" />
 				<span>Rename</span>
 			</DropdownMenu.Item>
 			<DropdownMenu.Item class="cursor-pointer">
