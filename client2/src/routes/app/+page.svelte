@@ -29,6 +29,11 @@
 			<BoardTabs.Trigger value="password">
 				<span>Password</span>
 			</BoardTabs.Trigger>
+			<div
+				class="flex items-center justify-center p-1.5 m-3 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
+			>
+				<PlusOutline class="size-4" />
+			</div>
 		</BoardTabs.List>
 		<BoardTabs.Content value="account">
 			<h1>HELLO</h1>
