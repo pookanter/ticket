@@ -1,32 +1,49 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import '../app.css';
+	import authStore, { type AuthStore } from '$lib/stores/auth';
 	import { AuthenService } from '$lib/services/authen-service';
+	import { goto } from '$app/navigation';
+	import type { Unsubscriber } from 'svelte/store';
+	// import { AuthenService } from '$lib/services/authen-service';
+	// import authStore from '$lib/stores/auth';
 
-	import { goto, replaceState } from '$app/navigation';
-	import { auth } from '$lib/store/authen';
-
-	let initial = true;
-
+	let unsubscribe: Unsubscriber;
 	onMount(() => {
-		const token = AuthenService.getAuthorization();
+		console.log('MAIN PAGE IS MOUNT');
+		unsubscribe = authStore.subscribe(async (state) => {
+			if (state.initializing) {
+				console.log('state.initializing...');
+				const token = AuthenService.getAuthorization();
+				const storeValue: AuthStore = {
+					initializing: false,
+					user: null
+				};
+				if (token) {
+					try {
+						const { data: user } = await AuthenService.getMe();
 
-		auth.set(token);
+						storeValue.user = user;
+					} catch (error) {
+						console.error(error);
+					}
+				}
+
+				authStore.set(storeValue);
+
+				setTimeout(() => {
+					if (storeValue.user) {
+						goto('/app');
+					} else {
+						goto('/login');
+					}
+				}, 0);
+			}
+		});
 	});
 
-	auth.subscribe((value) => {
-		console.log('value', value);
-		if (initial) {
-			initial = false;
-			return;
-		}
-		console.log('value', value);
-		if (!value) {
-			console.log('goto');
-			goto('/');
-		} else {
-			goto('/app');
-		}
+	onDestroy(() => {
+		unsubscribe();
 	});
 </script>
 

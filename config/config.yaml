@@ -20,7 +20,7 @@ services:
     dbname: "ticket_dev"
     user: "root"
     password: "randomrootpassword"
-private_key: "/app/certs/jwtRS256.key"
-public_key: "/app/certs/jwtRS256.key.pub"
-access_token_expire: 60
+private_key: "/app/certs/private_key.pem"
+public_key: "/app/certs/public_key.pem"
+access_token_expire: 3600
 refresh_token_expire: 86400

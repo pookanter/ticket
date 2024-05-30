@@ -9,9 +9,11 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
 	import { AuthenService } from '$lib/services/authen-service';
+	import authStore from '$lib/stores/auth';
 	import { AxiosError } from 'axios';
-	import { Subject, from } from 'rxjs';
-	import { onDestroy } from 'svelte';
+	import { Subject, catchError, from, map, switchMap, throwError } from 'rxjs';
+	import { onDestroy, onMount } from 'svelte';
+	import type { Unsubscriber } from 'svelte/store';
 
 	let loading = false;
 	const alertState = {
@@ -33,8 +35,19 @@
 		}
 	});
 
+	let unsubscribe: Unsubscriber;
+	onMount(() => {
+		unsubscribe = authStore.subscribe((state) => {
+			console.log('LOGIN MOUNT', state);
+			if (state.user) {
+				goto('/app');
+			}
+		});
+	});
+
 	onDestroy(() => {
 		alert$.unsubscribe();
+		unsubscribe();
 	});
 
 	function disableWhitespace(e: FormInputEvent<KeyboardEvent>) {
@@ -76,7 +89,6 @@
 	let signUpInvalid = false;
 
 	function handleSignIn(event: Event) {
-		goto('/app');
 		event.preventDefault();
 		clear(signInValidation);
 		signInInvalid = false;
@@ -96,18 +108,33 @@
 		}
 
 		loading = true;
-		from(AuthenService.signIn(signInData)).subscribe({
-			next: ({ data }) => {
-				loading = false;
-				AuthenService.setAuthorization(data);
+		from(AuthenService.signIn(signInData))
+			.pipe(
+				map(({ data }) => {
+					AuthenService.setAuthorization(data);
+					return data;
+				}),
+				switchMap(() =>
+					from(AuthenService.getMe()).pipe(
+						catchError((err) => {
+							return throwError(() => err);
+						})
+					)
+				)
+			)
+			.subscribe({
+				next: ({ data: user }) => {
+					console.log('success', user);
+					loading = false;
+					authStore.set({ initializing: false, user });
 
-				goto('/app');
-			},
-			error: (err) => {
-				loading = false;
-				alertSubject.next(err);
-			}
-		});
+					goto('/app');
+				},
+				error: (err) => {
+					loading = false;
+					alertSubject.next(err);
+				}
+			});
 	}
 
 	const signUpValidation = {
@@ -191,9 +218,9 @@
 	}
 </script>
 
-<AlertDialog.Root open={alertState.open} >
+<AlertDialog.Root open={alertState.open}>
 	<Dialog.Root {open} {onOpenChange}>
-		<section class="m-auto flex h-[90vh] items-center justify-center" >
+		<section class="m-auto flex h-[90vh] items-center justify-center">
 			<div class="flex h-full flex-shrink-[0.6] flex-col items-center justify-center">
 				<div
 					class="grid max-w-screen-xl px-4 py-8 mx-auto lg:grid-cols-12 lg:gap-8 lg:py-16 xl:gap-0"

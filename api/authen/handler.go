@@ -143,20 +143,20 @@ func (h *Handler) RefreshToken(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-	return nil
-	// claims, err := h.Auth.ParseToken(body.RefreshToken)
-	// if err != nil {
-	// 	return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
-	// }
 
-	// payload := auth.TokenPayload{
-	// 	UserID: claims.UserID,
-	// }
+	claims, err := h.Auth.ParseToken(body.RefreshToken)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+	}
 
-	// tokens, err := h.Auth.GenerateTokens(payload)
-	// if err != nil {
-	// 	return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	// }
+	payload := auth.TokenPayload{
+		UserID: claims.UserID,
+	}
 
-	// return c.JSON(http.StatusOK, tokens)
+	tokens, err := h.Auth.GenerateTokens(payload)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, tokens)
 }

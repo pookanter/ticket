@@ -59,9 +59,9 @@ function getRefreshToken() {
 	return token?.refresh_token;
 }
 
-function refreshToken(refreshToken: string) {
+function refreshToken(refresh_token: string) {
 	return http().post<AuthenService.Authorization>(`/${AUTHEN_SERVICE}/refresh-token`, {
-		refreshToken
+		refresh_token
 	});
 }
 

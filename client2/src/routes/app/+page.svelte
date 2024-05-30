@@ -1,17 +1,16 @@
 <script lang="ts">
-	import { AuthenService } from '$lib/services/authen-service';
-	import { auth, me } from '$lib/store/authen';
-	import { from } from 'rxjs';
-	import { onMount } from 'svelte';
 	import * as BoardTabs from '$lib/components/board-tabs/index';
-	import { FolderOpenOutline, PlusOutline } from 'flowbite-svelte-icons';
-	import { v4 as uuidv4 } from 'uuid';
+	import { PlusOutline } from 'flowbite-svelte-icons';
 	import * as Card from '$lib/components/ui/card/index';
 	import { flip } from 'svelte/animate';
 	import { dndzone } from 'svelte-dnd-action';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import TicketCard from '$lib/components/ticket-card/ticket-card.svelte';
 	import * as Dialog from '$lib/components/ui/dialog/index';
+	import type { Unsubscriber } from 'svelte/motion';
+	import { onDestroy, onMount } from 'svelte';
+	import authStore from '$lib/stores/auth';
+	import { goto } from '$app/navigation';
 	interface Ticket {
 		id: number;
 		title: string;
@@ -29,6 +28,20 @@
 		title: string;
 		statuses: Status[];
 	}
+
+	let unsubscribe: Unsubscriber;
+	onMount(() => {
+		unsubscribe = authStore.subscribe((state) => {
+			console.log('APP MOUNT', state);
+			if (!state.user) {
+				goto('/app');
+			}
+		});
+	});
+
+	onDestroy(() => {
+		unsubscribe();
+	});
 
 	const flipDurationMs = 200;
 	const boards = [

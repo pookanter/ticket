@@ -23,7 +23,7 @@ function addAuthenToken(request: InternalAxiosRequestConfig<unknown>) {
 		return request;
 	}
 
-	request.headers['Authorization'] = 'Bearer ' + accessToken;
+	request.headers['Authorization'] = `Bearer ${accessToken}`;
 
 	return request;
 }
@@ -42,7 +42,7 @@ export function http() {
 		if (request.url?.substring(0, 4) === 'http') {
 			baseURL = '';
 		} else if (AuthenService.getAccessToken()) {
-			request.headers['Authorization'] = 'Bearer ' + AuthenService.getAccessToken();
+			request.headers['Authorization'] = `Bearer ${AuthenService.getAccessToken()}`;
 		}
 
 		console.log('baseURL', baseURL);
