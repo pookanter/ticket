@@ -25,11 +25,11 @@ VALUES
 `
 
 type CreateTicketParams struct {
-	StatusID    uint32
-	Title       sql.NullString
-	Description sql.NullString
-	Contact     sql.NullString
-	SortOrder   uint32
+	StatusID    uint32         `json:"status_id"`
+	Title       sql.NullString `json:"title"`
+	Description sql.NullString `json:"description"`
+	Contact     sql.NullString `json:"contact"`
+	SortOrder   uint32         `json:"sort_order"`
 }
 
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) error {
@@ -58,7 +58,7 @@ func (q *Queries) GetTicketsByStatusId(ctx context.Context, statusID uint32) ([]
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Ticket
+	items := []Ticket{}
 	for rows.Next() {
 		var i Ticket
 		if err := rows.Scan(
@@ -97,10 +97,10 @@ WHERE
 `
 
 type UpdateTicketParams struct {
-	Title       sql.NullString
-	Description sql.NullString
-	Contact     sql.NullString
-	ID          uint64
+	Title       sql.NullString `json:"title"`
+	Description sql.NullString `json:"description"`
+	Contact     sql.NullString `json:"contact"`
+	ID          uint64         `json:"id"`
 }
 
 func (q *Queries) UpdateTicket(ctx context.Context, arg UpdateTicketParams) error {

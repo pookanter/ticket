@@ -18,9 +18,9 @@ VALUES
 `
 
 type CreateBoardParams struct {
-	UserID    uint64
-	Title     sql.NullString
-	SortOrder uint32
+	UserID    uint64         `json:"user_id"`
+	Title     sql.NullString `json:"title"`
+	SortOrder uint32         `json:"sort_order"`
 }
 
 func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) error {
@@ -78,7 +78,7 @@ func (q *Queries) GetBoardsByUserId(ctx context.Context, userID uint64) ([]Board
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Board
+	items := []Board{}
 	for rows.Next() {
 		var i Board
 		if err := rows.Scan(
@@ -167,8 +167,8 @@ WHERE
 `
 
 type UpdateBoardParams struct {
-	Title sql.NullString
-	ID    uint32
+	Title sql.NullString `json:"title"`
+	ID    uint32         `json:"id"`
 }
 
 func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) error {

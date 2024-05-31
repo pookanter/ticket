@@ -18,10 +18,10 @@ VALUES
 `
 
 type CreateUserParams struct {
-	Name     sql.NullString
-	Lastname sql.NullString
-	Email    sql.NullString
-	Password sql.NullString
+	Name     sql.NullString `json:"name"`
+	Lastname sql.NullString `json:"lastname"`
+	Email    sql.NullString `json:"email"`
+	Password sql.NullString `json:"password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
@@ -124,11 +124,11 @@ WHERE
 `
 
 type UpdateUserParams struct {
-	Name     sql.NullString
-	Lastname sql.NullString
-	Email    sql.NullString
-	Password sql.NullString
-	ID       uint64
+	Name     sql.NullString `json:"name"`
+	Lastname sql.NullString `json:"lastname"`
+	Email    sql.NullString `json:"email"`
+	Password sql.NullString `json:"password"`
+	ID       uint64         `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {

@@ -18,9 +18,9 @@ VALUES
 `
 
 type CreateStatusParams struct {
-	BoardID   uint32
-	Title     sql.NullString
-	SortOrder uint32
+	BoardID   uint32         `json:"board_id"`
+	Title     sql.NullString `json:"title"`
+	SortOrder uint32         `json:"sort_order"`
 }
 
 func (q *Queries) CreateStatus(ctx context.Context, arg CreateStatusParams) error {
@@ -55,7 +55,7 @@ func (q *Queries) GetStatusesByBoardId(ctx context.Context, boardID uint32) ([]S
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Status
+	items := []Status{}
 	for rows.Next() {
 		var i Status
 		if err := rows.Scan(
@@ -90,8 +90,8 @@ WHERE
 `
 
 type UpdateStatusParams struct {
-	Title sql.NullString
-	ID    uint32
+	Title sql.NullString `json:"title"`
+	ID    uint32         `json:"id"`
 }
 
 func (q *Queries) UpdateStatus(ctx context.Context, arg UpdateStatusParams) error {

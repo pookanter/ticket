@@ -9,40 +9,40 @@ import (
 )
 
 type Board struct {
-	ID        uint32
-	UserID    uint64
-	Title     sql.NullString
-	SortOrder uint32
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	ID        uint32         `json:"id"`
+	UserID    uint64         `json:"user_id"`
+	Title     sql.NullString `json:"title"`
+	SortOrder uint32         `json:"sort_order"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+	UpdatedAt sql.NullTime   `json:"updated_at"`
 }
 
 type Status struct {
-	ID        uint32
-	BoardID   uint32
-	Title     sql.NullString
-	SortOrder uint32
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	ID        uint32         `json:"id"`
+	BoardID   uint32         `json:"board_id"`
+	Title     sql.NullString `json:"title"`
+	SortOrder uint32         `json:"sort_order"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+	UpdatedAt sql.NullTime   `json:"updated_at"`
 }
 
 type Ticket struct {
-	ID          uint64
-	StatusID    uint32
-	Title       sql.NullString
-	Description sql.NullString
-	Contact     sql.NullString
-	SortOrder   uint32
-	CreatedAt   sql.NullTime
-	UpdatedAt   sql.NullTime
+	ID          uint64         `json:"id"`
+	StatusID    uint32         `json:"status_id"`
+	Title       sql.NullString `json:"title"`
+	Description sql.NullString `json:"description"`
+	Contact     sql.NullString `json:"contact"`
+	SortOrder   uint32         `json:"sort_order"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	UpdatedAt   sql.NullTime   `json:"updated_at"`
 }
 
 type User struct {
-	ID        uint64
-	Name      sql.NullString
-	Lastname  sql.NullString
-	Email     sql.NullString
-	Password  sql.NullString
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	ID        uint64         `json:"id"`
+	Name      sql.NullString `json:"name"`
+	Lastname  sql.NullString `json:"lastname"`
+	Email     sql.NullString `json:"email"`
+	Password  sql.NullString `json:"password"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+	UpdatedAt sql.NullTime   `json:"updated_at"`
 }
