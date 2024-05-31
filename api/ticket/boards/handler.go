@@ -132,7 +132,7 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	dbBoard, err := h.DB.GetLastInsertBoardByUserId(c.Request().Context(), dbUser.ID)
+	dbBoard, err := h.DB.GetLastCreatedBoardByUserId(c.Request().Context(), dbUser.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "board not found")

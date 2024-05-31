@@ -47,7 +47,7 @@ ORDER BY
 LIMIT
   1;
 
--- name: GetLastInsertBoardByUserId :one
+-- name: GetLastCreatedBoardByUserId :one
 SELECT
   *
 FROM
