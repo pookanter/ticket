@@ -14,7 +14,7 @@ type Handler struct {
 	DB *db.Queries
 }
 
-func NewHandler(api *apikit.API) *Handler {
+func New(api *apikit.API) *Handler {
 	return &Handler{
 		DB: db.New(api.DB),
 	}

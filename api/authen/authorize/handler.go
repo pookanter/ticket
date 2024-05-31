@@ -1,4 +1,4 @@
-package authen
+package authorize
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type Handler struct {
 	Auth      *auth.Auth
 }
 
-func NewHandler(api *apikit.API) *Handler {
+func New(api *apikit.API) *Handler {
 	return &Handler{
 		DB:        db.New(api.DB),
 		DBTimeOut: api.Config.DB().TimeOut,

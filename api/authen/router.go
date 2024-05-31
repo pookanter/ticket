@@ -1,17 +1,22 @@
 package authen
 
 import (
+	"ticket/api/authen/authorize"
 	"ticket/api/authen/users"
 	"ticket/pkg/apikit"
+	"ticket/pkg/auth"
 )
 
 func Router(api *apikit.API) {
-	h := NewHandler(api)
+	a := authorize.New(api)
 
-	api.App.POST("/sign-in", h.SignIn)
-	api.App.POST("/sign-up", h.SignUp)
+	api.App.POST("/sign-in", a.SignIn)
+	api.App.POST("/sign-up", a.SignUp)
+	api.App.POST("/refresh-token", a.RefreshToken)
 
-	api.App.POST("/refresh-token", h.RefreshToken)
+	u := users.New(api)
 
-	users.Router(api)
+	usersGroup := api.App.Group("/users")
+	usersGroup.Use(auth.Middleware(api.Config))
+	usersGroup.GET("/me", u.GetMe)
 }
