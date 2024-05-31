@@ -13,4 +13,5 @@ func Router(api *apikit.API) {
 
 	g.Use(guard)
 	g.GET("", h.GetBoards)
+	g.POST("", h.CreateBoard)
 }

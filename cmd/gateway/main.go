@@ -8,8 +8,8 @@ import (
 	"ticket/config"
 	"ticket/pkg/apikit"
 
+	"github.com/labstack/echo/middleware"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/valyala/fasthttp"
 )
 
@@ -83,3 +83,25 @@ func main() {
 
 	}).Start()
 }
+
+// func main() {
+
+// }
+
+// type Tmp struct {
+// 	Pos1 int
+// 	Pos2 int
+// 	Pos3 int
+// }
+
+// func sum(sl1 []int, target int) {
+
+// 	tmp := Tmp{}
+// 	tmpTarget := target
+// 	for i := 0; i < len(sl1); i++ {
+// 		tmp.Pos1 = sl1[i]
+// 		for j := i; j < len(sl1); j++ {
+
+// 		}
+// 	}
+// }

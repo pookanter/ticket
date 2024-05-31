@@ -39,6 +39,11 @@ function getBoards() {
 	return http().get<TicketService.Board[]>(`/${TICKET_SERVICE}/boards`);
 }
 
+function createBoard(data: { title: string }) {
+	return http().post<TicketService.Board>(`/${TICKET_SERVICE}/boards`, data);
+}
+
 export const TicketService = {
-	getBoards
+	getBoards,
+	createBoard
 };

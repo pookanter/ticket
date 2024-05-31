@@ -1,21 +1,17 @@
 <script lang="ts">
-	import {
-		DotsHorizontalOutline,
-		DotsVerticalOutline,
-		EditOutline,
-		TrashBinOutline
-	} from 'flowbite-svelte-icons';
+	import { DotsHorizontalOutline, EditOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Tabs as TabsPrimitive, type CustomEventHandler } from 'bits-ui';
 	import { cn } from '$lib/utils.js';
-	import { clickOutsideAction } from '$lib/directives/click-outside';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import type { TicketService } from '$lib/services/ticket-service';
 
-	type $$Props = TabsPrimitive.TriggerProps;
+	type $$Props = Omit<TabsPrimitive.TriggerProps, 'value'> & {
+		value: TicketService.Board;
+		clickupdate: (value: TicketService.Board) => void;
+	};
 	type $$Events = TabsPrimitive.TriggerEvents;
-
 	let className: $$Props['class'] = undefined;
-	export let value: $$Props['value'];
+	export let value: TicketService.Board;
 	export { className as class };
 
 	let menuEnabled = false;
@@ -24,6 +20,8 @@
 			menuEnabled = true;
 		}, 0);
 	}
+
+	export let clickupdate: (value: TicketService.Board) => void;
 </script>
 
 <TabsPrimitive.Trigger
@@ -31,7 +29,7 @@
 		'inline-block py-2 px-4 border-b-2 border-transparent rounded-t-lg !cursor-pointer hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 data-[state=active]:text-blue-600  data-[state=active]:border-blue-600',
 		className
 	)}
-	{value}
+	value={`${value.id}`}
 	{...$$restProps}
 	on:click
 	on:focus={onFocus}
@@ -48,9 +46,9 @@
 			</DropdownMenu.Trigger>
 		</div>
 		<DropdownMenu.Content>
-			<DropdownMenu.Item class="cursor-pointer">
+			<DropdownMenu.Item class="cursor-pointer" on:click={() => clickupdate(value)}>
 				<EditOutline class="mr-2 size-6" />
-				<span>Rename</span>
+				<span>Update</span>
 			</DropdownMenu.Item>
 			<DropdownMenu.Item class="cursor-pointer">
 				<TrashBinOutline class="w-4 h-4 mr-2" />

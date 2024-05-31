@@ -13,6 +13,9 @@
 	import { goto } from '$app/navigation';
 	import { TicketService } from '$lib/services/tircket-service';
 	import { from } from 'rxjs';
+	import BoardSaveDialogContent from '$lib/components/board-save-dialog/board-save-dialog-content.svelte';
+
+	let boards: TicketService.Board[] = [];
 
 	let unsubscribe: Unsubscriber;
 	onMount(() => {
@@ -25,7 +28,8 @@
 
 		from(TicketService.getBoards()).subscribe({
 			next: ({ data }) => {
-				boards.push(...data);
+				console.log('getBoards', data);
+				boards = [...data];
 			},
 			error: (error) => {
 				console.error('getBoards', error);
@@ -38,7 +42,6 @@
 	});
 
 	const flipDurationMs = 200;
-	const boards: TicketService.Board[] = [];
 
 	let index = 0;
 
@@ -79,8 +82,45 @@
 	const dialogState = {
 		open: false,
 		resrc_type: Resource.Board,
-		method: Method.Create
+		method: Method.Create,
+		data: null as any
 	};
+
+	const boardDialog = {
+		method: Method.Create,
+		data: {
+			id: 0,
+			title: ''
+		}
+	};
+
+	let dialogOpen = false;
+	let targetResource: Resource = Resource.Board;
+	function onDialogOpenChange(open: boolean) {
+		dialogOpen = open;
+	}
+	function openBoardDialog({
+		method,
+		value
+	}: {
+		method: Method;
+		value?: TicketService.Board | null;
+	}) {
+		console.log('dialogOpen', dialogOpen);
+		console.log('openBoardDialog', method, value);
+		if (method == Method.Create) {
+			boardDialog.method = Method.Create;
+			dialogOpen = true;
+		}
+
+		if (method == Method.Update && value) {
+			boardDialog.method = Method.Update;
+			boardDialog.data = { ...value };
+			dialogOpen = true;
+		}
+
+		targetResource = Resource.Board;
+	}
 
 	function editTicket(ticket: TicketService.Ticket) {
 		console.log('editTicket', ticket);
@@ -90,20 +130,24 @@
 </script>
 
 <section class="h-[90vh] w-full">
-	<Dialog.Root open={dialogState.open}>
+	<Dialog.Root open={dialogOpen} onOpenChange={onDialogOpenChange}>
 		<div class="h-full mt-2">
 			<BoardTabs.Root>
 				<BoardTabs.List>
 					{#each boards as board (board.id)}
-						<BoardTabs.Trigger value={`${boards[index].id}`}>
-							<span>{boards[index].title}</span>
+						<BoardTabs.Trigger
+							value={board}
+							clickupdate={(value) => openBoardDialog({ method: Method.Update, value })}
+						>
+							<span>{board.title}</span>
 						</BoardTabs.Trigger>
 					{/each}
-					<div
+					<button
+						on:click={() => openBoardDialog({ method: Method.Create })}
 						class="flex items-center justify-center p-1 m-3 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
 					>
 						<PlusOutline class="size-4" />
-					</div>
+					</button>
 				</BoardTabs.List>
 				{#each boards as board (board.id)}
 					<BoardTabs.Content value={`${boards[index].id}`}>
@@ -149,14 +193,8 @@
 				{/each}
 			</BoardTabs.Root>
 		</div>
-		<Dialog.Content>
-			<Dialog.Header>
-				<Dialog.Title>Are you sure absolutely sure?</Dialog.Title>
-				<Dialog.Description>
-					This action cannot be undone. This will permanently delete your account and remove your
-					data from our servers.
-				</Dialog.Description>
-			</Dialog.Header>
-		</Dialog.Content>
+		{#if targetResource === Resource.Board}
+			<BoardSaveDialogContent id={boardDialog.data.id} data={boardDialog.data} {boards} />
+		{/if}
 	</Dialog.Root>
 </section>

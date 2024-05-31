@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card/index';
 	import * as Dialog from '$lib/components/ui/dialog/index';
-	import type { TicketService } from '$lib/services/tircket-service';
+	import type { TicketService } from '$lib/services/ticket-service';
 	import { EditOutline, PlusOutline } from 'flowbite-svelte-icons';
 	export let ticket = {
 		id: 0,

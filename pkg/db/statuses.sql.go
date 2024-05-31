@@ -12,18 +12,19 @@ import (
 
 const createStatus = `-- name: CreateStatus :exec
 INSERT INTO
-  statuses (board_id, title, created_at)
+  statuses (board_id, title, sort_order, created_at)
 VALUES
-  (?, ?, NOW())
+  (?, ?, ?, NOW())
 `
 
 type CreateStatusParams struct {
-	BoardID uint32
-	Title   sql.NullString
+	BoardID   uint32
+	Title     sql.NullString
+	SortOrder uint32
 }
 
 func (q *Queries) CreateStatus(ctx context.Context, arg CreateStatusParams) error {
-	_, err := q.db.ExecContext(ctx, createStatus, arg.BoardID, arg.Title)
+	_, err := q.db.ExecContext(ctx, createStatus, arg.BoardID, arg.Title, arg.SortOrder)
 	return err
 }
 

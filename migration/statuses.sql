@@ -8,9 +8,9 @@ WHERE
 
 -- name: CreateStatus :exec
 INSERT INTO
-  statuses (board_id, title, created_at)
+  statuses (board_id, title, sort_order, created_at)
 VALUES
-  (?, ?, NOW());
+  (?, ?, ?, NOW());
 
 -- name: UpdateStatus :exec
 UPDATE

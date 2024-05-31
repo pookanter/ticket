@@ -13,10 +13,11 @@ INSERT INTO
     title,
     description,
     contact,
+    sort_order,
     created_at
   )
 VALUES
-  (?, ?, ?, ?, NOW());
+  (?, ?, ?, ?, ?, NOW());
 
 -- name: UpdateTicket :exec
 UPDATE

@@ -17,10 +17,11 @@ INSERT INTO
     title,
     description,
     contact,
+    sort_order,
     created_at
   )
 VALUES
-  (?, ?, ?, ?, NOW())
+  (?, ?, ?, ?, ?, NOW())
 `
 
 type CreateTicketParams struct {
@@ -28,6 +29,7 @@ type CreateTicketParams struct {
 	Title       sql.NullString
 	Description sql.NullString
 	Contact     sql.NullString
+	SortOrder   uint32
 }
 
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) error {
@@ -36,6 +38,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 		arg.Title,
 		arg.Description,
 		arg.Contact,
+		arg.SortOrder,
 	)
 	return err
 }
