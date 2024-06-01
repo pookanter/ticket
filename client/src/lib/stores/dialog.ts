@@ -1,4 +1,3 @@
-import * as Dialog from '$lib/components/ui/dialog';
 import { type ComponentType } from 'svelte';
 import { writable, type Writable } from 'svelte/store';
 

@@ -8,6 +8,7 @@
 	import type { FormInputEvent } from '../ui/input';
 	import { DialogStore } from '$lib/stores/dialog';
 	import { onDestroy, onMount } from 'svelte';
+	import { AlertStore } from '$lib/stores/alert';
 	const data = {
 		email: '',
 		name: '',
@@ -25,17 +26,16 @@
 	let invalid = false;
 	let loading = false;
 
-	function clear() {
+	function clear(src: { [key: string]: string }) {
 		let key: keyof typeof error;
 		for (key in error) {
-			error[key] = '';
-			data[key] = '';
+			src[key] = '';
 		}
 	}
 
 	async function handleSignUp(event: Event) {
 		event.preventDefault();
-		clear();
+		clear(error);
 		invalid = false;
 
 		if (data.email === '') {
@@ -80,7 +80,12 @@
 		try {
 			await AuthenService.signUp(data);
 			DialogStore.close();
-		} catch (error) {}
+		} catch ({ error, message }: any) {
+			AlertStore.create({
+				title: 'Error',
+				message: error ? error.message : message || 'An error occurred'
+			});
+		}
 		loading = false;
 	}
 
@@ -101,8 +106,9 @@
 		DialogStore.update((store) => {
 			store.onClose = (d: boolean) => {
 				console.log('Sign up dialog closed');
-				clear();
 				const closeable = !loading;
+				clear(data);
+				clear(error);
 
 				return closeable;
 			};

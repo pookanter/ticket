@@ -6,9 +6,12 @@
 	import { goto } from '$app/navigation';
 	import type { Unsubscriber } from 'svelte/store';
 	import * as Dialog from '$lib/components/ui/dialog';
-	import { DialogStore, type DialogState } from '$lib/stores/dialog';
+	import { DialogStore } from '$lib/stores/dialog';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	import { AlertStore } from '$lib/stores/alert';
 
 	let unsubscribes: Unsubscriber[] = [];
+	let alertState = AlertStore.defaultState();
 	let dialogState = DialogStore.defaultState();
 	onMount(() => {
 		unsubscribes.push(
@@ -58,6 +61,22 @@
 				dialogState = state;
 			})
 		);
+
+		unsubscribes.push(
+			AlertStore.subscribe((state) => {
+				if (state.initializing) {
+					AlertStore.update((store) => {
+						store.initializing = false;
+
+						return store;
+					});
+
+					return;
+				}
+
+				alertState = state;
+			})
+		);
 	});
 
 	onDestroy(() => {
@@ -68,12 +87,33 @@
 </script>
 
 <main class="m-auto max-w-7xl">
-	<Dialog.Root open={dialogState.open} onOpenChange={dialogState.onOpenChange}>
-		<slot />
-		{#if dialogState.component}
-			<svelte:component this={dialogState.component} />
-		{/if}
-	</Dialog.Root>
+	<AlertDialog.Root open={alertState.open} onOpenChange={alertState.onOpenChange}>
+		<AlertDialog.Content class="z-[60]">
+			<AlertDialog.Header>
+				{#if alertState.title}
+					<AlertDialog.Title>{alertState.title}</AlertDialog.Title>
+				{/if}
+				{#if alertState.message}
+					<AlertDialog.Description>{alertState.message}</AlertDialog.Description>
+				{/if}
+			</AlertDialog.Header>
+			<AlertDialog.Footer>
+				{#each alertState.buttons as button}
+					{#if button.type === 'cancel'}
+						<AlertDialog.Cancel on:click={button.onClick}>{button.text}</AlertDialog.Cancel>
+					{:else}
+						<AlertDialog.Action on:click={button.onClick}>{button.text}</AlertDialog.Action>
+					{/if}
+				{/each}
+			</AlertDialog.Footer>
+		</AlertDialog.Content>
+		<Dialog.Root open={dialogState.open} onOpenChange={dialogState.onOpenChange}>
+			<slot />
+			{#if dialogState.component}
+				<svelte:component this={dialogState.component} />
+			{/if}
+		</Dialog.Root>
+	</AlertDialog.Root>
 </main>
 <footer class="fixed bottom-0 left-0 w-full bg-white shadow dark:bg-gray-800">
 	<div class="w-full max-w-screen-xl p-4 mx-auto md:flex md:items-center md:justify-between">
