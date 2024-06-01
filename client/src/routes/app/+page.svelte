@@ -11,7 +11,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import authStore from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
-	import { TicketService } from '$lib/services/tircket-service';
+	import { TicketService } from '$lib/services/ticket-service';
 	import { from } from 'rxjs';
 	import BoardSaveDialogContent from '$lib/components/board-save-dialog/board-save-dialog-content.svelte';
 
