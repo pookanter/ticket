@@ -9,7 +9,7 @@
 	import { DialogStore, type DialogState } from '$lib/stores/dialog';
 
 	let unsubscribes: Unsubscriber[] = [];
-	let dialogState: DialogState;
+	let dialogState = DialogStore.defaultState();
 	onMount(() => {
 		unsubscribes.push(
 			authStore.subscribe(async (state) => {
@@ -68,9 +68,9 @@
 </script>
 
 <main class="m-auto max-w-7xl">
-	<Dialog.Root>
+	<Dialog.Root open={dialogState.open} onOpenChange={dialogState.onOpenChange}>
 		<slot />
-		{#if dialogState && dialogState.component}
+		{#if dialogState.component}
 			<svelte:component this={dialogState.component} />
 		{/if}
 	</Dialog.Root>

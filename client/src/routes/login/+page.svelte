@@ -53,18 +53,6 @@
 		unsubscribe();
 	});
 
-	function disableWhitespace(e: FormInputEvent<KeyboardEvent>) {
-		if (e?.code === 'Space') {
-			e.preventDefault();
-		}
-	}
-
-	function noWhitespaceFuncs<Key extends PropertyKey>(src: { [K in Key]: string }, key: Key) {
-		return (e: any) => {
-			src[key] = (src[key] as string).replaceAll(' ', '');
-		};
-	}
-
 	const signInData = {
 		email: '',
 		password: ''
@@ -179,18 +167,16 @@
 							</div>
 							<Button class="w-full" on:click={(e) => handleSignIn(e)}>Sign in</Button>
 							<p class="text-sm font-light text-gray-500 dark:text-gray-400">
-								Don’t have an account yet? <Dialog.Trigger
+								Don’t have an account yet?
+								<a
+									href={null}
+									class="font-medium cursor-pointer text-primary-600 dark:text-primary-500 hover:underline"
 									on:click={() => {
 										DialogStore.create(SignUpDialogContent);
 									}}
 								>
-									<a
-										href={null}
-										class="font-medium text-primary-600 dark:text-primary-500 hover:underline"
-									>
-										Sign up
-									</a>
-								</Dialog.Trigger>
+									Sign up
+								</a>
 							</p>
 						</form>
 					</div>

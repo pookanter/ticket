@@ -6,6 +6,8 @@
 	import { AuthenService } from '$lib/services/authen-service';
 	import Spinner from '$lib/components/spinner/Spinner.svelte';
 	import type { FormInputEvent } from '../ui/input';
+	import { DialogStore } from '$lib/stores/dialog';
+	import { onDestroy, onMount } from 'svelte';
 	const data = {
 		email: '',
 		name: '',
@@ -23,12 +25,11 @@
 	let invalid = false;
 	let loading = false;
 
-	// const t: Dialog.Content = Dialog.Content
-
 	function clear() {
 		let key: keyof typeof error;
 		for (key in error) {
 			error[key] = '';
+			data[key] = '';
 		}
 	}
 
@@ -78,6 +79,7 @@
 		loading = true;
 		try {
 			await AuthenService.signUp(data);
+			DialogStore.close();
 		} catch (error) {}
 		loading = false;
 	}
@@ -93,6 +95,25 @@
 			src[key] = (src[key] as string).replaceAll(' ', '');
 		};
 	}
+
+	onMount(() => {
+		console.log('Sign up dialog mounted');
+		DialogStore.update((store) => {
+			store.onClose = (d: boolean) => {
+				console.log('Sign up dialog closed');
+				clear();
+				const closeable = !loading;
+
+				return closeable;
+			};
+
+			return store;
+		});
+	});
+
+	onDestroy(() => {
+		console.log('Sign up dialog destroyed');
+	});
 </script>
 
 <Dialog.Content class="sm:max-w-[425px]" disableClosing={loading}>
