@@ -16,7 +16,7 @@ services:
       dockerfile: ./build/authen/Dockerfile
       target: development
     ports:
-      - ":4000"
+      - "4000"
     volumes:
       - ./cmd/authen:/app/cmd/authen
       - ./api/authen:/app/api/authen
@@ -29,7 +29,7 @@ services:
       dockerfile: ./build/ticket/Dockerfile
       target: development
     ports:
-      - ":4001"
+      - "4001"
     volumes:
       - ./cmd/ticket:/app/cmd/ticket
       - ./api/ticket:/app/api/ticket
