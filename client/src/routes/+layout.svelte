@@ -5,50 +5,75 @@
 	import { AuthenService } from '$lib/services/authen-service';
 	import { goto } from '$app/navigation';
 	import type { Unsubscriber } from 'svelte/store';
-	// import { AuthenService } from '$lib/services/authen-service';
-	// import authStore from '$lib/stores/auth';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { DialogStore, type DialogState } from '$lib/stores/dialog';
 
-	let unsubscribe: Unsubscriber;
+	let unsubscribes: Unsubscriber[] = [];
+	let dialogState: DialogState;
 	onMount(() => {
-		console.log('MAIN PAGE IS MOUNT');
-		unsubscribe = authStore.subscribe(async (state) => {
-			if (state.initializing) {
-				console.log('state.initializing...');
-				const token = AuthenService.getAuthorization();
-				const storeValue: AuthStore = {
-					initializing: false,
-					user: null
-				};
-				if (token) {
-					try {
-						const { data: user } = await AuthenService.getMe();
+		unsubscribes.push(
+			authStore.subscribe(async (state) => {
+				if (state.initializing) {
+					console.log('state.initializing...');
+					const token = AuthenService.getAuthorization();
+					const storeValue: AuthStore = {
+						initializing: false,
+						user: null
+					};
+					if (token) {
+						try {
+							const { data: user } = await AuthenService.getMe();
 
-						storeValue.user = user;
-					} catch (error) {
-						console.error(error);
+							storeValue.user = user;
+						} catch (error) {
+							console.error(error);
+						}
 					}
+
+					authStore.set(storeValue);
+
+					setTimeout(() => {
+						if (storeValue.user) {
+							goto('/app');
+						} else {
+							goto('/login');
+						}
+					}, 0);
+				}
+			})
+		);
+
+		unsubscribes.push(
+			DialogStore.subscribe((state) => {
+				if (state.initializing) {
+					DialogStore.update((store) => {
+						store.initializing = false;
+
+						return store;
+					});
+
+					return;
 				}
 
-				authStore.set(storeValue);
-
-				setTimeout(() => {
-					if (storeValue.user) {
-						goto('/app');
-					} else {
-						goto('/login');
-					}
-				}, 0);
-			}
-		});
+				dialogState = state;
+			})
+		);
 	});
 
 	onDestroy(() => {
-		unsubscribe();
+		unsubscribes.forEach((unsubscribe) => {
+			unsubscribe();
+		});
 	});
 </script>
 
 <main class="m-auto max-w-7xl">
-	<slot />
+	<Dialog.Root>
+		<slot />
+		{#if dialogState && dialogState.component}
+			<svelte:component this={dialogState.component} />
+		{/if}
+	</Dialog.Root>
 </main>
 <footer class="fixed bottom-0 left-0 w-full bg-white shadow dark:bg-gray-800">
 	<div class="w-full max-w-screen-xl p-4 mx-auto md:flex md:items-center md:justify-between">
