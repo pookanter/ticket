@@ -18,9 +18,9 @@ VALUES
 `
 
 type CreateStatusParams struct {
-	BoardID   uint32         `json:"board_id"`
-	Title     sql.NullString `json:"title"`
-	SortOrder uint32         `json:"sort_order"`
+	BoardID   uint32         `db:"board_id" json:"board_id"`
+	Title     sql.NullString `db:"title" json:"title"`
+	SortOrder uint32         `db:"sort_order" json:"sort_order"`
 }
 
 func (q *Queries) CreateStatus(ctx context.Context, arg CreateStatusParams) error {
@@ -40,7 +40,7 @@ func (q *Queries) DeleteStatus(ctx context.Context, id uint32) error {
 	return err
 }
 
-const getStatusesByBoardId = `-- name: GetStatusesByBoardId :many
+const getStatusesByBoardID = `-- name: GetStatusesByBoardID :many
 SELECT
   id, board_id, title, sort_order, created_at, updated_at
 FROM
@@ -49,8 +49,8 @@ WHERE
   board_id = ?
 `
 
-func (q *Queries) GetStatusesByBoardId(ctx context.Context, boardID uint32) ([]Status, error) {
-	rows, err := q.db.QueryContext(ctx, getStatusesByBoardId, boardID)
+func (q *Queries) GetStatusesByBoardID(ctx context.Context, boardID uint32) ([]Status, error) {
+	rows, err := q.db.QueryContext(ctx, getStatusesByBoardID, boardID)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +90,8 @@ WHERE
 `
 
 type UpdateStatusParams struct {
-	Title sql.NullString `json:"title"`
-	ID    uint32         `json:"id"`
+	Title sql.NullString `db:"title" json:"title"`
+	ID    uint32         `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateStatus(ctx context.Context, arg UpdateStatusParams) error {

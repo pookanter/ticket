@@ -1,4 +1,4 @@
--- name: GetStatusesByBoardId :many
+-- name: GetStatusesByBoardID :many
 SELECT
   *
 FROM

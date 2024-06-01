@@ -1,4 +1,4 @@
--- name: GetBoardsByUserId :many
+-- name: GetBoardsByUserID :many
 SELECT
   *
 FROM
@@ -6,7 +6,7 @@ FROM
 WHERE
   user_id = ?;
 
--- name: GetBoardById :one
+-- name: GetBoardByID :one
 SELECT
   *
 FROM
@@ -35,26 +35,34 @@ DELETE FROM
 WHERE
   id = ?;
 
--- name: GetLastBoardByUserId :one
+-- name: CountBoardByUserID :one
 SELECT
-  *
+  COUNT(*)
 FROM
   boards
 WHERE
-  user_id = ?
-ORDER BY
-  created_at DESC
-LIMIT
-  1;
+  user_id = ?;
 
--- name: GetLastCreatedBoardByUserId :one
+-- name: ListBoardViewByUserID :many
 SELECT
   *
 FROM
-  boards
+  board_view
 WHERE
-  user_id = ?
-ORDER BY
-  created_at DESC
-LIMIT
-  1;
+  user_id = ?;
+
+-- name: GetLastInsertBoardViewByUserID :one
+SELECT
+  *
+FROM
+  board_view
+WHERE
+  board_view.user_id = ?
+  AND id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      boards
+    LIMIT
+      1
+  );

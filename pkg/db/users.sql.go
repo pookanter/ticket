@@ -18,10 +18,10 @@ VALUES
 `
 
 type CreateUserParams struct {
-	Name     sql.NullString `json:"name"`
-	Lastname sql.NullString `json:"lastname"`
-	Email    sql.NullString `json:"email"`
-	Password sql.NullString `json:"password"`
+	Name     sql.NullString `db:"name" json:"name"`
+	Lastname sql.NullString `db:"lastname" json:"lastname"`
+	Email    sql.NullString `db:"email" json:"email"`
+	Password sql.NullString `db:"password" json:"password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
@@ -84,7 +84,7 @@ func (q *Queries) FindUserByID(ctx context.Context, id uint64) (User, error) {
 	return i, err
 }
 
-const getUser = `-- name: GetUser :one
+const getUserByID = `-- name: GetUserByID :one
 SELECT
   id, name, lastname, email, password, created_at, updated_at
 FROM
@@ -95,8 +95,8 @@ LIMIT
   1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id uint64) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, id)
+func (q *Queries) GetUserByID(ctx context.Context, id uint64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -124,11 +124,11 @@ WHERE
 `
 
 type UpdateUserParams struct {
-	Name     sql.NullString `json:"name"`
-	Lastname sql.NullString `json:"lastname"`
-	Email    sql.NullString `json:"email"`
-	Password sql.NullString `json:"password"`
-	ID       uint64         `json:"id"`
+	Name     sql.NullString `db:"name" json:"name"`
+	Lastname sql.NullString `db:"lastname" json:"lastname"`
+	Email    sql.NullString `db:"email" json:"email"`
+	Password sql.NullString `db:"password" json:"password"`
+	ID       uint64         `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {

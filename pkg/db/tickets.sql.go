@@ -25,11 +25,11 @@ VALUES
 `
 
 type CreateTicketParams struct {
-	StatusID    uint32         `json:"status_id"`
-	Title       sql.NullString `json:"title"`
-	Description sql.NullString `json:"description"`
-	Contact     sql.NullString `json:"contact"`
-	SortOrder   uint32         `json:"sort_order"`
+	StatusID    uint32         `db:"status_id" json:"status_id"`
+	Title       sql.NullString `db:"title" json:"title"`
+	Description sql.NullString `db:"description" json:"description"`
+	Contact     sql.NullString `db:"contact" json:"contact"`
+	SortOrder   uint32         `db:"sort_order" json:"sort_order"`
 }
 
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) error {
@@ -43,7 +43,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 	return err
 }
 
-const getTicketsByStatusId = `-- name: GetTicketsByStatusId :many
+const getTicketsByStatusID = `-- name: GetTicketsByStatusID :many
 SELECT
   id, status_id, title, description, contact, sort_order, created_at, updated_at
 FROM
@@ -52,8 +52,8 @@ WHERE
   status_id = ?
 `
 
-func (q *Queries) GetTicketsByStatusId(ctx context.Context, statusID uint32) ([]Ticket, error) {
-	rows, err := q.db.QueryContext(ctx, getTicketsByStatusId, statusID)
+func (q *Queries) GetTicketsByStatusID(ctx context.Context, statusID uint32) ([]Ticket, error) {
+	rows, err := q.db.QueryContext(ctx, getTicketsByStatusID, statusID)
 	if err != nil {
 		return nil, err
 	}
@@ -97,10 +97,10 @@ WHERE
 `
 
 type UpdateTicketParams struct {
-	Title       sql.NullString `json:"title"`
-	Description sql.NullString `json:"description"`
-	Contact     sql.NullString `json:"contact"`
-	ID          uint64         `json:"id"`
+	Title       sql.NullString `db:"title" json:"title"`
+	Description sql.NullString `db:"description" json:"description"`
+	Contact     sql.NullString `db:"contact" json:"contact"`
+	ID          uint64         `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateTicket(ctx context.Context, arg UpdateTicketParams) error {

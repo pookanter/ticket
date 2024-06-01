@@ -8,7 +8,25 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	"github.com/lib/pq"
 )
+
+const countBoardByUserID = `-- name: CountBoardByUserID :one
+SELECT
+  COUNT(*)
+FROM
+  boards
+WHERE
+  user_id = ?
+`
+
+func (q *Queries) CountBoardByUserID(ctx context.Context, userID uint64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countBoardByUserID, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const createBoard = `-- name: CreateBoard :exec
 INSERT INTO
@@ -18,9 +36,9 @@ VALUES
 `
 
 type CreateBoardParams struct {
-	UserID    uint64         `json:"user_id"`
-	Title     sql.NullString `json:"title"`
-	SortOrder uint32         `json:"sort_order"`
+	UserID    uint64         `db:"user_id" json:"user_id"`
+	Title     sql.NullString `db:"title" json:"title"`
+	SortOrder uint32         `db:"sort_order" json:"sort_order"`
 }
 
 func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) error {
@@ -40,7 +58,7 @@ func (q *Queries) DeleteBoard(ctx context.Context, id uint32) error {
 	return err
 }
 
-const getBoardById = `-- name: GetBoardById :one
+const getBoardByID = `-- name: GetBoardByID :one
 SELECT
   id, user_id, title, sort_order, created_at, updated_at
 FROM
@@ -49,8 +67,8 @@ WHERE
   id = ?
 `
 
-func (q *Queries) GetBoardById(ctx context.Context, id uint32) (Board, error) {
-	row := q.db.QueryRowContext(ctx, getBoardById, id)
+func (q *Queries) GetBoardByID(ctx context.Context, id uint32) (Board, error) {
+	row := q.db.QueryRowContext(ctx, getBoardByID, id)
 	var i Board
 	err := row.Scan(
 		&i.ID,
@@ -63,7 +81,7 @@ func (q *Queries) GetBoardById(ctx context.Context, id uint32) (Board, error) {
 	return i, err
 }
 
-const getBoardsByUserId = `-- name: GetBoardsByUserId :many
+const getBoardsByUserID = `-- name: GetBoardsByUserID :many
 SELECT
   id, user_id, title, sort_order, created_at, updated_at
 FROM
@@ -72,8 +90,8 @@ WHERE
   user_id = ?
 `
 
-func (q *Queries) GetBoardsByUserId(ctx context.Context, userID uint64) ([]Board, error) {
-	rows, err := q.db.QueryContext(ctx, getBoardsByUserId, userID)
+func (q *Queries) GetBoardsByUserID(ctx context.Context, userID uint64) ([]Board, error) {
+	rows, err := q.db.QueryContext(ctx, getBoardsByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,22 +120,26 @@ func (q *Queries) GetBoardsByUserId(ctx context.Context, userID uint64) ([]Board
 	return items, nil
 }
 
-const getLastBoardByUserId = `-- name: GetLastBoardByUserId :one
+const getLastInsertBoardViewByUserID = `-- name: GetLastInsertBoardViewByUserID :one
 SELECT
-  id, user_id, title, sort_order, created_at, updated_at
+  id, user_id, title, sort_order, created_at, updated_at, statuses
 FROM
-  boards
+  board_view
 WHERE
-  user_id = ?
-ORDER BY
-  created_at DESC
-LIMIT
-  1
+  board_view.user_id = ?
+  AND id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      boards
+    LIMIT
+      1
+  )
 `
 
-func (q *Queries) GetLastBoardByUserId(ctx context.Context, userID uint64) (Board, error) {
-	row := q.db.QueryRowContext(ctx, getLastBoardByUserId, userID)
-	var i Board
+func (q *Queries) GetLastInsertBoardViewByUserID(ctx context.Context, userID uint64) (BoardView, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertBoardViewByUserID, userID)
+	var i BoardView
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -125,35 +147,49 @@ func (q *Queries) GetLastBoardByUserId(ctx context.Context, userID uint64) (Boar
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		pq.Array(&i.Statuses),
 	)
 	return i, err
 }
 
-const getLastCreatedBoardByUserId = `-- name: GetLastCreatedBoardByUserId :one
+const listBoardViewByUserID = `-- name: ListBoardViewByUserID :many
 SELECT
-  id, user_id, title, sort_order, created_at, updated_at
+  id, user_id, title, sort_order, created_at, updated_at, statuses
 FROM
-  boards
+  board_view
 WHERE
   user_id = ?
-ORDER BY
-  created_at DESC
-LIMIT
-  1
 `
 
-func (q *Queries) GetLastCreatedBoardByUserId(ctx context.Context, userID uint64) (Board, error) {
-	row := q.db.QueryRowContext(ctx, getLastCreatedBoardByUserId, userID)
-	var i Board
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Title,
-		&i.SortOrder,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) ListBoardViewByUserID(ctx context.Context, userID uint64) ([]BoardView, error) {
+	rows, err := q.db.QueryContext(ctx, listBoardViewByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BoardView{}
+	for rows.Next() {
+		var i BoardView
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.SortOrder,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			pq.Array(&i.Statuses),
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateBoard = `-- name: UpdateBoard :exec
@@ -167,8 +203,8 @@ WHERE
 `
 
 type UpdateBoardParams struct {
-	Title sql.NullString `json:"title"`
-	ID    uint32         `json:"id"`
+	Title sql.NullString `db:"title" json:"title"`
+	ID    uint32         `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) error {

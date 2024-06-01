@@ -1,4 +1,4 @@
--- name: GetTicketsByStatusId :many
+-- name: GetTicketsByStatusID :many
 SELECT
   *
 FROM

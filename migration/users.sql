@@ -1,4 +1,4 @@
--- name: GetUser :one
+-- name: GetUserByID :one
 SELECT
   *
 FROM
