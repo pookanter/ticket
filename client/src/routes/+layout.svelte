@@ -87,7 +87,11 @@
 </script>
 
 <main class="m-auto max-w-7xl">
-	<AlertDialog.Root open={alertState.open} onOpenChange={alertState.onOpenChange}>
+	<AlertDialog.Root
+		open={alertState.open}
+		onOpenChange={alertState.onOpenChange}
+		closeOnOutsideClick={false}
+	>
 		<AlertDialog.Content class="z-[60]">
 			<AlertDialog.Header>
 				{#if alertState.title}
@@ -107,7 +111,11 @@
 				{/each}
 			</AlertDialog.Footer>
 		</AlertDialog.Content>
-		<Dialog.Root open={dialogState.open} onOpenChange={dialogState.onOpenChange}>
+		<Dialog.Root
+			open={dialogState.open}
+			onOpenChange={dialogState.onOpenChange}
+			closeOnOutsideClick={false}
+		>
 			<slot />
 			{#if dialogState.component}
 				<svelte:component this={dialogState.component} />
