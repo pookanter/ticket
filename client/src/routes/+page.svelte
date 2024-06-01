@@ -22,7 +22,7 @@
 		unsubscribe = authStore.subscribe((state) => {
 			console.log('APP MOUNT', state);
 			if (!state.user) {
-				goto('/app');
+				goto('/');
 			}
 		});
 

@@ -37,7 +37,7 @@
 
 					setTimeout(() => {
 						if (storeValue.user) {
-							goto('/app');
+							goto('/');
 						} else {
 							goto('/login');
 						}

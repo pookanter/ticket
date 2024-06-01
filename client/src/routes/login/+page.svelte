@@ -18,7 +18,7 @@
 		unsubscribe = authStore.subscribe((state) => {
 			console.log('LOGIN MOUNT', state);
 			if (state.user) {
-				goto('/app');
+				goto('/');
 			}
 		});
 	});
@@ -64,7 +64,7 @@
 			const { data: user } = await AuthenService.getMe();
 
 			authStore.set({ initializing: false, user });
-			goto('/app');
+			goto('/');
 		} catch ({ error, message }: any) {
 			AlertStore.create({
 				title: 'Error',
