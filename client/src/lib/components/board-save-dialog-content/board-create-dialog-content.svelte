@@ -16,11 +16,7 @@
 		try {
 			const { data: board } = await TicketService.createBoard(data);
 
-			BoardStore.update((state) => {
-				state.boards = [...state.boards, board];
-				return state;
-			});
-
+			BoardStore.addBoard({ board });
 			DialogStore.close();
 		} catch (error: any) {
 			AlertStore.error(error);

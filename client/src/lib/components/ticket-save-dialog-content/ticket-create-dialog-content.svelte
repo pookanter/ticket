@@ -23,7 +23,6 @@
 			const { data: ticket } = await TicketService.createTicket({ board_id, status_id }, data);
 
 			BoardStore.addTicket({ board_id, ticket });
-
 			DialogStore.close();
 		} catch (error: any) {
 			AlertStore.error(error);

@@ -7,7 +7,6 @@
 	import { BoardStore } from '$lib/stores/board';
 	import { AlertStore } from '$lib/stores/alert';
 	import { DialogStore } from '$lib/stores/dialog';
-	import { cloneDeep } from 'lodash';
 
 	export let board_id: number;
 
@@ -19,20 +18,7 @@
 		try {
 			const { data: status } = await TicketService.createStatus({ board_id }, data);
 
-			BoardStore.update((state) => {
-				const boards = cloneDeep(state.boards);
-				const board = boards.find((board) => board.id === status.board_id);
-
-				if (!board) {
-					return state;
-				}
-
-				board.statuses = [...board.statuses, status];
-				state.boards = [...boards];
-
-				return state;
-			});
-
+			BoardStore.addStatus({ status });
 			DialogStore.close();
 		} catch (error: any) {
 			AlertStore.error(error);

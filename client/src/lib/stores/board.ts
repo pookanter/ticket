@@ -19,6 +19,31 @@ function defaultState(): BoardState {
 
 const boardStore = writable<BoardState>(defaultState());
 
+function addBoard({ board }: { board: TicketService.Board }) {
+	boardStore.update((store) => {
+		const boards = cloneDeep(store.boards);
+		boards.push(board);
+
+		store.boards = boards;
+
+		return store;
+	});
+}
+
+function addStatus({ status }: { status: TicketService.Status }) {
+	boardStore.update((store) => {
+		const boards = cloneDeep(store.boards);
+		const board = boards.find((b) => b.id === status.board_id);
+		if (board) {
+			board.statuses.push(status);
+		}
+
+		store.boards = boards;
+
+		return store;
+	});
+}
+
 function addTicket({ board_id, ticket }: { board_id: number; ticket: TicketService.Ticket }) {
 	boardStore.update((store) => {
 		const boards = cloneDeep(store.boards);
@@ -36,4 +61,4 @@ function addTicket({ board_id, ticket }: { board_id: number; ticket: TicketServi
 	});
 }
 
-export const BoardStore = { ...boardStore, defaultState, addTicket };
+export const BoardStore = { ...boardStore, defaultState, addBoard, addStatus, addTicket };
