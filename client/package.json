@@ -38,6 +38,7 @@
 		"dotenv": "^16.4.5",
 		"flowbite-svelte-icons": "^1.6.1",
 		"lucide-svelte": "^0.379.0",
+		"mode-watcher": "^0.3.0",
 		"rxjs": "^7.8.1",
 		"svelte-dnd-action": "^0.9.48",
 		"tailwind-merge": "^2.3.0",
