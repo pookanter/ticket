@@ -94,7 +94,7 @@
 	<header
 		class="z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 	>
-		<div class="container flex items-center justify-end h-14">
+		<div class="flex items-center justify-end px-3 h-14">
 			<Button on:click={toggleMode} variant="outline" size="icon">
 				<Sun
 					class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
