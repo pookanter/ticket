@@ -16,12 +16,13 @@
 	import { DialogStore } from '$lib/stores/dialog';
 	import BoardCreateDialogContent from '$lib/components/board-save-dialog-content/board-create-dialog-content.svelte';
 	import StatusCreateDialogContent from '$lib/components/status-save-dialog-content/status-create-dialog-content.svelte';
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import * as Scroll from '$lib/components/ui/scroll-area';
 	import TicketCreateDialogContent from '$lib/components/ticket-save-dialog-content/ticket-create-dialog-content.svelte';
+	import { cloneDeep } from 'lodash';
+
+	const { ScrollArea } = Scroll;
 
 	let unsubscribes: Unsubscriber[] = [];
-	let boards: TicketService.Board[] = [];
-	let index = 0;
 	let boardState = BoardStore.defaultState();
 	onMount(() => {
 		unsubscribes.push(
@@ -80,26 +81,30 @@
 
 	type ColumnEvent = CustomEvent & { detail: { items: TicketService.Status[] } };
 	function handleDndConsiderColumns(e: ColumnEvent) {
-		console.log('boards[index] before', boards[index].statuses);
-		boards[index].statuses = e.detail.items;
-
-		console.log('boards[index] change', boards[index].statuses);
+		// console.log('CustomEvent', boardState.selected);
+		if (!boardState.selected) return;
+		boardState.selected.statuses = [...e.detail.items];
 	}
 	function handleDndFinalizeColumns(e: ColumnEvent) {
-		boards[index].statuses = e.detail.items;
+		// console.log('handleDndFinalizeColumns', boardState.selected);
+		if (!boardState.selected) return;
+		boardState.selected.statuses = [...e.detail.items];
 	}
 
 	type CardEvent = CustomEvent & { detail: { items: TicketService.Ticket[] } };
 	function handleDndConsiderCards(cid: number, e: CardEvent) {
-		console.log('handleDndConsiderCards', cid, e.detail.items);
-		const colIdx = boards[index].statuses?.findIndex((c) => c.id === cid);
-		boards[index].statuses[colIdx].tickets = e.detail.items;
-		boards[index].statuses = [...boards[index].statuses];
+		// console.log('handleDndConsiderCards', cid, e.detail.items);
+		if (!boardState.selected) return;
+		const colIdx = boardState.selected.statuses?.findIndex((c) => c.id === cid);
+		boardState.selected.statuses[colIdx].tickets = e.detail.items;
+		boardState.selected.statuses = [...boardState.selected.statuses];
 	}
 	function handleDndFinalizeCards(cid: number, e: CardEvent) {
-		const colIdx = boards[index].statuses.findIndex((c) => c.id === cid);
-		boards[index].statuses[colIdx].tickets = e.detail.items;
-		boards[index].statuses = [...boards[index].statuses];
+		// console.log('handleDndFinalizeCards', cid, e.detail.items);
+		if (!boardState.selected) return;
+		const colIdx = boardState.selected.statuses.findIndex((c) => c.id === cid);
+		boardState.selected.statuses[colIdx].tickets = e.detail.items;
+		boardState.selected.statuses = [...boardState.selected.statuses];
 	}
 
 	enum Resource {
@@ -168,7 +173,7 @@
 		<ScrollArea orientation="horizontal" class="has-[>div>div>div]:h-full">
 			{#if boardState.selected}
 				<div
-					class="flex justify-start h-full gap-4 p-4 overflow-x-auto overflow-y-hidden"
+					class="grid grid-flow-col gap-4 p-4 overflow-x-auto overflow-y-hidden"
 					use:dndzone={{
 						items: boardState.selected.statuses,
 						flipDurationMs,
@@ -179,14 +184,50 @@
 					on:finalize={handleDndFinalizeColumns}
 				>
 					{#each boardState.selected.statuses as status (status.id)}
-						<div class="relative" animate:flip={{ duration: flipDurationMs }}>
-							<Card.Root class="p-2 w-80">
-								<Card.Header class="px-2 py-2 pt-0">
-									<Card.Title>
-										<div class="flex items-center justify-between">
-											<span class="text-base">{status.title}</span>
+						<div animate:flip={{ duration: flipDurationMs }}>
+							<ScrollArea
+								orientation="vertical"
+								class="h-[calc(100vh-(var(--header-height)+var(--footer-height))-2rem-1px)]"
+							>
+								<Card.Root class="p-2 w-80">
+									<Card.Header class="px-2 py-2 pt-0">
+										<Card.Title>
+											<div class="flex items-center justify-between">
+												<span class="text-base">{status.title}</span>
+												<button
+													class="p-1 ml-4 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
+													on:click={() => {
+														DialogStore.create({
+															component: TicketCreateDialogContent,
+															params: { board_id: boardState?.selected?.id, status_id: status.id }
+														});
+													}}
+												>
+													<PlusOutline class="size-4" />
+												</button>
+											</div>
+										</Card.Title>
+									</Card.Header>
+									<Card.Content class="px-0 py-0">
+										<div
+											class="flex flex-col gap-2 dnd2"
+											use:dndzone={{
+												items: status.tickets,
+												flipDurationMs,
+												dropTargetStyle: {}
+											}}
+											on:consider={(e) => handleDndConsiderCards(status.id, e)}
+											on:finalize={(e) => handleDndFinalizeCards(status.id, e)}
+										>
+											{#each status.tickets as ticket (ticket.id)}
+												<div animate:flip={{ duration: flipDurationMs }}>
+													<TicketCard {ticket} edit={editTicket} />
+												</div>
+											{/each}
+										</div>
+										{#if status.tickets.length === 0}
 											<button
-												class="p-1 ml-4 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
+												class="flex items-center justify-start w-full p-2 rounded hover:bg-accent"
 												on:click={() => {
 													DialogStore.create({
 														component: TicketCreateDialogContent,
@@ -195,43 +236,12 @@
 												}}
 											>
 												<PlusOutline class="size-4" />
+												<span class="ml-2">Add ticket</span>
 											</button>
-										</div>
-									</Card.Title>
-								</Card.Header>
-								<Card.Content class="px-0 py-0">
-									<div
-										class="flex flex-col gap-2"
-										use:dndzone={{
-											items: status.tickets,
-											flipDurationMs,
-											dropTargetStyle: {}
-										}}
-										on:consider={(e) => handleDndConsiderCards(status.id, e)}
-										on:finalize={(e) => handleDndFinalizeCards(status.id, e)}
-									>
-										{#each status.tickets as ticket (ticket.id)}
-											<div animate:flip={{ duration: flipDurationMs }}>
-												<TicketCard {ticket} edit={editTicket} />
-											</div>
-										{/each}
-									</div>
-									{#if status.tickets.length === 0}
-										<button
-											class="flex items-center justify-start w-full p-2 rounded hover:bg-accent"
-											on:click={() => {
-												DialogStore.create({
-													component: TicketCreateDialogContent,
-													params: { board_id: boardState?.selected?.id, status_id: status.id }
-												});
-											}}
-										>
-											<PlusOutline class="size-4" />
-											<span class="ml-2">Add ticket</span>
-										</button>
-									{/if}
-								</Card.Content>
-							</Card.Root>
+										{/if}
+									</Card.Content>
+								</Card.Root>
+							</ScrollArea>
 						</div>
 					{/each}
 					<div class="block">

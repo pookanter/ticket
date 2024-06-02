@@ -36,6 +36,10 @@ function addStatus({ status }: { status: TicketService.Status }) {
 		const board = boards.find((b) => b.id === status.board_id);
 		if (board) {
 			board.statuses.push(status);
+
+			if (store.selected && store.selected.id === board.id) {
+				store.selected = board;
+			}
 		}
 
 		store.boards = boards;
@@ -52,6 +56,10 @@ function addTicket({ board_id, ticket }: { board_id: number; ticket: TicketServi
 			const status = board.statuses.find((s) => s.id === ticket.status_id);
 			if (status) {
 				status.tickets.push(ticket);
+			}
+
+			if (store.selected && store.selected.id === board.id) {
+				store.selected = board;
 			}
 		}
 
