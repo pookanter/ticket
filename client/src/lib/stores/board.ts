@@ -1,4 +1,5 @@
 import { TicketService } from '$lib/services/ticket-service';
+import { cloneDeep } from 'lodash';
 import { from } from 'rxjs';
 import { writable, get } from 'svelte/store';
 
@@ -18,15 +19,21 @@ function defaultState(): BoardState {
 
 const boardStore = writable<BoardState>(defaultState());
 
-// async function createBoard(data: Parameters<typeof TicketService.createBoard>[0]) {
-// 	from(TicketService.createBoard(data)).subscribe({
-// 		next: ({ data: board }) => {
-// 			BoardStore.update((store) => {
-// 				store.boards.push(board);
-// 				return store;
-// 			});
-// 		}
-// 	});
-// }
+function addTicket({ board_id, ticket }: { board_id: number; ticket: TicketService.Ticket }) {
+	boardStore.update((store) => {
+		const boards = cloneDeep(store.boards);
+		const board = boards.find((b) => b.id === board_id);
+		if (board) {
+			const status = board.statuses.find((s) => s.id === ticket.status_id);
+			if (status) {
+				status.tickets.push(ticket);
+			}
+		}
 
-export const BoardStore = { ...boardStore, defaultState };
+		store.boards = boards;
+
+		return store;
+	});
+}
+
+export const BoardStore = { ...boardStore, defaultState, addTicket };

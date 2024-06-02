@@ -43,12 +43,23 @@ function createBoard(data: { title: string }) {
 	return http().post<TicketService.Board>(`/${TICKET_SERVICE}/boards`, data);
 }
 
-function createStatusByBoardId(boardId: number, data: { title: string }) {
-	return http().post<TicketService.Status>(`/${TICKET_SERVICE}/boards/${boardId}/statuses`, data);
+function createStatus({ board_id }: { board_id: number }, data: { title: string }) {
+	return http().post<TicketService.Status>(`/${TICKET_SERVICE}/boards/${board_id}/statuses`, data);
+}
+
+function createTicket(
+	{ board_id, status_id }: { board_id: number; status_id: number },
+	data: { title: string; description: string; contact: string }
+) {
+	return http().post<TicketService.Ticket>(
+		`/${TICKET_SERVICE}/boards/${board_id}/statuses/${status_id}/tickets`,
+		data
+	);
 }
 
 export const TicketService = {
 	getBoards,
 	createBoard,
-	createStatusByBoardId
+	createStatus,
+	createTicket
 };

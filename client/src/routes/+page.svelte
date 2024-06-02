@@ -11,13 +11,13 @@
 	import authStore from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { TicketService } from '$lib/services/ticket-service';
-	import BoardSaveDialogContent from '$lib/components/board-save-dialog-content/board-create-dialog-content.svelte';
 	import { BoardStore } from '$lib/stores/board';
 	import { AlertStore } from '$lib/stores/alert';
 	import { DialogStore } from '$lib/stores/dialog';
 	import BoardCreateDialogContent from '$lib/components/board-save-dialog-content/board-create-dialog-content.svelte';
 	import StatusCreateDialogContent from '$lib/components/status-save-dialog-content/status-create-dialog-content.svelte';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import TicketCreateDialogContent from '$lib/components/ticket-save-dialog-content/ticket-create-dialog-content.svelte';
 
 	let unsubscribes: Unsubscriber[] = [];
 	let boards: TicketService.Board[] = [];
@@ -172,10 +172,16 @@
 								<Card.Root class="px-2 w-80">
 									<Card.Header>
 										<Card.Title>
-											<div class="flex items-center justify-between ">
+											<div class="flex items-center justify-between">
 												<span>{status.title}</span>
 												<button
 													class="p-1 ml-4 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
+													on:click={() => {
+														DialogStore.create({
+															component: TicketCreateDialogContent,
+															params: { board_id: board.id, status_id: status.id }
+														});
+													}}
 												>
 													<PlusOutline class="size-4" />
 												</button>
@@ -204,8 +210,8 @@
 												class="flex items-center justify-start w-full p-2 rounded hover:bg-accent"
 												on:click={() => {
 													DialogStore.create({
-														component: StatusCreateDialogContent,
-														params: { board_id: board.id }
+														component: TicketCreateDialogContent,
+														params: { board_id: board.id, status_id: status.id }
 													});
 												}}
 											>

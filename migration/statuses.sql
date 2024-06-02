@@ -1,3 +1,14 @@
+-- name: GetStatus :one
+SELECT
+  statuses.*
+FROM
+  statuses
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  statuses.id = ?
+  AND statuses.board_id = ?
+  AND boards.user_id = ?;
+
 -- name: GetStatusesByBoardID :many
 SELECT
   *

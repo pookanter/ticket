@@ -12,6 +12,22 @@ import (
 	"github.com/guregu/null"
 )
 
+const countTicketByStatusID = `-- name: CountTicketByStatusID :one
+SELECT
+  COUNT(*)
+FROM
+  tickets
+WHERE
+  status_id = ?
+`
+
+func (q *Queries) CountTicketByStatusID(ctx context.Context, statusID uint32) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTicketByStatusID, statusID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createTicket = `-- name: CreateTicket :exec
 INSERT INTO
   tickets (
@@ -43,6 +59,39 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 		arg.SortOrder,
 	)
 	return err
+}
+
+const getLastInsertTicketByStatusID = `-- name: GetLastInsertTicketByStatusID :one
+SELECT
+  id, status_id, title, description, contact, sort_order, created_at, updated_at
+FROM
+  tickets
+WHERE
+  tickets.status_id = ?
+  AND id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      tickets AS t
+    LIMIT
+      1
+  )
+`
+
+func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID uint32) (Ticket, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertTicketByStatusID, statusID)
+	var i Ticket
+	err := row.Scan(
+		&i.ID,
+		&i.StatusID,
+		&i.Title,
+		&i.Description,
+		&i.Contact,
+		&i.SortOrder,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getTicketsByStatusID = `-- name: GetTicketsByStatusID :many

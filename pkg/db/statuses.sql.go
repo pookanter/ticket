@@ -89,6 +89,38 @@ func (q *Queries) GetLastInsertStatusViewByBoardID(ctx context.Context, boardID 
 	return i, err
 }
 
+const getStatus = `-- name: GetStatus :one
+SELECT
+  statuses.id, statuses.board_id, statuses.title, statuses.sort_order, statuses.created_at, statuses.updated_at
+FROM
+  statuses
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  statuses.id = ?
+  AND statuses.board_id = ?
+  AND boards.user_id = ?
+`
+
+type GetStatusParams struct {
+	ID      uint32 `db:"id" json:"id"`
+	BoardID uint32 `db:"board_id" json:"board_id"`
+	UserID  uint64 `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) GetStatus(ctx context.Context, arg GetStatusParams) (Status, error) {
+	row := q.db.QueryRowContext(ctx, getStatus, arg.ID, arg.BoardID, arg.UserID)
+	var i Status
+	err := row.Scan(
+		&i.ID,
+		&i.BoardID,
+		&i.Title,
+		&i.SortOrder,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getStatusesByBoardID = `-- name: GetStatusesByBoardID :many
 SELECT
   id, board_id, title, sort_order, created_at, updated_at

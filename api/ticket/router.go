@@ -3,18 +3,25 @@ package ticket
 import (
 	"ticket/api/ticket/boards"
 	"ticket/api/ticket/statuses"
+	"ticket/api/ticket/tickets"
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 )
 
 func Router(api *apikit.API) {
 	b := boards.New(api)
+	guard := auth.Middleware(api.Config)
 
-	api.App.Use(auth.Middleware(api.Config))
-	api.App.GET("/boards", b.GetBoards)
-	api.App.POST("/boards", b.CreateBoard)
+	bg := api.App.Group("/boards", guard)
+	bg.GET("", b.GetBoards)
+	bg.POST("", b.CreateBoard)
 
 	s := statuses.New(api)
 
-	api.App.POST("/boards/:board_id/statuses", s.CreateStatus)
+	sg := bg.Group("/:board_id/statuses")
+	sg.POST("", s.CreateStatus)
+
+	t := tickets.New(api)
+	tg := sg.Group("/:status_id/tickets")
+	tg.POST("", t.CreateTicket)
 }
