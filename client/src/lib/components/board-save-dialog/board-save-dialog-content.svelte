@@ -5,6 +5,7 @@
 	import { TicketService } from '$lib/services/ticket-service';
 	import { Button } from '$lib/components/ui/button/index';
 	import { from } from 'rxjs';
+	import { BoardStore } from '$lib/stores/board';
 
 	export let id = 0;
 	export let data = {
@@ -12,15 +13,13 @@
 	};
 	export let boards: TicketService.Board[] = [];
 
-	function handleSubmit() {
+	async function handleSubmit() {
 		if (!id) {
-			from(TicketService.createBoard(data)).subscribe({
-				next: ({ data }) => {
-					boards = [...boards, data];
-				},
-				error: (error) => {
-					console.error('createBoard', error);
-				}
+			const { data: board } = await TicketService.createBoard(data);
+
+			BoardStore.update((state) => {
+				state.boards = [...state.boards, board];
+				return state;
 			});
 		} else {
 			console.log('update', data);

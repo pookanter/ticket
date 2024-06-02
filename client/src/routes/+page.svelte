@@ -14,36 +14,54 @@
 	import { TicketService } from '$lib/services/ticket-service';
 	import { from } from 'rxjs';
 	import BoardSaveDialogContent from '$lib/components/board-save-dialog/board-save-dialog-content.svelte';
+	import { BoardStore } from '$lib/stores/board';
+	import { AlertStore } from '$lib/stores/alert';
 
+	let unsubscribes: Unsubscriber[] = [];
 	let boards: TicketService.Board[] = [];
+	let index = 0;
 
-	let unsubscribe: Unsubscriber;
 	onMount(() => {
-		unsubscribe = authStore.subscribe((state) => {
-			console.log('APP MOUNT', state);
-			if (!state.user) {
-				goto('/');
-			}
-		});
+		unsubscribes.push(
+			authStore.subscribe((state) => {
+				console.log('APP MOUNT', state);
+				if (!state.user) {
+					goto('/');
+				}
+			})
+		);
 
-		from(TicketService.getBoards()).subscribe({
-			next: ({ data }) => {
-				console.log('getBoards', data);
-				boards = [...data];
-			},
-			error: (error) => {
-				console.error('getBoards', error);
-			}
-		});
+		unsubscribes.push(
+			BoardStore.subscribe(async (state) => {
+				if (state.initializing) {
+					try {
+						const { data: boards } = await TicketService.getBoards();
+						BoardStore.update((state) => {
+							state.boards = boards;
+							return state;
+						});
+					} catch ({ error, message }: any) {
+						AlertStore.create({
+							title: 'Error',
+							message: error ? error.message : message || 'An error occurred'
+						});
+					}
+
+					BoardStore.update((state) => {
+						state.initializing = false;
+						return state;
+					});
+					return;
+				}
+			})
+		);
 	});
 
 	onDestroy(() => {
-		unsubscribe();
+		unsubscribes.forEach((unsubscribe) => unsubscribe());
 	});
 
 	const flipDurationMs = 200;
-
-	let index = 0;
 
 	type ColumnEvent = CustomEvent & { detail: { items: TicketService.Status[] } };
 	function handleDndConsiderColumns(e: ColumnEvent) {
