@@ -40,13 +40,13 @@ type Status struct {
 }
 
 type StatusView struct {
-	ID        uint32      `db:"id" json:"id"`
-	BoardID   uint32      `db:"board_id" json:"board_id"`
-	Title     null.String `db:"title" json:"title"`
-	SortOrder uint32      `db:"sort_order" json:"sort_order"`
-	CreatedAt null.Time   `db:"created_at" json:"created_at"`
-	UpdatedAt null.Time   `db:"updated_at" json:"updated_at"`
-	Tickets   interface{} `db:"tickets" json:"tickets"`
+	ID        uint32          `db:"id" json:"id"`
+	BoardID   uint32          `db:"board_id" json:"board_id"`
+	Title     null.String     `db:"title" json:"title"`
+	SortOrder uint32          `db:"sort_order" json:"sort_order"`
+	CreatedAt null.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt null.Time       `db:"updated_at" json:"updated_at"`
+	Tickets   json.RawMessage `db:"tickets" json:"tickets"`
 }
 
 type Ticket struct {

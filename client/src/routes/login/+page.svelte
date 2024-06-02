@@ -128,7 +128,7 @@
 								href={null}
 								class="font-medium cursor-pointer text-primary-600 dark:text-primary-500 hover:underline"
 								on:click={() => {
-									DialogStore.create(SignUpDialogContent);
+									DialogStore.create({ component: SignUpDialogContent });
 								}}
 							>
 								Sign up

@@ -8,6 +8,7 @@ export type DialogState<T> = {
 	open: boolean;
 	forceClose: boolean;
 	component: ComponentType | null;
+	params: { [key: string]: any };
 	data?: T;
 	onOpenChange: (isOpen: boolean) => void;
 	onClose?: (d: T) => boolean;
@@ -32,6 +33,7 @@ function defaultState(): DialogState<Data> {
 		initializing: true,
 		open: false,
 		component: null,
+		params: {},
 		forceClose: false,
 		onOpenChange: onOpenChange
 	};
@@ -43,11 +45,22 @@ export interface DialogStore<T> extends Writable<DialogState<T>> {
 	state: DialogState<T>;
 }
 
-function create(comp: ComponentType) {
+function create({
+	component,
+	params
+}: {
+	component: ComponentType;
+	params?: { [key: string]: any };
+}) {
 	dialogStore.update((store) => {
-		if (comp !== store.component) {
-			console.log('create', comp);
-			store.component = comp;
+		if (component !== store.component) {
+			store.component = component;
+		}
+
+		if (params) {
+			store.params = params;
+		} else {
+			store.params = {};
 		}
 
 		store.open = true;

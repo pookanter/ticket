@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"ticket/api/ticket/boards"
+	"ticket/api/ticket/statuses"
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 )
@@ -12,4 +13,8 @@ func Router(api *apikit.API) {
 	api.App.Use(auth.Middleware(api.Config))
 	api.App.GET("/boards", b.GetBoards)
 	api.App.POST("/boards", b.CreateBoard)
+
+	s := statuses.New(api)
+
+	api.App.POST("/boards/:board_id/statuses", s.CreateStatus)
 }

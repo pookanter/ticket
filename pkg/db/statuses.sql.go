@@ -11,6 +11,22 @@ import (
 	"github.com/guregu/null"
 )
 
+const countStatusByBoardID = `-- name: CountStatusByBoardID :one
+SELECT
+  COUNT(*)
+FROM
+  statuses
+WHERE
+  board_id = ?
+`
+
+func (q *Queries) CountStatusByBoardID(ctx context.Context, boardID uint32) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countStatusByBoardID, boardID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createStatus = `-- name: CreateStatus :exec
 INSERT INTO
   statuses (board_id, title, sort_order, created_at)
@@ -39,6 +55,38 @@ WHERE
 func (q *Queries) DeleteStatus(ctx context.Context, id uint32) error {
 	_, err := q.db.ExecContext(ctx, deleteStatus, id)
 	return err
+}
+
+const getLastInsertStatusViewByBoardID = `-- name: GetLastInsertStatusViewByBoardID :one
+SELECT
+  id, board_id, title, sort_order, created_at, updated_at, tickets
+FROM
+  status_view
+WHERE
+  status_view.board_id = ?
+  AND id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      statuses
+    LIMIT
+      1
+  )
+`
+
+func (q *Queries) GetLastInsertStatusViewByBoardID(ctx context.Context, boardID uint32) (StatusView, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertStatusViewByBoardID, boardID)
+	var i StatusView
+	err := row.Scan(
+		&i.ID,
+		&i.BoardID,
+		&i.Title,
+		&i.SortOrder,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Tickets,
+	)
+	return i, err
 }
 
 const getStatusesByBoardID = `-- name: GetStatusesByBoardID :many

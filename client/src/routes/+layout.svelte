@@ -118,7 +118,7 @@
 		>
 			<slot />
 			{#if dialogState.component}
-				<svelte:component this={dialogState.component} />
+				<svelte:component this={dialogState.component} {...dialogState.params} />
 			{/if}
 		</Dialog.Root>
 	</AlertDialog.Root>

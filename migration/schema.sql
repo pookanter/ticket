@@ -44,28 +44,24 @@ CREATE
 OR REPLACE VIEW status_view AS
 SELECT
   s.*,
-  IF(
-    COUNT(t.id) = 0,
-    JSON_ARRAY(),
-    JSON_ARRAYAGG(
-      JSON_OBJECT(
-        'id',
-        t.id,
-        'status_id',
-        t.status_id,
-        'title',
-        t.title,
-        'description',
-        t.description,
-        'contact',
-        t.contact,
-        'sort_order',
-        t.sort_order,
-        'created_at',
-        t.created_at,
-        'updated_at',
-        t.updated_at
-      )
+  JSON_ARRAYAGG(
+    JSON_OBJECT(
+      'id',
+      t.id,
+      'status_id',
+      t.status_id,
+      'title',
+      t.title,
+      'description',
+      t.description,
+      'contact',
+      t.contact,
+      'sort_order',
+      t.sort_order,
+      'created_at',
+      t.created_at,
+      'updated_at',
+      t.updated_at
     )
   ) AS tickets
 FROM

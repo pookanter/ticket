@@ -26,3 +26,27 @@ DELETE FROM
   statuses
 WHERE
   id = ?;
+
+-- name: CountStatusByBoardID :one
+SELECT
+  COUNT(*)
+FROM
+  statuses
+WHERE
+  board_id = ?;
+
+-- name: GetLastInsertStatusViewByBoardID :one
+SELECT
+  *
+FROM
+  status_view
+WHERE
+  status_view.board_id = ?
+  AND id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      statuses
+    LIMIT
+      1
+  );

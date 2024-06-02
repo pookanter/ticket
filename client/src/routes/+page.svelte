@@ -16,6 +16,8 @@
 	import { AlertStore } from '$lib/stores/alert';
 	import { DialogStore } from '$lib/stores/dialog';
 	import BoardCreateDialogContent from '$lib/components/board-save-dialog-content/board-create-dialog-content.svelte';
+	import StatusCreateDialogContent from '$lib/components/status-save-dialog-content/status-create-dialog-content.svelte';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
 
 	let unsubscribes: Unsubscriber[] = [];
 	let boards: TicketService.Board[] = [];
@@ -117,18 +119,6 @@
 		data: null as any
 	};
 
-	const boardDialog = {
-		method: Method.Create,
-		data: {
-			id: 0,
-			title: ''
-		}
-	};
-
-	function openCreateBoardDialog() {
-		DialogStore.create(BoardCreateDialogContent);
-	}
-
 	function editTicket(ticket: TicketService.Ticket) {
 		console.log('editTicket', ticket);
 		dialogState.resrc_type = Resource.Ticket;
@@ -137,79 +127,93 @@
 </script>
 
 <section class="h-[90vh] w-full">
-	<div class="h-full mt-2">
-		<BoardTabs.Root>
-			<BoardTabs.List>
-				{#each boardState.boards as board (board.id)}
-					<BoardTabs.Trigger
-						value={board}
-						clickupdate={(value) => openCreateBoardDialog()}
-						on:click={() => {
-							BoardStore.update((state) => {
-								state.selected = board;
-								console.log('selected', state.selected);
-								return state;
-							});
-						}}
-					>
-						<span>{board.title}</span>
-					</BoardTabs.Trigger>
-				{/each}
-				<button
-					on:click={() => openCreateBoardDialog()}
-					class="flex items-center justify-center p-1 m-3 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
-				>
-					<PlusOutline class="size-4" />
-				</button>
-			</BoardTabs.List>
+	<BoardTabs.Root class="mt-2 size-full">
+		<BoardTabs.List>
 			{#each boardState.boards as board (board.id)}
-				<BoardTabs.Content value={`${board.id}`}>
-					{#if boardState.selected}
-						<div
-							class="flex justify-start h-full gap-4 p-4 overflow-x-auto overflow-y-hidden"
-							use:dndzone={{
-								items: boardState.selected.statuses,
-								flipDurationMs,
-								type: 'columns',
-								dropTargetStyle: {}
-							}}
-							on:consider={handleDndConsiderColumns}
-							on:finalize={handleDndFinalizeColumns}
-						>
-							{#each boardState.selected.statuses as status (status.id)}
-								<div class="relative" animate:flip={{ duration: flipDurationMs }}>
-									<Card.Root class="px-2 w-80">
-										<Card.Header>
-											<Card.Title>{status.title}</Card.Title>
-										</Card.Header>
-										<Card.Content class="px-0">
-											<div
-												class="flex flex-col gap-2 min-h-32"
-												use:dndzone={{
-													items: status.tickets,
-													flipDurationMs,
-													dropTargetStyle: {}
-												}}
-												on:consider={(e) => handleDndConsiderCards(status.id, e)}
-												on:finalize={(e) => handleDndFinalizeCards(status.id, e)}
-											>
-												{#each status.tickets as ticket (ticket.id)}
-													<div animate:flip={{ duration: flipDurationMs }}>
-														<TicketCard {ticket} edit={editTicket} />
-													</div>
-												{/each}
-											</div>
-											<Button variant="outline" class="w-full mt-2">
-												<PlusOutline class="size-4" />
-											</Button>
-										</Card.Content>
-									</Card.Root>
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</BoardTabs.Content>
+				<BoardTabs.Trigger
+					value={board}
+					clickupdate={(value) => {}}
+					on:click={() => {
+						BoardStore.update((state) => {
+							state.selected = board;
+							console.log('selected', state.selected);
+							return state;
+						});
+					}}
+				>
+					<span>{board.title}</span>
+				</BoardTabs.Trigger>
 			{/each}
-		</BoardTabs.Root>
-	</div>
+			<button
+				on:click={() => {
+					DialogStore.create({ component: BoardCreateDialogContent });
+				}}
+				class="flex items-center justify-center p-1 m-3 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
+			>
+				<PlusOutline class="size-4" />
+			</button>
+		</BoardTabs.List>
+		{#each boardState.boards as board (board.id)}
+			<BoardTabs.Content value={`${board.id}`}>
+				<ScrollArea class="size-full" orientation="horizontal">
+					<div
+						class="flex justify-start h-full gap-4 p-4 overflow-x-auto overflow-y-hidden"
+						use:dndzone={{
+							items: board.statuses,
+							flipDurationMs,
+							type: 'columns',
+							dropTargetStyle: {}
+						}}
+						on:consider={handleDndConsiderColumns}
+						on:finalize={handleDndFinalizeColumns}
+					>
+						{#each board.statuses as status (status.id)}
+							<div class="relative" animate:flip={{ duration: flipDurationMs }}>
+								<Card.Root class="px-2 w-80">
+									<Card.Header>
+										<Card.Title>{status.title}</Card.Title>
+									</Card.Header>
+									<Card.Content class="px-0">
+										<div
+											class="flex flex-col gap-2 min-h-32"
+											use:dndzone={{
+												items: status.tickets,
+												flipDurationMs,
+												dropTargetStyle: {}
+											}}
+											on:consider={(e) => handleDndConsiderCards(status.id, e)}
+											on:finalize={(e) => handleDndFinalizeCards(status.id, e)}
+										>
+											{#each status.tickets as ticket (ticket.id)}
+												<div animate:flip={{ duration: flipDurationMs }}>
+													<TicketCard {ticket} edit={editTicket} />
+												</div>
+											{/each}
+										</div>
+										<Button variant="outline" class="w-full mt-2">
+											<PlusOutline class="size-4" />
+										</Button>
+									</Card.Content>
+								</Card.Root>
+							</div>
+						{/each}
+						<div class="block">
+							<button
+								class="flex items-center justify-between px-2 pt-6"
+								on:click={() => {
+									DialogStore.create({
+										component: StatusCreateDialogContent,
+										params: { board_id: board.id }
+									});
+								}}
+							>
+								<PlusOutline class="size-4" />
+								<span class="ml-2">Add Status</span>
+							</button>
+						</div>
+					</div>
+				</ScrollArea>
+			</BoardTabs.Content>
+		{/each}
+	</BoardTabs.Root>
 </section>

@@ -43,7 +43,12 @@ function createBoard(data: { title: string }) {
 	return http().post<TicketService.Board>(`/${TICKET_SERVICE}/boards`, data);
 }
 
+function createStatusByBoardId(boardId: number, data: { title: string }) {
+	return http().post<TicketService.Status>(`/${TICKET_SERVICE}/boards/${boardId}/statuses`, data);
+}
+
 export const TicketService = {
 	getBoards,
-	createBoard
+	createBoard,
+	createStatusByBoardId
 };
