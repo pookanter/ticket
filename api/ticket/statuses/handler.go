@@ -27,6 +27,8 @@ func New(api *apikit.API) *Handler {
 }
 
 func (h *Handler) CreateStatus(c echo.Context) error {
+	claims := c.Get("claims").(*auth.Claims)
+
 	boardID, err := strconv.ParseUint(c.Param("board_id"), 10, 32)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -54,7 +56,10 @@ func (h *Handler) CreateStatus(c echo.Context) error {
 	defer tx.Rollback()
 	qtx := h.Queries.WithTx(tx)
 
-	board, err := qtx.GetBoardByID(ctx, uint32(boardID))
+	board, err := qtx.GetBoard(ctx, db.GetBoardParams{
+		ID:     uint32(boardID),
+		UserID: claims.UserID,
+	})
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusBadRequest, "board not found")

@@ -1,11 +1,3 @@
--- name: GetTicketsByStatusID :many
-SELECT
-  *
-FROM
-  tickets
-WHERE
-  status_id = ?;
-
 -- name: CreateTicket :exec
 INSERT INTO
   tickets (

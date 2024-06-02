@@ -57,17 +57,23 @@ func (q *Queries) DeleteBoard(ctx context.Context, id uint32) error {
 	return err
 }
 
-const getBoardByID = `-- name: GetBoardByID :one
+const getBoard = `-- name: GetBoard :one
 SELECT
   id, user_id, title, sort_order, created_at, updated_at
 FROM
   boards
 WHERE
   id = ?
+  AND user_id = ?
 `
 
-func (q *Queries) GetBoardByID(ctx context.Context, id uint32) (Board, error) {
-	row := q.db.QueryRowContext(ctx, getBoardByID, id)
+type GetBoardParams struct {
+	ID     uint32 `db:"id" json:"id"`
+	UserID uint64 `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) GetBoard(ctx context.Context, arg GetBoardParams) (Board, error) {
+	row := q.db.QueryRowContext(ctx, getBoard, arg.ID, arg.UserID)
 	var i Board
 	err := row.Scan(
 		&i.ID,

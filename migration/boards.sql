@@ -6,13 +6,14 @@ FROM
 WHERE
   user_id = ?;
 
--- name: GetBoardByID :one
+-- name: GetBoard :one
 SELECT
   *
 FROM
   boards
 WHERE
-  id = ?;
+  id = ?
+  AND user_id = ?;
 
 -- name: CreateBoard :exec
 INSERT INTO

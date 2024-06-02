@@ -94,47 +94,6 @@ func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID ui
 	return i, err
 }
 
-const getTicketsByStatusID = `-- name: GetTicketsByStatusID :many
-SELECT
-  id, status_id, title, description, contact, sort_order, created_at, updated_at
-FROM
-  tickets
-WHERE
-  status_id = ?
-`
-
-func (q *Queries) GetTicketsByStatusID(ctx context.Context, statusID uint32) ([]Ticket, error) {
-	rows, err := q.db.QueryContext(ctx, getTicketsByStatusID, statusID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Ticket{}
-	for rows.Next() {
-		var i Ticket
-		if err := rows.Scan(
-			&i.ID,
-			&i.StatusID,
-			&i.Title,
-			&i.Description,
-			&i.Contact,
-			&i.SortOrder,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateTicket = `-- name: UpdateTicket :exec
 UPDATE
   tickets
