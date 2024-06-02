@@ -197,9 +197,9 @@
 								</Card.Root>
 							</div>
 						{/each}
-						<div class="block">
+						<div class="block min-w-80">
 							<button
-								class="flex items-center justify-between px-2 pt-6"
+								class="flex items-center justify-start px-2 pt-6"
 								on:click={() => {
 									DialogStore.create({
 										component: StatusCreateDialogContent,
