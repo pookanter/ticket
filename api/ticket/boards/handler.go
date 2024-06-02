@@ -7,6 +7,7 @@ import (
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
 
+	"github.com/guregu/null"
 	"github.com/labstack/echo/v4"
 )
 
@@ -76,7 +77,7 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 
 	err = qtx.CreateBoard(ctx, db.CreateBoardParams{
 		UserID:    user.ID,
-		Title:     sql.NullString{String: body.Title, Valid: true},
+		Title:     null.NewString(body.Title, true),
 		SortOrder: uint32(count),
 	})
 	if err != nil {

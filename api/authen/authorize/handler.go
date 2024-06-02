@@ -10,6 +10,7 @@ import (
 	"ticket/pkg/db"
 	"time"
 
+	"github.com/guregu/null"
 	"github.com/labstack/echo/v4"
 )
 
@@ -46,7 +47,7 @@ func (h *Handler) SignIn(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), h.DBTimeOut)
 	defer cancel()
 
-	user, err := h.DB.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
+	user, err := h.DB.FindUserByEmail(ctx, null.NewString(body.Email, true))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "user not found")
@@ -97,7 +98,7 @@ func (h *Handler) SignUp(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), h.DBTimeOut)
 	defer cancel()
 
-	user, err := h.DB.FindUserByEmail(ctx, sql.NullString{String: body.Email, Valid: true})
+	user, err := h.DB.FindUserByEmail(ctx, null.NewString(body.Email, true))
 	if err != nil && err != sql.ErrNoRows {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -114,10 +115,10 @@ func (h *Handler) SignUp(c echo.Context) error {
 	}
 
 	err = h.DB.CreateUser(ctx, db.CreateUserParams{
-		Name:     sql.NullString{String: body.Name, Valid: true},
-		Lastname: sql.NullString{String: body.Lastname, Valid: true},
-		Email:    sql.NullString{String: body.Email, Valid: true},
-		Password: sql.NullString{String: hash, Valid: true},
+		Name:     null.NewString(body.Name, true),
+		Lastname: null.NewString(body.Lastname, true),
+		Email:    null.NewString(body.Email, true),
+		Password: null.NewString(hash, true),
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

@@ -11,16 +11,13 @@ sql:
       go:
         package: "db"
         out: "pkg/db"
-        emit_json_tags: true
-        emit_pointers_for_null_types: true
         emit_empty_slices: true
         emit_db_tags: true
+        emit_json_tags: true
         overrides:
-          - column: "board_view.statuses"
-            go_type:
-              type: "StatusView"
-              slice: true
-          - column: "status_view.tickets"
-            go_type:
-              type: "Ticket"
-              slice: true
+          - db_type: varchar
+            nullable: true
+            go_type: "github.com/guregu/null.String"
+          - db_type: datetime
+            nullable: true
+            go_type: "github.com/guregu/null.Time"

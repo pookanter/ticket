@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/guregu/null"
 )
 
 const createStatus = `-- name: CreateStatus :exec
@@ -18,9 +19,9 @@ VALUES
 `
 
 type CreateStatusParams struct {
-	BoardID   uint32         `db:"board_id" json:"board_id"`
-	Title     sql.NullString `db:"title" json:"title"`
-	SortOrder uint32         `db:"sort_order" json:"sort_order"`
+	BoardID   uint32      `db:"board_id" json:"board_id"`
+	Title     null.String `db:"title" json:"title"`
+	SortOrder uint32      `db:"sort_order" json:"sort_order"`
 }
 
 func (q *Queries) CreateStatus(ctx context.Context, arg CreateStatusParams) error {
@@ -90,8 +91,8 @@ WHERE
 `
 
 type UpdateStatusParams struct {
-	Title sql.NullString `db:"title" json:"title"`
-	ID    uint32         `db:"id" json:"id"`
+	Title null.String `db:"title" json:"title"`
+	ID    uint32      `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateStatus(ctx context.Context, arg UpdateStatusParams) error {

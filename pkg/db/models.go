@@ -6,63 +6,66 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
+
+	"github.com/guregu/null"
 )
 
 type Board struct {
-	ID        uint32         `db:"id" json:"id"`
-	UserID    uint64         `db:"user_id" json:"user_id"`
-	Title     sql.NullString `db:"title" json:"title"`
-	SortOrder uint32         `db:"sort_order" json:"sort_order"`
-	CreatedAt sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt sql.NullTime   `db:"updated_at" json:"updated_at"`
+	ID        uint32      `db:"id" json:"id"`
+	UserID    uint64      `db:"user_id" json:"user_id"`
+	Title     null.String `db:"title" json:"title"`
+	SortOrder uint32      `db:"sort_order" json:"sort_order"`
+	CreatedAt null.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt null.Time   `db:"updated_at" json:"updated_at"`
 }
 
 type BoardView struct {
-	ID        uint32         `db:"id" json:"id"`
-	UserID    uint64         `db:"user_id" json:"user_id"`
-	Title     sql.NullString `db:"title" json:"title"`
-	SortOrder uint32         `db:"sort_order" json:"sort_order"`
-	CreatedAt sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt sql.NullTime   `db:"updated_at" json:"updated_at"`
-	Statuses  []StatusView   `db:"statuses" json:"statuses"`
+	ID        uint32          `db:"id" json:"id"`
+	UserID    uint64          `db:"user_id" json:"user_id"`
+	Title     null.String     `db:"title" json:"title"`
+	SortOrder uint32          `db:"sort_order" json:"sort_order"`
+	CreatedAt null.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt null.Time       `db:"updated_at" json:"updated_at"`
+	Statuses  json.RawMessage `db:"statuses" json:"statuses"`
 }
 
 type Status struct {
-	ID        uint32         `db:"id" json:"id"`
-	BoardID   uint32         `db:"board_id" json:"board_id"`
-	Title     sql.NullString `db:"title" json:"title"`
-	SortOrder uint32         `db:"sort_order" json:"sort_order"`
-	CreatedAt sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt sql.NullTime   `db:"updated_at" json:"updated_at"`
+	ID        uint32      `db:"id" json:"id"`
+	BoardID   uint32      `db:"board_id" json:"board_id"`
+	Title     null.String `db:"title" json:"title"`
+	SortOrder uint32      `db:"sort_order" json:"sort_order"`
+	CreatedAt null.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt null.Time   `db:"updated_at" json:"updated_at"`
 }
 
 type StatusView struct {
-	ID        uint32         `db:"id" json:"id"`
-	BoardID   uint32         `db:"board_id" json:"board_id"`
-	Title     sql.NullString `db:"title" json:"title"`
-	SortOrder uint32         `db:"sort_order" json:"sort_order"`
-	CreatedAt sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt sql.NullTime   `db:"updated_at" json:"updated_at"`
-	Tickets   []Ticket       `db:"tickets" json:"tickets"`
+	ID        uint32      `db:"id" json:"id"`
+	BoardID   uint32      `db:"board_id" json:"board_id"`
+	Title     null.String `db:"title" json:"title"`
+	SortOrder uint32      `db:"sort_order" json:"sort_order"`
+	CreatedAt null.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt null.Time   `db:"updated_at" json:"updated_at"`
+	Tickets   interface{} `db:"tickets" json:"tickets"`
 }
 
 type Ticket struct {
 	ID          uint64         `db:"id" json:"id"`
 	StatusID    uint32         `db:"status_id" json:"status_id"`
-	Title       sql.NullString `db:"title" json:"title"`
+	Title       null.String    `db:"title" json:"title"`
 	Description sql.NullString `db:"description" json:"description"`
-	Contact     sql.NullString `db:"contact" json:"contact"`
+	Contact     null.String    `db:"contact" json:"contact"`
 	SortOrder   uint32         `db:"sort_order" json:"sort_order"`
-	CreatedAt   sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt   sql.NullTime   `db:"updated_at" json:"updated_at"`
+	CreatedAt   null.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt   null.Time      `db:"updated_at" json:"updated_at"`
 }
 
 type User struct {
-	ID        uint64         `db:"id" json:"id"`
-	Name      sql.NullString `db:"name" json:"name"`
-	Lastname  sql.NullString `db:"lastname" json:"lastname"`
-	Email     sql.NullString `db:"email" json:"email"`
-	Password  sql.NullString `db:"password" json:"password"`
-	CreatedAt sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt sql.NullTime   `db:"updated_at" json:"updated_at"`
+	ID        uint64      `db:"id" json:"id"`
+	Name      null.String `db:"name" json:"name"`
+	Lastname  null.String `db:"lastname" json:"lastname"`
+	Email     null.String `db:"email" json:"email"`
+	Password  null.String `db:"password" json:"password"`
+	CreatedAt null.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt null.Time   `db:"updated_at" json:"updated_at"`
 }

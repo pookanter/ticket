@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/guregu/null"
 )
 
 const createUser = `-- name: CreateUser :exec
@@ -18,10 +19,10 @@ VALUES
 `
 
 type CreateUserParams struct {
-	Name     sql.NullString `db:"name" json:"name"`
-	Lastname sql.NullString `db:"lastname" json:"lastname"`
-	Email    sql.NullString `db:"email" json:"email"`
-	Password sql.NullString `db:"password" json:"password"`
+	Name     null.String `db:"name" json:"name"`
+	Lastname null.String `db:"lastname" json:"lastname"`
+	Email    null.String `db:"email" json:"email"`
+	Password null.String `db:"password" json:"password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
@@ -45,7 +46,7 @@ LIMIT
   1
 `
 
-func (q *Queries) FindUserByEmail(ctx context.Context, email sql.NullString) (User, error) {
+func (q *Queries) FindUserByEmail(ctx context.Context, email null.String) (User, error) {
 	row := q.db.QueryRowContext(ctx, findUserByEmail, email)
 	var i User
 	err := row.Scan(
@@ -124,11 +125,11 @@ WHERE
 `
 
 type UpdateUserParams struct {
-	Name     sql.NullString `db:"name" json:"name"`
-	Lastname sql.NullString `db:"lastname" json:"lastname"`
-	Email    sql.NullString `db:"email" json:"email"`
-	Password sql.NullString `db:"password" json:"password"`
-	ID       uint64         `db:"id" json:"id"`
+	Name     null.String `db:"name" json:"name"`
+	Lastname null.String `db:"lastname" json:"lastname"`
+	Email    null.String `db:"email" json:"email"`
+	Password null.String `db:"password" json:"password"`
+	ID       uint64      `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {

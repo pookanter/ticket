@@ -7,9 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/lib/pq"
+	"github.com/guregu/null"
 )
 
 const countBoardByUserID = `-- name: CountBoardByUserID :one
@@ -36,9 +35,9 @@ VALUES
 `
 
 type CreateBoardParams struct {
-	UserID    uint64         `db:"user_id" json:"user_id"`
-	Title     sql.NullString `db:"title" json:"title"`
-	SortOrder uint32         `db:"sort_order" json:"sort_order"`
+	UserID    uint64      `db:"user_id" json:"user_id"`
+	Title     null.String `db:"title" json:"title"`
+	SortOrder uint32      `db:"sort_order" json:"sort_order"`
 }
 
 func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) error {
@@ -147,7 +146,7 @@ func (q *Queries) GetLastInsertBoardViewByUserID(ctx context.Context, userID uin
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		pq.Array(&i.Statuses),
+		&i.Statuses,
 	)
 	return i, err
 }
@@ -177,7 +176,7 @@ func (q *Queries) ListBoardViewByUserID(ctx context.Context, userID uint64) ([]B
 			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			pq.Array(&i.Statuses),
+			&i.Statuses,
 		); err != nil {
 			return nil, err
 		}
@@ -203,8 +202,8 @@ WHERE
 `
 
 type UpdateBoardParams struct {
-	Title sql.NullString `db:"title" json:"title"`
-	ID    uint32         `db:"id" json:"id"`
+	Title null.String `db:"title" json:"title"`
+	ID    uint32      `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) error {

@@ -8,6 +8,8 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	"github.com/guregu/null"
 )
 
 const createTicket = `-- name: CreateTicket :exec
@@ -26,9 +28,9 @@ VALUES
 
 type CreateTicketParams struct {
 	StatusID    uint32         `db:"status_id" json:"status_id"`
-	Title       sql.NullString `db:"title" json:"title"`
+	Title       null.String    `db:"title" json:"title"`
 	Description sql.NullString `db:"description" json:"description"`
-	Contact     sql.NullString `db:"contact" json:"contact"`
+	Contact     null.String    `db:"contact" json:"contact"`
 	SortOrder   uint32         `db:"sort_order" json:"sort_order"`
 }
 
@@ -97,9 +99,9 @@ WHERE
 `
 
 type UpdateTicketParams struct {
-	Title       sql.NullString `db:"title" json:"title"`
+	Title       null.String    `db:"title" json:"title"`
 	Description sql.NullString `db:"description" json:"description"`
-	Contact     sql.NullString `db:"contact" json:"contact"`
+	Contact     null.String    `db:"contact" json:"contact"`
 	ID          uint64         `db:"id" json:"id"`
 }
 
