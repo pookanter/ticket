@@ -208,9 +208,12 @@
 											</div>
 										</Card.Title>
 									</Card.Header>
-									<Card.Content class="px-0 py-0">
+
+									<Card.Content class="relative px-0 py-0">
 										<div
-											class="flex flex-col gap-2 dnd2"
+											class="absolute top-0 left-0 flex flex-col w-full gap-2"
+											class:absolute={status.tickets.length === 0}
+											class:h-20={status.tickets.length === 0}
 											use:dndzone={{
 												items: status.tickets,
 												flipDurationMs,
