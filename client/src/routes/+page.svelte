@@ -171,11 +171,20 @@
 							<div class="relative" animate:flip={{ duration: flipDurationMs }}>
 								<Card.Root class="px-2 w-80">
 									<Card.Header>
-										<Card.Title>{status.title}</Card.Title>
+										<Card.Title>
+											<div class="flex items-center justify-between ">
+												<span>{status.title}</span>
+												<button
+													class="p-1 ml-4 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
+												>
+													<PlusOutline class="size-4" />
+												</button>
+											</div>
+										</Card.Title>
 									</Card.Header>
 									<Card.Content class="px-0">
 										<div
-											class="flex flex-col gap-2 min-h-32"
+											class="flex flex-col gap-2"
 											use:dndzone={{
 												items: status.tickets,
 												flipDurationMs,
@@ -190,16 +199,27 @@
 												</div>
 											{/each}
 										</div>
-										<Button variant="outline" class="w-full mt-2">
-											<PlusOutline class="size-4" />
-										</Button>
+										{#if status.tickets.length === 0}
+											<button
+												class="flex items-center justify-start w-full p-2 rounded hover:bg-accent"
+												on:click={() => {
+													DialogStore.create({
+														component: StatusCreateDialogContent,
+														params: { board_id: board.id }
+													});
+												}}
+											>
+												<PlusOutline class="size-4" />
+												<span class="ml-2">Add ticket</span>
+											</button>
+										{/if}
 									</Card.Content>
 								</Card.Root>
 							</div>
 						{/each}
-						<div class="block min-w-80">
+						<div class="block">
 							<button
-								class="flex items-center justify-start px-2 pt-6"
+								class="flex items-center justify-start p-2 mt-4 rounded min-w-80 hover:bg-accent"
 								on:click={() => {
 									DialogStore.create({
 										component: StatusCreateDialogContent,
@@ -208,7 +228,7 @@
 								}}
 							>
 								<PlusOutline class="size-4" />
-								<span class="ml-2">Add Status</span>
+								<span class="ml-2">Add status</span>
 							</button>
 						</div>
 					</div>
