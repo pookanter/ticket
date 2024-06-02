@@ -1,3 +1,4 @@
+import axios, { AxiosError } from 'axios';
 import { type ComponentType } from 'svelte';
 import { writable, type Writable } from 'svelte/store';
 
@@ -55,13 +56,15 @@ export interface AlertStore<T> extends Writable<AlertState<T>> {
 	state: AlertState<T>;
 }
 
-type Param = {
+function create({
+	title,
+	message,
+	buttons
+}: {
 	title?: string;
 	message?: string;
 	buttons?: Buttons;
-};
-
-function create({ title, message, buttons }: Param) {
+}) {
 	alertStore.update((store) => {
 		store.title = title || '';
 		store.message = message || '';
@@ -72,9 +75,29 @@ function create({ title, message, buttons }: Param) {
 	});
 }
 
+function error(error: Error | AxiosError | { title?: string; message?: string }) {
+	alertStore.update((store) => {
+		if (error instanceof Error) {
+			store.title = 'Error';
+			store.message = error.message;
+		} else if (axios.isAxiosError(error)) {
+			store.title = 'Error';
+			store.message = error.response?.data?.message || error.message;
+		} else {
+			store.title = error.title || 'Error';
+			store.message = error.message || 'An error occurred';
+		}
+
+		store.open = true;
+
+		return store;
+	});
+}
+
 export const AlertStore = {
 	...alertStore,
 	defaultState,
 	create,
-	close
+	close,
+	error
 };

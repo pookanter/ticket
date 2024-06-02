@@ -4,32 +4,33 @@
 	import { Label } from '$lib/components/ui/label/index';
 	import { TicketService } from '$lib/services/ticket-service';
 	import { Button } from '$lib/components/ui/button/index';
-	import { from } from 'rxjs';
 	import { BoardStore } from '$lib/stores/board';
+	import { AlertStore } from '$lib/stores/alert';
+	import { DialogStore } from '$lib/stores/dialog';
 
-	export let id = 0;
-	export let data = {
+	let data = {
 		title: ''
 	};
-	export let boards: TicketService.Board[] = [];
 
 	async function handleSubmit() {
-		if (!id) {
+		try {
 			const { data: board } = await TicketService.createBoard(data);
 
 			BoardStore.update((state) => {
 				state.boards = [...state.boards, board];
 				return state;
 			});
-		} else {
-			console.log('update', data);
+
+			DialogStore.close();
+		} catch (error: any) {
+			AlertStore.error(error);
 		}
 	}
 </script>
 
 <Dialog.Content>
 	<Dialog.Header>
-		<Dialog.Title>{!id ? 'Create board' : 'Update Board'}</Dialog.Title>
+		<Dialog.Title>Create board</Dialog.Title>
 	</Dialog.Header>
 	<div class="grid gap-4 py-4">
 		<div class="grid gap-4 py-4">
@@ -40,6 +41,6 @@
 		</div>
 	</div>
 	<Dialog.Footer>
-		<Button type="submit" on:click={handleSubmit}>{!id ? 'Create' : 'Update'}</Button>
+		<Button type="submit" on:click={handleSubmit}>Create</Button>
 	</Dialog.Footer>
 </Dialog.Content>

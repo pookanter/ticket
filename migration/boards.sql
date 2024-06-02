@@ -49,7 +49,9 @@ SELECT
 FROM
   board_view
 WHERE
-  user_id = ?;
+  user_id = ?
+ORDER BY
+  sort_order ASC;
 
 -- name: GetLastInsertBoardViewByUserID :one
 SELECT

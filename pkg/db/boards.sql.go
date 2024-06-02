@@ -158,6 +158,8 @@ FROM
   board_view
 WHERE
   user_id = ?
+ORDER BY
+  sort_order ASC
 `
 
 func (q *Queries) ListBoardViewByUserID(ctx context.Context, userID uint64) ([]BoardView, error) {

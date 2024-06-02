@@ -59,6 +59,8 @@
 					return;
 				}
 
+				console.log('board state change', state.boards);
+
 				boardState = { ...state };
 			})
 		);
