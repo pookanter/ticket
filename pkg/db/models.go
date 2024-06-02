@@ -5,7 +5,6 @@
 package db
 
 import (
-	"database/sql"
 	"encoding/json"
 
 	"github.com/guregu/null"
@@ -50,14 +49,14 @@ type StatusView struct {
 }
 
 type Ticket struct {
-	ID          uint64         `db:"id" json:"id"`
-	StatusID    uint32         `db:"status_id" json:"status_id"`
-	Title       null.String    `db:"title" json:"title"`
-	Description sql.NullString `db:"description" json:"description"`
-	Contact     null.String    `db:"contact" json:"contact"`
-	SortOrder   uint32         `db:"sort_order" json:"sort_order"`
-	CreatedAt   null.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt   null.Time      `db:"updated_at" json:"updated_at"`
+	ID          uint64      `db:"id" json:"id"`
+	StatusID    uint32      `db:"status_id" json:"status_id"`
+	Title       null.String `db:"title" json:"title"`
+	Description null.String `db:"description" json:"description"`
+	Contact     null.String `db:"contact" json:"contact"`
+	SortOrder   uint32      `db:"sort_order" json:"sort_order"`
+	CreatedAt   null.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt   null.Time   `db:"updated_at" json:"updated_at"`
 }
 
 type User struct {

@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/guregu/null"
 )
@@ -43,11 +42,11 @@ VALUES
 `
 
 type CreateTicketParams struct {
-	StatusID    uint32         `db:"status_id" json:"status_id"`
-	Title       null.String    `db:"title" json:"title"`
-	Description sql.NullString `db:"description" json:"description"`
-	Contact     null.String    `db:"contact" json:"contact"`
-	SortOrder   uint32         `db:"sort_order" json:"sort_order"`
+	StatusID    uint32      `db:"status_id" json:"status_id"`
+	Title       null.String `db:"title" json:"title"`
+	Description null.String `db:"description" json:"description"`
+	Contact     null.String `db:"contact" json:"contact"`
+	SortOrder   uint32      `db:"sort_order" json:"sort_order"`
 }
 
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) error {
@@ -107,10 +106,10 @@ WHERE
 `
 
 type UpdateTicketParams struct {
-	Title       null.String    `db:"title" json:"title"`
-	Description sql.NullString `db:"description" json:"description"`
-	Contact     null.String    `db:"contact" json:"contact"`
-	ID          uint64         `db:"id" json:"id"`
+	Title       null.String `db:"title" json:"title"`
+	Description null.String `db:"description" json:"description"`
+	Contact     null.String `db:"contact" json:"contact"`
+	ID          uint64      `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateTicket(ctx context.Context, arg UpdateTicketParams) error {
