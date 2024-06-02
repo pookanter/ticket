@@ -84,7 +84,7 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 	err = qtx.CreateTicket(ctx, db.CreateTicketParams{
 		StatusID:    uint32(status.ID),
 		Title:       null.NewString(body.Title, true),
-		Description: sql.NullString{String: body.Description, Valid: true},
+		Description: null.NewString(body.Description, true),
 		Contact:     null.NewString(body.Contact, true),
 		SortOrder:   uint32(count),
 	})

@@ -18,6 +18,9 @@ sql:
           - db_type: varchar
             nullable: true
             go_type: "github.com/guregu/null.String"
+          - db_type: text
+            nullable: true
+            go_type: "github.com/guregu/null.String"
           - db_type: datetime
             nullable: true
             go_type: "github.com/guregu/null.Time"
