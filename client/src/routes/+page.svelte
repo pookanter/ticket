@@ -20,7 +20,7 @@
 	let unsubscribes: Unsubscriber[] = [];
 	let boards: TicketService.Board[] = [];
 	let index = 0;
-
+	let boardState = BoardStore.defaultState();
 	onMount(() => {
 		unsubscribes.push(
 			authStore.subscribe((state) => {
@@ -38,6 +38,11 @@
 						const { data: boards } = await TicketService.getBoards();
 						BoardStore.update((state) => {
 							state.boards = boards;
+
+							if (boards.length > 0) {
+								state.selected = boards[0];
+							}
+
 							return state;
 						});
 					} catch ({ error, message }: any) {
@@ -53,12 +58,18 @@
 					});
 					return;
 				}
+
+				boardState = { ...state };
 			})
 		);
 	});
 
 	onDestroy(() => {
 		unsubscribes.forEach((unsubscribe) => unsubscribe());
+		BoardStore.update((state) => {
+			state.initializing = true;
+			return state;
+		});
 	});
 
 	const flipDurationMs = 200;
@@ -152,10 +163,17 @@
 		<div class="h-full mt-2">
 			<BoardTabs.Root>
 				<BoardTabs.List>
-					{#each boards as board (board.id)}
+					{#each boardState.boards as board (board.id)}
 						<BoardTabs.Trigger
 							value={board}
 							clickupdate={(value) => openBoardDialog({ method: Method.Update, value })}
+							on:click={() => {
+								BoardStore.update((state) => {
+									state.selected = board;
+									console.log('selected', state.selected);
+									return state;
+								});
+							}}
 						>
 							<span>{board.title}</span>
 						</BoardTabs.Trigger>
@@ -167,46 +185,52 @@
 						<PlusOutline class="size-4" />
 					</button>
 				</BoardTabs.List>
-				{#each boards as board (board.id)}
-					<BoardTabs.Content value={`${boards[index].id}`}>
-						<div
-							class="flex justify-start h-full gap-4 p-4 overflow-x-auto overflow-y-hidden"
-							use:dndzone={{
-								items: boards[index].statuses,
-								flipDurationMs,
-								type: 'columns',
-								dropTargetStyle: {}
-							}}
-							on:consider={handleDndConsiderColumns}
-							on:finalize={handleDndFinalizeColumns}
-						>
-							{#each boards[index].statuses as status (status.id)}
-								<div class="relative" animate:flip={{ duration: flipDurationMs }}>
-									<Card.Root class="px-2 w-80">
-										<Card.Header>
-											<Card.Title>{status.title}</Card.Title>
-										</Card.Header>
-										<Card.Content class="px-0">
-											<div
-												class="flex flex-col gap-2 min-h-32"
-												use:dndzone={{ items: status.tickets, flipDurationMs, dropTargetStyle: {} }}
-												on:consider={(e) => handleDndConsiderCards(status.id, e)}
-												on:finalize={(e) => handleDndFinalizeCards(status.id, e)}
-											>
-												{#each status.tickets as ticket (ticket.id)}
-													<div animate:flip={{ duration: flipDurationMs }}>
-														<TicketCard {ticket} edit={editTicket} />
-													</div>
-												{/each}
-											</div>
-											<Button variant="outline" class="w-full mt-2">
-												<PlusOutline class="size-4" />
-											</Button>
-										</Card.Content>
-									</Card.Root>
-								</div>
-							{/each}
-						</div>
+				{#each boardState.boards as board (board.id)}
+					<BoardTabs.Content value={`${board.id}`}>
+						{#if boardState.selected}
+							<div
+								class="flex justify-start h-full gap-4 p-4 overflow-x-auto overflow-y-hidden"
+								use:dndzone={{
+									items: boardState.selected.statuses,
+									flipDurationMs,
+									type: 'columns',
+									dropTargetStyle: {}
+								}}
+								on:consider={handleDndConsiderColumns}
+								on:finalize={handleDndFinalizeColumns}
+							>
+								{#each boardState.selected.statuses as status (status.id)}
+									<div class="relative" animate:flip={{ duration: flipDurationMs }}>
+										<Card.Root class="px-2 w-80">
+											<Card.Header>
+												<Card.Title>{status.title}</Card.Title>
+											</Card.Header>
+											<Card.Content class="px-0">
+												<div
+													class="flex flex-col gap-2 min-h-32"
+													use:dndzone={{
+														items: status.tickets,
+														flipDurationMs,
+														dropTargetStyle: {}
+													}}
+													on:consider={(e) => handleDndConsiderCards(status.id, e)}
+													on:finalize={(e) => handleDndFinalizeCards(status.id, e)}
+												>
+													{#each status.tickets as ticket (ticket.id)}
+														<div animate:flip={{ duration: flipDurationMs }}>
+															<TicketCard {ticket} edit={editTicket} />
+														</div>
+													{/each}
+												</div>
+												<Button variant="outline" class="w-full mt-2">
+													<PlusOutline class="size-4" />
+												</Button>
+											</Card.Content>
+										</Card.Root>
+									</div>
+								{/each}
+							</div>
+						{/if}
 					</BoardTabs.Content>
 				{/each}
 			</BoardTabs.Root>

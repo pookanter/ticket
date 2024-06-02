@@ -2,15 +2,21 @@ import { TicketService } from '$lib/services/ticket-service';
 import { from } from 'rxjs';
 import { writable, get } from 'svelte/store';
 
-export type BoardStore = {
+export type BoardState = {
 	initializing: boolean;
+	selected?: TicketService.Board;
 	boards: TicketService.Board[];
 };
 
-const BoardStore = writable<BoardStore>({
-	initializing: true,
-	boards: []
-});
+function defaultState(): BoardState {
+	return {
+		initializing: true,
+		selected: undefined,
+		boards: []
+	};
+}
+
+const boardStore = writable<BoardState>(defaultState());
 
 // async function createBoard(data: Parameters<typeof TicketService.createBoard>[0]) {
 // 	from(TicketService.createBoard(data)).subscribe({
@@ -23,4 +29,4 @@ const BoardStore = writable<BoardStore>({
 // 	});
 // }
 
-export { BoardStore };
+export const BoardStore = { ...boardStore, defaultState };
