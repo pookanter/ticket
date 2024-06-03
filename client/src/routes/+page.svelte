@@ -25,6 +25,7 @@
 	let unsubscribes: Unsubscriber[] = [];
 	let boardState = BoardStore.defaultState();
 	let tempBoardState = BoardStore.defaultState();
+	let srcTicket: TicketService.Ticket = null;
 	onMount(async () => {
 		unsubscribes.push(
 			authStore.subscribe((state) => {
@@ -37,7 +38,7 @@
 
 		unsubscribes.push(
 			BoardStore.subscribe(async (state) => {
-				console.log('board state change', state.boards);
+				console.log('board state change', state);
 
 				boardState = cloneDeep(state);
 				tempBoardState = cloneDeep(state);
@@ -82,7 +83,7 @@
 		}
 	}
 
-	function detectStatusChanges() {
+	async function detectStatusChanges() {
 		if (!boardState.selected || !tempBoardState.selected) return;
 		console.log('detectStatusChanges');
 
@@ -91,77 +92,69 @@
 
 		for (let i = 0; i < prevStatuses.length; i++) {
 			if (prevStatuses[i].id !== currStatuses[i].id) {
-				console.log('ticket order changed', currStatuses[i]);
+				const moveStatus = currStatuses[i];
+				console.log(`status id ${moveStatus.id} order changed to position to ${i}`);
+
+				try {
+					const { data: status } = await TicketService.updateStatusPartial(
+						{
+							board_id: boardState.selected.id,
+							status_id: moveStatus.id
+						},
+						{ sort_order: i }
+					);
+
+					BoardStore.updateStatus({ status });
+				} catch (error: any) {
+					AlertStore.error(error);
+					BoardStore.selectBoard(tempBoardState.selected);
+				}
 				return;
 			}
 		}
 	}
-
-	async function detectTicketChanges(statusID: number) {
-		if (!boardState.selected || !tempBoardState.selected) return;
-		console.log('detectTicketChanges', statusID);
-
-		const { selected: currBoard } = boardState;
-		const { selected: prevBoard } = tempBoardState;
-
-		const idx = currBoard.statuses.findIndex((x) => x.id === statusID);
-
-		if (idx === -1) return;
-
-		const prevStatus = prevBoard.statuses[idx];
-		const currStatus = currBoard.statuses[idx];
-
-		const prevTickets = prevStatus.tickets;
-		const currTickets = currStatus.tickets;
-
-		const checkPosChange = prevTickets.length === currTickets.length;
-		if (checkPosChange) {
-			for (let i = 0; i < prevTickets.length; i++) {
-				if (prevTickets[i].id !== currTickets[i].id) {
-					const moveTicket = currTickets[i];
-					console.log(
-						`ticket id ${moveTicket.id} order changed from position ${moveTicket.sort_order} to ${i}`
-					);
-
-					try {
-						await TicketService.updateTicketPartial(
-							{
-								board_id: currBoard.id,
-								status_id: moveTicket.status_id,
-								ticket_id: moveTicket.id
-							},
-							{ sort_order: i }
-						);
-					} catch (error: any) {
-						AlertStore.error(error);
-					}
-
-					return;
-				}
-			}
-		} else {
-			for (let i = 0; i < currTickets.length; i++) {
-				if (currTickets[i].status_id !== currStatus.id) {
-					const moveTicket = currTickets[i];
-					console.log(`ticket id ${moveTicket.id} moved to status id ${currStatus.id}`);
-
-					try {
-						await TicketService.updateTicketPartial(
-							{
-								board_id: currBoard.id,
-								status_id: moveTicket.status_id,
-								ticket_id: moveTicket.id
-							},
-							{ sort_order: i, status_id: currStatus.id }
-						);
-					} catch (error: any) {
-						AlertStore.error(error);
-					}
-
-					return;
-				}
-			}
+	async function updateTicket(
+		...params: Parameters<(typeof TicketService)['updateTicketPartial']>
+	) {
+		try {
+			await TicketService.updateTicketPartial(...params);
+		} catch (error: any) {
+			AlertStore.error(error);
+			tempBoardState.selected && BoardStore.selectBoard(tempBoardState.selected);
 		}
+	}
+
+	function detectTicketChanges(statusID: number) {
+		const status = boardState.selected.statuses.find((x) => x.id == statusID);
+
+		if (!status) return;
+
+		const index = status.tickets.findIndex((x) => x.id == srcTicket.id);
+
+		if (index == -1) return;
+
+		const targetTicket = status.tickets[index];
+
+		const data = {
+			sort_order: index + 1
+		} as Parameters<(typeof TicketService)['updateTicketPartial']>[1];
+
+		if (targetTicket.status_id !== statusID) {
+			data.status_id = statusID;
+		}
+
+		console.log('detectTicketChanges', targetTicket);
+
+		updateTicket(
+			{
+				board_id: boardState.selected.id,
+				status_id: targetTicket.status_id,
+				ticket_id: targetTicket.id
+			},
+			data
+		);
+
+		srcTicket = null;
 	}
 
 	const flipDurationMs = 200;
@@ -308,6 +301,10 @@
 													tabindex={ticket.id}
 													role="button"
 													animate:flip={{ duration: flipDurationMs }}
+													on:mousedown={(e) => {
+														srcTicket = ticket;
+														console.log('srcTicket', srcTicket);
+													}}
 												>
 													<TicketCard {ticket} edit={editTicket} />
 												</div>

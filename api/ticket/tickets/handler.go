@@ -277,9 +277,9 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 		var isOutOfRange bool
 
 		if moveOut {
-			isOutOfRange = *body.SortOrder > uint32(count)
+			isOutOfRange = *body.SortOrder > uint32(count+1)
 		} else {
-			isOutOfRange = *body.SortOrder > uint32(count-1)
+			isOutOfRange = *body.SortOrder > uint32(count)
 		}
 
 		if isOutOfRange {
@@ -289,38 +289,25 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 		ticketParam.SortOrder = *body.SortOrder
 
 		g.Go(func() error {
-			var newSortOrder uint32
-
-			if ticket.SortOrder > ticketParam.SortOrder || moveOut {
-				newSortOrder = ticketParam.SortOrder
-			} else if ticket.SortOrder < ticketParam.SortOrder {
-				newSortOrder = ticket.SortOrder - 1
-			}
-
-			friends, err := qtx.GetTicketsWithMinimumSortOrder(subctx, db.GetTicketsWithMinimumSortOrderParams{
-				StatusID:           ticketParam.StatusID,
-				SortOrder:          newSortOrder,
-				SortOrderDirection: "asc",
-			})
+			friends, err := qtx.GetTicketsByStatusID(subctx, ticket.StatusID)
 			if err != nil {
 				return err
 			}
 
+			newSortOrder := 0
 			for _, t := range friends {
+				newSortOrder++
 				if t.ID == ticket.ID {
 					continue
 				}
 
-				newSortOrder++
-
 				err = qtx.UpdateTicketSortOrder(subctx, db.UpdateTicketSortOrderParams{
-					SortOrder: newSortOrder,
+					SortOrder: uint32(newSortOrder),
 					ID:        t.ID,
 				})
 				if err != nil {
 					return err
 				}
-
 			}
 
 			return nil

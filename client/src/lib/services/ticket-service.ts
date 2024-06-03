@@ -60,6 +60,19 @@ function createStatus({ board_id }: { board_id: number }, data: { title: string 
 	return http().post<TicketService.Status>(`/${TICKET_SERVICE}/boards/${board_id}/statuses`, data);
 }
 
+function updateStatusPartial(
+	{ board_id, status_id }: { board_id: number; status_id: number },
+	data: {
+		title?: string;
+		sort_order?: number;
+	}
+) {
+	return http().patch<TicketService.Status>(
+		`/${TICKET_SERVICE}/boards/${board_id}/statuses/${status_id}`,
+		data
+	);
+}
+
 function createTicket(
 	{ board_id, status_id }: { board_id: number; status_id: number },
 	data: { title: string; description: string; contact: string }
@@ -91,6 +104,7 @@ export const TicketService = {
 	getBoardById,
 	createBoard,
 	createStatus,
+	updateStatusPartial,
 	createTicket,
 	updateTicketPartial
 };

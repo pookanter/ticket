@@ -15,7 +15,9 @@ SELECT
 FROM
   statuses
 WHERE
-  board_id = ?;
+  board_id = ?
+ORDER BY
+  sort_order ASC;
 
 -- name: GetStatusesWithMinimumSortOrder :many
 SELECT

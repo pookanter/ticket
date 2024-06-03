@@ -155,6 +155,8 @@ FROM
   statuses
 WHERE
   board_id = ?
+ORDER BY
+  sort_order ASC
 `
 
 func (q *Queries) GetStatusesByBoardID(ctx context.Context, boardID uint32) ([]Status, error) {

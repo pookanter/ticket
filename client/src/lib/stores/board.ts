@@ -19,18 +19,7 @@ const boardStore = writable<BoardState>(defaultState());
 
 function selectBoard(board: TicketService.BoardFullDetail) {
 	boardStore.update((state) => {
-		const selected = cloneDeep(board);
-		selected.statuses = selected.statuses.sort((a, b) => a.sort_order - b.sort_order);
-
-		for (let i = 0; i < selected.statuses.length; i++) {
-			selected.statuses[i].tickets = selected.statuses[i].tickets.sort(
-				(a, b) => a.sort_order - b.sort_order
-			);
-		}
-
-		state.selected = selected;
-
-		return state;
+		return { ...state, selected: board };
 	});
 }
 
@@ -58,6 +47,22 @@ function addStatus({ status }: { status: TicketService.Status }) {
 	});
 }
 
+function updateStatus({ status }: { status: TicketService.Status }) {
+	boardStore.update((state) => {
+		const selected = cloneDeep(state.selected);
+		if (selected) {
+			const index = selected.statuses.findIndex((s) => s.id === status.id);
+			if (index !== -1) {
+				selected.statuses[index] = status;
+			}
+		}
+
+		state.selected = selected;
+
+		return state;
+	});
+}
+
 function addTicket({ board_id, ticket }: { board_id: number; ticket: TicketService.Ticket }) {
 	boardStore.update((state) => {
 		const selected = cloneDeep(state.selected);
@@ -74,11 +79,40 @@ function addTicket({ board_id, ticket }: { board_id: number; ticket: TicketServi
 	});
 }
 
+function updateTicket({ ticket }: { ticket: TicketService.Ticket }) {
+	boardStore.update((state) => {
+		const selected = cloneDeep(state.selected);
+		if (selected) {
+			const status = selected.statuses.find((s) => s.id === ticket.status_id);
+			if (status) {
+				const index = status.tickets.findIndex((t) => t.id === ticket.id);
+				if (index !== -1) {
+					if (ticket.sort_order != status.tickets[index].sort_order) {
+						const tickets = status.tickets.slice();
+						tickets.splice(index, 1);
+						tickets.splice(ticket.sort_order, 0, ticket);
+
+						status.tickets = tickets;
+					} else {
+						status.tickets[index] = ticket;
+					}
+				}
+			}
+		}
+
+		state.selected = selected;
+
+		return state;
+	});
+}
+
 export const BoardStore = {
 	...boardStore,
 	defaultState,
 	selectBoard,
 	addBoard,
 	addStatus,
-	addTicket
+	updateStatus,
+	addTicket,
+	updateTicket
 };

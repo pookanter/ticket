@@ -7,6 +7,7 @@ import (
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
+	"ticket/pkg/usecases"
 
 	"github.com/guregu/null"
 	"github.com/labstack/echo/v4"
@@ -44,9 +45,11 @@ func (h *Handler) GetBoardByID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	boardView, err := h.Queries.GetBoardView(c.Request().Context(), db.GetBoardViewParams{
-		UserID: claims.UserID,
+	ctx := c.Request().Context()
+
+	dbboard, err := h.Queries.GetBoard(ctx, db.GetBoardParams{
 		ID:     uint32(boardID),
+		UserID: claims.UserID,
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -56,7 +59,30 @@ func (h *Handler) GetBoardByID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, boardView)
+	board := usecases.NewBoardFullDetail(dbboard)
+
+	statuses, err := h.Queries.GetStatusesByBoardID(ctx, dbboard.ID)
+	if err != nil && err != sql.ErrNoRows {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	for i, s := range statuses {
+		status := usecases.NewStatusFullDetail(s)
+
+		tickets, err := h.Queries.GetTicketsByStatusID(ctx, s.ID)
+		if err != nil && err != sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		for _, t := range tickets {
+			t.SortOrder = uint32(i)
+			status.Tickets = append(status.Tickets, usecases.NewTicket(t))
+		}
+
+		board.Statuses = append(board.Statuses, status)
+	}
+
+	return c.JSON(http.StatusOK, board)
 }
 
 func (h *Handler) CreateBoard(c echo.Context) error {

@@ -11,6 +11,16 @@ WHERE
   AND statuses.board_id = coalesce(sqlc.narg('board_id'), statuses.board_id)
   AND boards.user_id = coalesce(sqlc.narg('user_id'), boards.user_id);
 
+-- name: GetTicketsByStatusID :many
+SELECT
+  *
+FROM
+  tickets
+WHERE
+  status_id = ?
+ORDER BY
+  sort_order ASC;
+
 -- name: GetTicketsWithMinimumSortOrder :many
 SELECT
   *
