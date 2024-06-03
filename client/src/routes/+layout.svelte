@@ -92,7 +92,7 @@
 <ModeWatcher />
 <div class="relative flex flex-col justify-between min-h-screen bg-background">
 	<header
-		class="box-content h-[var(--header-height)] z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+		class="box-content h-[var(--header-height)] z-50 w-full border-b border-border/40 bg-background/95"
 	>
 		<div class="flex items-center justify-end h-full px-3">
 			<Button on:click={toggleMode} variant="outline" size="icon">
@@ -143,7 +143,7 @@
 			</Dialog.Root>
 		</AlertDialog.Root>
 	</main>
-	<footer class="box-content w-full bg-white shadow dark:bg-gray-800 h-[var(--footer-height)]">
+	<footer class="box-content w-full bg-background/95 h-[var(--footer-height)]">
 		<div class="w-full max-w-screen-xl p-4 mx-auto md:flex md:items-center md:justify-between">
 			<span class="text-sm text-gray-500 sm:text-center dark:text-gray-400"
 				>Made by <b>Sippakorn Phuakpong</b> with SvelteKit and TailwindCSS with back-end write in Go.
