@@ -86,6 +86,38 @@ func (q *Queries) GetBoard(ctx context.Context, arg GetBoardParams) (Board, erro
 	return i, err
 }
 
+const getBoardView = `-- name: GetBoardView :one
+SELECT
+  id, user_id, title, sort_order, created_at, updated_at, statuses
+FROM
+  board_view
+WHERE
+  user_id = ?
+  AND id = ?
+ORDER BY
+  sort_order ASC
+`
+
+type GetBoardViewParams struct {
+	UserID uint64 `db:"user_id" json:"user_id"`
+	ID     uint32 `db:"id" json:"id"`
+}
+
+func (q *Queries) GetBoardView(ctx context.Context, arg GetBoardViewParams) (BoardView, error) {
+	row := q.db.QueryRowContext(ctx, getBoardView, arg.UserID, arg.ID)
+	var i BoardView
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.SortOrder,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Statuses,
+	)
+	return i, err
+}
+
 const getBoardsByUserID = `-- name: GetBoardsByUserID :many
 SELECT
   id, user_id, title, sort_order, created_at, updated_at

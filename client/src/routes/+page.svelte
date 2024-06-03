@@ -11,7 +11,7 @@
 	import authStore from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { TicketService } from '$lib/services/ticket-service';
-	import { BoardStore } from '$lib/stores/board';
+	import { BoardStore, type BoardState } from '$lib/stores/board';
 	import { AlertStore } from '$lib/stores/alert';
 	import { DialogStore } from '$lib/stores/dialog';
 	import BoardCreateDialogContent from '$lib/components/board-save-dialog-content/board-create-dialog-content.svelte';
@@ -25,7 +25,7 @@
 	let unsubscribes: Unsubscriber[] = [];
 	let boardState = BoardStore.defaultState();
 	let tempBoardState = BoardStore.defaultState();
-	onMount(() => {
+	onMount(async () => {
 		unsubscribes.push(
 			authStore.subscribe((state) => {
 				console.log('APP MOUNT', state);
@@ -37,47 +37,50 @@
 
 		unsubscribes.push(
 			BoardStore.subscribe(async (state) => {
-				if (state.initializing) {
-					try {
-						const { data: boards } = await TicketService.getBoards();
-						BoardStore.update((state) => {
-							state.boards = boards;
-
-							if (boards.length > 0) {
-								state.selected = boards[0];
-							}
-
-							return state;
-						});
-					} catch ({ error, message }: any) {
-						AlertStore.create({
-							title: 'Error',
-							message: error ? error.message : message || 'An error occurred'
-						});
-					}
-
-					BoardStore.update((state) => {
-						state.initializing = false;
-						return state;
-					});
-					return;
-				}
-
 				console.log('board state change', state.boards);
 
 				boardState = cloneDeep(state);
 				tempBoardState = cloneDeep(state);
 			})
 		);
+
+		try {
+			const { data: boards } = await TicketService.getBoards();
+
+			if (boards.length > 0) {
+				const { data: selected } = await TicketService.getBoardById(boards[0].id);
+
+				BoardStore.selectBoard(selected);
+			}
+
+			BoardStore.update((state) => {
+				state.boards = boards;
+				return state;
+			});
+		} catch ({ error, message }: any) {
+			AlertStore.create({
+				title: 'Error',
+				message: error ? error.message : message || 'An error occurred'
+			});
+		}
 	});
 
 	onDestroy(() => {
 		unsubscribes.forEach((unsubscribe) => unsubscribe());
 		BoardStore.update((state) => {
-			state.initializing = true;
 			return state;
 		});
 	});
+
+	async function fetchBoardFullDetail(board: TicketService.Board) {
+		try {
+			const { data: boardFullDetail } = await TicketService.getBoardById(board.id);
+
+			BoardStore.selectBoard(boardFullDetail);
+		} catch (error: any) {
+			AlertStore.error(error);
+		}
+	}
 
 	function detectStatusChanges() {
 		if (!boardState.selected || !tempBoardState.selected) return;
@@ -176,12 +179,14 @@
 
 	type CardEvent = CustomEvent & { detail: { items: TicketService.Ticket[] } };
 	function handleDndConsiderCards(cid: number, e: CardEvent) {
+		console.log('handleDndConsiderCards', cid, e.detail.items);
 		if (!boardState.selected) return;
 		const colIdx = boardState.selected.statuses?.findIndex((c) => c.id === cid);
 		boardState.selected.statuses[colIdx].tickets = e.detail.items;
 		boardState.selected.statuses = [...boardState.selected.statuses];
 	}
 	function handleDndFinalizeCards(cid: number, e: CardEvent) {
+		console.log('handleDndFinalizeCards', cid, e.detail.items);
 		if (!boardState.selected) return;
 		const colIdx = boardState.selected.statuses.findIndex((c) => c.id === cid);
 		boardState.selected.statuses[colIdx].tickets = e.detail.items;
@@ -232,13 +237,7 @@
 					boardState.selected.id === board.id
 						? 'bg-accent-foreground bg-opacity-10 text-accent-foreground'
 						: ''}"
-					on:click={() => {
-						BoardStore.update((state) => {
-							state.selected = board;
-
-							return state;
-						});
-					}}
+					on:click={() => fetchBoardFullDetail(board)}
 				>
 					{board.title}
 					<Button

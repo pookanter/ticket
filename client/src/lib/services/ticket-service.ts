@@ -29,6 +29,15 @@ export namespace TicketService {
 		sort_order: number;
 		created_at: string;
 		updated_at: string;
+	}
+
+	export interface BoardFullDetail {
+		id: number;
+		user_id: number;
+		title: string;
+		sort_order: number;
+		created_at: string;
+		updated_at: string;
 		statuses: Status[];
 	}
 }
@@ -37,6 +46,10 @@ const TICKET_SERVICE = 'ticket-service' as const;
 
 function getBoards() {
 	return http().get<TicketService.Board[]>(`/${TICKET_SERVICE}/boards`);
+}
+
+function getBoardById(board_id: number) {
+	return http().get<TicketService.BoardFullDetail>(`/${TICKET_SERVICE}/boards/${board_id}`);
 }
 
 function createBoard(data: { title: string }) {
@@ -75,6 +88,7 @@ function updateTicketPartial(
 
 export const TicketService = {
 	getBoards,
+	getBoardById,
 	createBoard,
 	createStatus,
 	createTicket,

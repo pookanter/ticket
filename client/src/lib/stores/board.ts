@@ -4,14 +4,12 @@ import { from } from 'rxjs';
 import { writable, get } from 'svelte/store';
 
 export type BoardState = {
-	initializing: boolean;
-	selected?: TicketService.Board;
+	selected?: TicketService.BoardFullDetail;
 	boards: TicketService.Board[];
 };
 
 function defaultState(): BoardState {
 	return {
-		initializing: true,
 		selected: undefined,
 		boards: []
 	};
@@ -19,54 +17,68 @@ function defaultState(): BoardState {
 
 const boardStore = writable<BoardState>(defaultState());
 
+function selectBoard(board: TicketService.BoardFullDetail) {
+	boardStore.update((state) => {
+		const selected = cloneDeep(board);
+		selected.statuses = selected.statuses.sort((a, b) => a.sort_order - b.sort_order);
+
+		for (let i = 0; i < selected.statuses.length; i++) {
+			selected.statuses[i].tickets = selected.statuses[i].tickets.sort(
+				(a, b) => a.sort_order - b.sort_order
+			);
+		}
+
+		state.selected = selected;
+
+		return state;
+	});
+}
+
 function addBoard({ board }: { board: TicketService.Board }) {
-	boardStore.update((store) => {
-		const boards = cloneDeep(store.boards);
+	boardStore.update((state) => {
+		const boards = cloneDeep(state.boards);
 		boards.push(board);
 
-		store.boards = boards;
+		state.boards = boards;
 
-		return store;
+		return state;
 	});
 }
 
 function addStatus({ status }: { status: TicketService.Status }) {
-	boardStore.update((store) => {
-		const boards = cloneDeep(store.boards);
-		const board = boards.find((b) => b.id === status.board_id);
-		if (board) {
-			board.statuses.push(status);
-
-			if (store.selected && store.selected.id === board.id) {
-				store.selected = board;
-			}
+	boardStore.update((state) => {
+		const selected = cloneDeep(state.selected);
+		if (selected && selected.id === status.board_id) {
+			selected.statuses.push(status);
 		}
 
-		store.boards = boards;
+		state.selected = selected;
 
-		return store;
+		return state;
 	});
 }
 
 function addTicket({ board_id, ticket }: { board_id: number; ticket: TicketService.Ticket }) {
-	boardStore.update((store) => {
-		const boards = cloneDeep(store.boards);
-		const board = boards.find((b) => b.id === board_id);
-		if (board) {
-			const status = board.statuses.find((s) => s.id === ticket.status_id);
+	boardStore.update((state) => {
+		const selected = cloneDeep(state.selected);
+		if (selected && selected.id === board_id) {
+			const status = selected.statuses.find((s) => s.id === ticket.status_id);
 			if (status) {
 				status.tickets.push(ticket);
 			}
-
-			if (store.selected && store.selected.id === board.id) {
-				store.selected = board;
-			}
 		}
 
-		store.boards = boards;
+		state.selected = selected;
 
-		return store;
+		return state;
 	});
 }
 
-export const BoardStore = { ...boardStore, defaultState, addBoard, addStatus, addTicket };
+export const BoardStore = {
+	...boardStore,
+	defaultState,
+	selectBoard,
+	addBoard,
+	addStatus,
+	addTicket
+};

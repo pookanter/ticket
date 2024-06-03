@@ -3,6 +3,7 @@ package boards
 import (
 	"database/sql"
 	"net/http"
+	"strconv"
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
@@ -27,12 +28,35 @@ func New(api *apikit.API) *Handler {
 
 func (h *Handler) GetBoards(c echo.Context) error {
 	claims := c.Get("claims").(*auth.Claims)
-	boards, err := h.Queries.ListBoardViewByUserID(c.Request().Context(), claims.UserID)
+	boards, err := h.Queries.GetBoardsByUserID(c.Request().Context(), claims.UserID)
 	if err != nil && err != sql.ErrNoRows {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, boards)
+}
+
+func (h *Handler) GetBoardByID(c echo.Context) error {
+	claims := c.Get("claims").(*auth.Claims)
+
+	boardID, err := strconv.ParseUint(c.Param("board_id"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	boardView, err := h.Queries.GetBoardView(c.Request().Context(), db.GetBoardViewParams{
+		UserID: claims.UserID,
+		ID:     uint32(boardID),
+	})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "board not found")
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, boardView)
 }
 
 func (h *Handler) CreateBoard(c echo.Context) error {

@@ -54,6 +54,17 @@ WHERE
 ORDER BY
   sort_order ASC;
 
+-- name: GetBoardView :one
+SELECT
+  *
+FROM
+  board_view
+WHERE
+  user_id = ?
+  AND id = ?
+ORDER BY
+  sort_order ASC;
+
 -- name: GetLastInsertBoardViewByUserID :one
 SELECT
   *
