@@ -1,6 +1,6 @@
 -- name: GetTicket :one
 SELECT
-  *
+  tickets.*
 FROM
   tickets
   JOIN statuses ON tickets.status_id = statuses.id
@@ -8,8 +8,8 @@ FROM
 WHERE
   tickets.id = ?
   AND tickets.status_id = coalesce(sqlc.narg('status_id'), tickets.status_id)
-  AND statuses.board_id = coalesce(sqlc.narg('board_id'), tickets.board_id)
-  AND boards.user_id = coalesce(sqlc.narg('user_id'), tickets.user_id);
+  AND statuses.board_id = coalesce(sqlc.narg('board_id'), statuses.board_id)
+  AND boards.user_id = coalesce(sqlc.narg('user_id'), boards.user_id);
 
 -- name: GetTicketsWithMinimumSortOrder :many
 SELECT

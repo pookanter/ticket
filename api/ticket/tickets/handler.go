@@ -110,7 +110,7 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 	return c.JSON(http.StatusCreated, ticket)
 }
 
-func (h *Handler) UpadteTicketPartial(c echo.Context) error {
+func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 	claims := c.Get("claims").(*auth.Claims)
 
 	boardID, err := strconv.ParseUint(c.Param("board_id"), 10, 32)
@@ -129,11 +129,11 @@ func (h *Handler) UpadteTicketPartial(c echo.Context) error {
 	}
 
 	var body struct {
-		Title       *string `json:"title" validate:"min=3,max=100"`
-		Description *string `json:"description" validate:"min=3,max=500"`
-		Contact     *string `json:"contact" validate:"min=3,max=100"`
-		SortOrder   *uint32 `json:"sort_order" validte:"min=0"`
-		StatusID    *uint32 `json:"status_id" validate:"min=0"`
+		Title       *string `json:"title" validate:"omitempty,min=3,max=100"`
+		Description *string `json:"description" validate:"omitempty,min=3,max=500"`
+		Contact     *string `json:"contact" validate:"omitempty,min=3,max=100"`
+		SortOrder   *uint32 `json:"sort_order" validte:"omitempty,min=0"`
+		StatusID    *uint32 `json:"status_id" validate:"omitempty,min=0"`
 	}
 
 	err = c.Bind(&body)
@@ -202,13 +202,17 @@ func (h *Handler) UpadteTicketPartial(c echo.Context) error {
 		ticketParam.Contact = null.NewString(*body.Contact, true)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	subctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+	g, subctx := errgroup.WithContext(subctx)
 
-	moveOut := body.SortOrder != nil && ticket.StatusID != *body.StatusID
+	moveOut := body.StatusID != nil && ticket.StatusID != *body.StatusID
 
 	if moveOut {
+		if body.SortOrder == nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "sort order on is required on move to new status")
+		}
+
 		isChange = true
 		newStatus, err := qtx.GetStatus(ctx, db.GetStatusParams{
 			ID:      *body.StatusID,
@@ -228,13 +232,13 @@ func (h *Handler) UpadteTicketPartial(c echo.Context) error {
 		g.Go(func() error {
 			oldSortOrder := ticket.SortOrder
 
-			oldFriends, err := qtx.GetTicketsWithMinimumSortOrder(ctx, db.GetTicketsWithMinimumSortOrderParams{
+			oldFriends, err := qtx.GetTicketsWithMinimumSortOrder(subctx, db.GetTicketsWithMinimumSortOrderParams{
 				StatusID:           ticket.StatusID,
 				SortOrder:          oldSortOrder,
 				SortOrderDirection: "asc",
 			})
 			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+				return err
 			}
 
 			for _, t := range oldFriends {
@@ -242,12 +246,12 @@ func (h *Handler) UpadteTicketPartial(c echo.Context) error {
 					continue
 				}
 
-				err = qtx.UpdateTicketSortOrder(ctx, db.UpdateTicketSortOrderParams{
+				err = qtx.UpdateTicketSortOrder(subctx, db.UpdateTicketSortOrderParams{
 					SortOrder: oldSortOrder,
 					ID:        t.ID,
 				})
 				if err != nil {
-					return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+					return err
 				}
 
 				oldSortOrder--
@@ -264,30 +268,36 @@ func (h *Handler) UpadteTicketPartial(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
-		var isNewSortOrderInRange bool
+		var isOutOfRange bool
 
 		if moveOut {
-			isNewSortOrderInRange = *body.SortOrder < uint32(count-1)
+			isOutOfRange = *body.SortOrder > uint32(count)
 		} else {
-			isNewSortOrderInRange = *body.SortOrder < uint32(count)
+			isOutOfRange = *body.SortOrder > uint32(count-1)
 		}
 
-		if isNewSortOrderInRange {
+		if isOutOfRange {
 			return echo.NewHTTPError(http.StatusBadRequest, "sort order out of range")
 		}
 
 		ticketParam.SortOrder = *body.SortOrder
 
 		g.Go(func() error {
-			newSortOrder := ticketParam.SortOrder
+			var newSortOrder uint32
 
-			friends, err := qtx.GetTicketsWithMinimumSortOrder(ctx, db.GetTicketsWithMinimumSortOrderParams{
+			if ticket.SortOrder > ticketParam.SortOrder || moveOut {
+				newSortOrder = ticketParam.SortOrder
+			} else if ticket.SortOrder < ticketParam.SortOrder {
+				newSortOrder = ticket.SortOrder - 1
+			}
+
+			friends, err := qtx.GetTicketsWithMinimumSortOrder(subctx, db.GetTicketsWithMinimumSortOrderParams{
 				StatusID:           ticketParam.StatusID,
 				SortOrder:          newSortOrder,
 				SortOrderDirection: "asc",
 			})
 			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+				return err
 			}
 
 			for _, t := range friends {
@@ -297,12 +307,12 @@ func (h *Handler) UpadteTicketPartial(c echo.Context) error {
 
 				newSortOrder++
 
-				err = qtx.UpdateTicketSortOrder(ctx, db.UpdateTicketSortOrderParams{
+				err = qtx.UpdateTicketSortOrder(subctx, db.UpdateTicketSortOrderParams{
 					SortOrder: newSortOrder,
 					ID:        t.ID,
 				})
 				if err != nil {
-					return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+					return err
 				}
 
 			}

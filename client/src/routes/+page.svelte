@@ -24,6 +24,7 @@
 
 	let unsubscribes: Unsubscriber[] = [];
 	let boardState = BoardStore.defaultState();
+	let tempBoardState = BoardStore.defaultState();
 	onMount(() => {
 		unsubscribes.push(
 			authStore.subscribe((state) => {
@@ -64,7 +65,8 @@
 
 				console.log('board state change', state.boards);
 
-				boardState = { ...state };
+				boardState = cloneDeep(state);
+				tempBoardState = cloneDeep(state);
 			})
 		);
 	});
@@ -77,34 +79,114 @@
 		});
 	});
 
+	function detectStatusChanges() {
+		if (!boardState.selected || !tempBoardState.selected) return;
+		console.log('detectStatusChanges');
+
+		const prevStatuses = tempBoardState.selected.statuses;
+		const currStatuses = boardState.selected.statuses;
+
+		for (let i = 0; i < prevStatuses.length; i++) {
+			if (prevStatuses[i].id !== currStatuses[i].id) {
+				console.log('ticket order changed', currStatuses[i]);
+				return;
+			}
+		}
+	}
+
+	async function detectTicketChanges(statusID: number) {
+		if (!boardState.selected || !tempBoardState.selected) return;
+		console.log('detectTicketChanges', statusID);
+
+		const { selected: currBoard } = boardState;
+		const { selected: prevBoard } = tempBoardState;
+
+		const idx = currBoard.statuses.findIndex((x) => x.id === statusID);
+
+		if (idx === -1) return;
+
+		const prevStatus = prevBoard.statuses[idx];
+		const currStatus = currBoard.statuses[idx];
+
+		const prevTickets = prevStatus.tickets;
+		const currTickets = currStatus.tickets;
+
+		const checkPosChange = prevTickets.length === currTickets.length;
+		if (checkPosChange) {
+			for (let i = 0; i < prevTickets.length; i++) {
+				if (prevTickets[i].id !== currTickets[i].id) {
+					const moveTicket = currTickets[i];
+					console.log(
+						`ticket id ${moveTicket.id} order changed from position ${moveTicket.sort_order} to ${i}`
+					);
+
+					try {
+						await TicketService.updateTicketPartial(
+							{
+								board_id: currBoard.id,
+								status_id: moveTicket.status_id,
+								ticket_id: moveTicket.id
+							},
+							{ sort_order: i }
+						);
+					} catch (error: any) {
+						AlertStore.error(error);
+					}
+
+					return;
+				}
+			}
+		} else {
+			for (let i = 0; i < currTickets.length; i++) {
+				if (currTickets[i].status_id !== currStatus.id) {
+					const moveTicket = currTickets[i];
+					console.log(`ticket id ${moveTicket.id} moved to status id ${currStatus.id}`);
+
+					try {
+						await TicketService.updateTicketPartial(
+							{
+								board_id: currBoard.id,
+								status_id: moveTicket.status_id,
+								ticket_id: moveTicket.id
+							},
+							{ sort_order: i, status_id: currStatus.id }
+						);
+					} catch (error: any) {
+						AlertStore.error(error);
+					}
+
+					return;
+				}
+			}
+		}
+	}
+
 	const flipDurationMs = 200;
 
 	type ColumnEvent = CustomEvent & { detail: { items: TicketService.Status[] } };
 	function handleDndConsiderColumns(e: ColumnEvent) {
-		// console.log('CustomEvent', boardState.selected);
 		if (!boardState.selected) return;
 		boardState.selected.statuses = [...e.detail.items];
 	}
 	function handleDndFinalizeColumns(e: ColumnEvent) {
-		// console.log('handleDndFinalizeColumns', boardState.selected);
 		if (!boardState.selected) return;
 		boardState.selected.statuses = [...e.detail.items];
+		detectStatusChanges();
 	}
 
 	type CardEvent = CustomEvent & { detail: { items: TicketService.Ticket[] } };
 	function handleDndConsiderCards(cid: number, e: CardEvent) {
-		// console.log('handleDndConsiderCards', cid, e.detail.items);
 		if (!boardState.selected) return;
 		const colIdx = boardState.selected.statuses?.findIndex((c) => c.id === cid);
 		boardState.selected.statuses[colIdx].tickets = e.detail.items;
 		boardState.selected.statuses = [...boardState.selected.statuses];
 	}
 	function handleDndFinalizeCards(cid: number, e: CardEvent) {
-		// console.log('handleDndFinalizeCards', cid, e.detail.items);
 		if (!boardState.selected) return;
 		const colIdx = boardState.selected.statuses.findIndex((c) => c.id === cid);
 		boardState.selected.statuses[colIdx].tickets = e.detail.items;
 		boardState.selected.statuses = [...boardState.selected.statuses];
+		detectTicketChanges(cid);
 	}
 
 	enum Resource {
@@ -223,7 +305,11 @@
 											on:finalize={(e) => handleDndFinalizeCards(status.id, e)}
 										>
 											{#each status.tickets as ticket (ticket.id)}
-												<div animate:flip={{ duration: flipDurationMs }}>
+												<div
+													tabindex={ticket.id}
+													role="button"
+													animate:flip={{ duration: flipDurationMs }}
+												>
 													<TicketCard {ticket} edit={editTicket} />
 												</div>
 											{/each}

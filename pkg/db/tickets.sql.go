@@ -96,7 +96,7 @@ func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID ui
 
 const getTicket = `-- name: GetTicket :one
 SELECT
-  tickets.id, status_id, tickets.title, description, contact, tickets.sort_order, tickets.created_at, tickets.updated_at, statuses.id, board_id, statuses.title, statuses.sort_order, statuses.created_at, statuses.updated_at, boards.id, user_id, boards.title, boards.sort_order, boards.created_at, boards.updated_at
+  tickets.id, tickets.status_id, tickets.title, tickets.description, tickets.contact, tickets.sort_order, tickets.created_at, tickets.updated_at
 FROM
   tickets
   JOIN statuses ON tickets.status_id = statuses.id
@@ -104,8 +104,8 @@ FROM
 WHERE
   tickets.id = ?
   AND tickets.status_id = coalesce(?, tickets.status_id)
-  AND statuses.board_id = coalesce(?, tickets.board_id)
-  AND boards.user_id = coalesce(?, tickets.user_id)
+  AND statuses.board_id = coalesce(?, statuses.board_id)
+  AND boards.user_id = coalesce(?, boards.user_id)
 `
 
 type GetTicketParams struct {
@@ -115,37 +115,14 @@ type GetTicketParams struct {
 	UserID   sql.NullInt64 `db:"user_id" json:"user_id"`
 }
 
-type GetTicketRow struct {
-	ID          uint64      `db:"id" json:"id"`
-	StatusID    uint32      `db:"status_id" json:"status_id"`
-	Title       null.String `db:"title" json:"title"`
-	Description null.String `db:"description" json:"description"`
-	Contact     null.String `db:"contact" json:"contact"`
-	SortOrder   uint32      `db:"sort_order" json:"sort_order"`
-	CreatedAt   null.Time   `db:"created_at" json:"created_at"`
-	UpdatedAt   null.Time   `db:"updated_at" json:"updated_at"`
-	ID_2        uint32      `db:"id_2" json:"id_2"`
-	BoardID     uint32      `db:"board_id" json:"board_id"`
-	Title_2     null.String `db:"title_2" json:"title_2"`
-	SortOrder_2 uint32      `db:"sort_order_2" json:"sort_order_2"`
-	CreatedAt_2 null.Time   `db:"created_at_2" json:"created_at_2"`
-	UpdatedAt_2 null.Time   `db:"updated_at_2" json:"updated_at_2"`
-	ID_3        uint32      `db:"id_3" json:"id_3"`
-	UserID      uint64      `db:"user_id" json:"user_id"`
-	Title_3     null.String `db:"title_3" json:"title_3"`
-	SortOrder_3 uint32      `db:"sort_order_3" json:"sort_order_3"`
-	CreatedAt_3 null.Time   `db:"created_at_3" json:"created_at_3"`
-	UpdatedAt_3 null.Time   `db:"updated_at_3" json:"updated_at_3"`
-}
-
-func (q *Queries) GetTicket(ctx context.Context, arg GetTicketParams) (GetTicketRow, error) {
+func (q *Queries) GetTicket(ctx context.Context, arg GetTicketParams) (Ticket, error) {
 	row := q.db.QueryRowContext(ctx, getTicket,
 		arg.ID,
 		arg.StatusID,
 		arg.BoardID,
 		arg.UserID,
 	)
-	var i GetTicketRow
+	var i Ticket
 	err := row.Scan(
 		&i.ID,
 		&i.StatusID,
@@ -155,18 +132,6 @@ func (q *Queries) GetTicket(ctx context.Context, arg GetTicketParams) (GetTicket
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.ID_2,
-		&i.BoardID,
-		&i.Title_2,
-		&i.SortOrder_2,
-		&i.CreatedAt_2,
-		&i.UpdatedAt_2,
-		&i.ID_3,
-		&i.UserID,
-		&i.Title_3,
-		&i.SortOrder_3,
-		&i.CreatedAt_3,
-		&i.UpdatedAt_3,
 	)
 	return i, err
 }

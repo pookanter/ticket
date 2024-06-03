@@ -57,9 +57,26 @@ function createTicket(
 	);
 }
 
+function updateTicketPartial(
+	{ board_id, status_id, ticket_id }: { board_id: number; status_id: number; ticket_id: number },
+	data: {
+		title?: string;
+		description?: string;
+		contact?: string;
+		status_id?: number;
+		sort_order?: number;
+	}
+) {
+	return http().patch<TicketService.Ticket>(
+		`/${TICKET_SERVICE}/boards/${board_id}/statuses/${status_id}/tickets/${ticket_id}`,
+		data
+	);
+}
+
 export const TicketService = {
 	getBoards,
 	createBoard,
 	createStatus,
-	createTicket
+	createTicket,
+	updateTicketPartial
 };

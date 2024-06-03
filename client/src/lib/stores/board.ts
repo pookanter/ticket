@@ -5,14 +5,14 @@ import { writable, get } from 'svelte/store';
 
 export type BoardState = {
 	initializing: boolean;
-	selected: TicketService.Board | null;
+	selected?: TicketService.Board;
 	boards: TicketService.Board[];
 };
 
 function defaultState(): BoardState {
 	return {
 		initializing: true,
-		selected: null,
+		selected: undefined,
 		boards: []
 	};
 }
