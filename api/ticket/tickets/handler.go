@@ -70,8 +70,8 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 
 	status, err := qtx.GetStatus(ctx, db.GetStatusParams{
 		ID:      uint32(statusID),
-		BoardID: uint32(boardID),
-		UserID:  claims.UserID,
+		BoardID: sql.NullInt32{Int32: int32(boardID), Valid: true},
+		UserID:  sql.NullInt64{Int64: int64(claims.UserID), Valid: true},
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -177,7 +177,7 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	isChange := false
+	isChanged := false
 	ticketParam := db.UpdateTicketParams{
 		StatusID:    ticket.StatusID,
 		Title:       ticket.Title,
@@ -188,17 +188,17 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 	}
 
 	if body.Title != nil {
-		isChange = true
+		isChanged = true
 		ticketParam.Title = null.NewString(*body.Title, true)
 	}
 
 	if body.Description != nil {
-		isChange = true
+		isChanged = true
 		ticketParam.Description = null.NewString(*body.Description, true)
 	}
 
 	if body.Contact != nil {
-		isChange = true
+		isChanged = true
 		ticketParam.Contact = null.NewString(*body.Contact, true)
 	}
 
@@ -213,11 +213,17 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "sort order on is required on move to new status")
 		}
 
-		isChange = true
+		isChanged = true
 		newStatus, err := qtx.GetStatus(ctx, db.GetStatusParams{
-			ID:      *body.StatusID,
-			BoardID: uint32(boardID),
-			UserID:  claims.UserID,
+			ID: *body.StatusID,
+			BoardID: sql.NullInt32{
+				Int32: int32(boardID),
+				Valid: true,
+			},
+			UserID: sql.NullInt64{
+				Int64: int64(claims.UserID),
+				Valid: true,
+			},
 		})
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -262,7 +268,7 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 	}
 
 	if body.SortOrder != nil {
-		isChange = true
+		isChanged = true
 		count, err := qtx.CountTicketByStatusID(ctx, ticket.StatusID)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -321,15 +327,15 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 		})
 	}
 
-	err = g.Wait()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	if isChange {
+	if isChanged {
 		err = qtx.UpdateTicket(ctx, ticketParam)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		err = g.Wait()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 
 		err = tx.Commit()

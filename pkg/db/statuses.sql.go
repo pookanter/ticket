@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/guregu/null"
 )
@@ -97,14 +98,14 @@ FROM
   JOIN boards ON statuses.board_id = boards.id
 WHERE
   statuses.id = ?
-  AND statuses.board_id = ?
-  AND boards.user_id = ?
+  AND statuses.board_id = coalesce(?, statuses.board_id)
+  AND boards.user_id = coalesce(?, boards.user_id)
 `
 
 type GetStatusParams struct {
-	ID      uint32 `db:"id" json:"id"`
-	BoardID uint32 `db:"board_id" json:"board_id"`
-	UserID  uint64 `db:"user_id" json:"user_id"`
+	ID      uint32        `db:"id" json:"id"`
+	BoardID sql.NullInt32 `db:"board_id" json:"board_id"`
+	UserID  sql.NullInt64 `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) GetStatus(ctx context.Context, arg GetStatusParams) (Status, error) {
@@ -117,6 +118,32 @@ func (q *Queries) GetStatus(ctx context.Context, arg GetStatusParams) (Status, e
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getStatusView = `-- name: GetStatusView :one
+SELECT
+  id, board_id, title, sort_order, created_at, updated_at, tickets
+FROM
+  status_view
+WHERE
+  id = ?
+ORDER BY
+  sort_order ASC
+`
+
+func (q *Queries) GetStatusView(ctx context.Context, id uint32) (StatusView, error) {
+	row := q.db.QueryRowContext(ctx, getStatusView, id)
+	var i StatusView
+	err := row.Scan(
+		&i.ID,
+		&i.BoardID,
+		&i.Title,
+		&i.SortOrder,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Tickets,
 	)
 	return i, err
 }
@@ -160,22 +187,105 @@ func (q *Queries) GetStatusesByBoardID(ctx context.Context, boardID uint32) ([]S
 	return items, nil
 }
 
+const getStatusesWithMinimumSortOrder = `-- name: GetStatusesWithMinimumSortOrder :many
+SELECT
+  id, board_id, title, sort_order, created_at, updated_at
+FROM
+  statuses
+WHERE
+  board_id = ?
+  AND sort_order >= ?
+ORDER BY
+  (
+    CASE
+      WHEN ? = 'asc' THEN sort_order
+    END
+  ) ASC,
+  (
+    CASE
+      WHEN ? = 'desc' THEN sort_order
+    END
+  ) DESC
+`
+
+type GetStatusesWithMinimumSortOrderParams struct {
+	BoardID            uint32      `db:"board_id" json:"board_id"`
+	SortOrder          uint32      `db:"sort_order" json:"sort_order"`
+	SortOrderDirection interface{} `db:"sort_order_direction" json:"sort_order_direction"`
+}
+
+func (q *Queries) GetStatusesWithMinimumSortOrder(ctx context.Context, arg GetStatusesWithMinimumSortOrderParams) ([]Status, error) {
+	rows, err := q.db.QueryContext(ctx, getStatusesWithMinimumSortOrder,
+		arg.BoardID,
+		arg.SortOrder,
+		arg.SortOrderDirection,
+		arg.SortOrderDirection,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Status{}
+	for rows.Next() {
+		var i Status
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.Title,
+			&i.SortOrder,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateStatus = `-- name: UpdateStatus :exec
 UPDATE
   statuses
 SET
   title = ?,
+  sort_order = ?,
   updated_at = NOW()
 WHERE
   id = ?
 `
 
 type UpdateStatusParams struct {
-	Title null.String `db:"title" json:"title"`
-	ID    uint32      `db:"id" json:"id"`
+	Title     null.String `db:"title" json:"title"`
+	SortOrder uint32      `db:"sort_order" json:"sort_order"`
+	ID        uint32      `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateStatus(ctx context.Context, arg UpdateStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateStatus, arg.Title, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateStatus, arg.Title, arg.SortOrder, arg.ID)
+	return err
+}
+
+const updateStatusSortOrder = `-- name: UpdateStatusSortOrder :exec
+UPDATE
+  statuses
+SET
+  sort_order = ?
+WHERE
+  id = ?
+`
+
+type UpdateStatusSortOrderParams struct {
+	SortOrder uint32 `db:"sort_order" json:"sort_order"`
+	ID        uint32 `db:"id" json:"id"`
+}
+
+func (q *Queries) UpdateStatusSortOrder(ctx context.Context, arg UpdateStatusSortOrderParams) error {
+	_, err := q.db.ExecContext(ctx, updateStatusSortOrder, arg.SortOrder, arg.ID)
 	return err
 }

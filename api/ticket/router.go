@@ -21,6 +21,7 @@ func Router(api *apikit.API) {
 
 	sg := bg.Group("/:board_id/statuses")
 	sg.POST("", s.CreateStatus)
+	sg.PATCH("/:status_id", s.UpdateStatusPartial)
 
 	t := tickets.New(api)
 	tg := sg.Group("/:status_id/tickets")

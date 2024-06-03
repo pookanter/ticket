@@ -6,8 +6,8 @@ FROM
   JOIN boards ON statuses.board_id = boards.id
 WHERE
   statuses.id = ?
-  AND statuses.board_id = ?
-  AND boards.user_id = ?;
+  AND statuses.board_id = coalesce(sqlc.narg('board_id'), statuses.board_id)
+  AND boards.user_id = coalesce(sqlc.narg('user_id'), boards.user_id);
 
 -- name: GetStatusesByBoardID :many
 SELECT
@@ -16,6 +16,26 @@ FROM
   statuses
 WHERE
   board_id = ?;
+
+-- name: GetStatusesWithMinimumSortOrder :many
+SELECT
+  *
+FROM
+  statuses
+WHERE
+  board_id = ?
+  AND sort_order >= ?
+ORDER BY
+  (
+    CASE
+      WHEN sqlc.arg('sort_order_direction') = 'asc' THEN sort_order
+    END
+  ) ASC,
+  (
+    CASE
+      WHEN sqlc.arg('sort_order_direction') = 'desc' THEN sort_order
+    END
+  ) DESC;
 
 -- name: CreateStatus :exec
 INSERT INTO
@@ -28,7 +48,16 @@ UPDATE
   statuses
 SET
   title = ?,
+  sort_order = ?,
   updated_at = NOW()
+WHERE
+  id = ?;
+
+-- name: UpdateStatusSortOrder :exec
+UPDATE
+  statuses
+SET
+  sort_order = ?
 WHERE
   id = ?;
 
@@ -45,6 +74,16 @@ FROM
   statuses
 WHERE
   board_id = ?;
+
+-- name: GetStatusView :one
+SELECT
+  *
+FROM
+  status_view
+WHERE
+  id = ?
+ORDER BY
+  sort_order ASC;
 
 -- name: GetLastInsertStatusViewByBoardID :one
 SELECT
