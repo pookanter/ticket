@@ -62,7 +62,7 @@ func (h *Handler) CreateStatus(c echo.Context) error {
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusBadRequest, "board not found")
+			return echo.NewHTTPError(http.StatusNotFound, "board not found")
 		}
 
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -94,3 +94,5 @@ func (h *Handler) CreateStatus(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, status)
 }
+
+// func (h *Handler) Sort
