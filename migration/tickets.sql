@@ -1,15 +1,36 @@
--- name: GetTicket :one
+-- name: GetTicketByID :one
 SELECT
-  tickets.*
+  *
+FROM
+  tickets
+WHERE
+  id = ?;
+
+-- name: GetTicketWithBoard :one
+SELECT
+  sqlc.embed(tickets),
+  sqlc.embed(boards)
 FROM
   tickets
   JOIN statuses ON tickets.status_id = statuses.id
   JOIN boards ON statuses.board_id = boards.id
 WHERE
   tickets.id = ?
-  AND tickets.status_id = coalesce(sqlc.narg('status_id'), tickets.status_id)
-  AND statuses.board_id = coalesce(sqlc.narg('board_id'), statuses.board_id)
-  AND boards.user_id = coalesce(sqlc.narg('user_id'), boards.user_id);
+  AND statuses.board_id = ?
+  AND boards.user_id = ?;
+
+-- name: GetTicketsWithBoard :many
+SELECT
+  sqlc.embed(tickets),
+  sqlc.embed(boards)
+FROM
+  tickets
+  JOIN statuses ON tickets.status_id = statuses.id
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  tickets.id IN (sqlc.slice('ids'))
+  AND statuses.board_id = ?
+  AND boards.user_id = ?;
 
 -- name: GetTicketsByStatusID :many
 SELECT
@@ -67,11 +88,16 @@ SET
 WHERE
   id = ?;
 
--- name: UpdateTicketSortOrder :exec
+-- name: UpdateTicketSortOrderAndStatusID :exec
 UPDATE
   tickets
 SET
-  sort_order = ?
+  sort_order = ?,
+  status_id = sqlc.arg('status_id'),
+  updated_at = CASE
+    WHEN sqlc.arg('status_id') <> tickets.status_id THEN NOW()
+    ELSE updated_at
+  END
 WHERE
   id = ?;
 

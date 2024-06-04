@@ -7,7 +7,7 @@ package db
 
 import (
 	"context"
-	"database/sql"
+	"strings"
 
 	"github.com/guregu/null"
 )
@@ -94,34 +94,17 @@ func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID ui
 	return i, err
 }
 
-const getTicket = `-- name: GetTicket :one
+const getTicketByID = `-- name: GetTicketByID :one
 SELECT
-  tickets.id, tickets.status_id, tickets.title, tickets.description, tickets.contact, tickets.sort_order, tickets.created_at, tickets.updated_at
+  id, status_id, title, description, contact, sort_order, created_at, updated_at
 FROM
   tickets
-  JOIN statuses ON tickets.status_id = statuses.id
-  JOIN boards ON statuses.board_id = boards.id
 WHERE
-  tickets.id = ?
-  AND tickets.status_id = coalesce(?, tickets.status_id)
-  AND statuses.board_id = coalesce(?, statuses.board_id)
-  AND boards.user_id = coalesce(?, boards.user_id)
+  id = ?
 `
 
-type GetTicketParams struct {
-	ID       uint64        `db:"id" json:"id"`
-	StatusID sql.NullInt32 `db:"status_id" json:"status_id"`
-	BoardID  sql.NullInt32 `db:"board_id" json:"board_id"`
-	UserID   sql.NullInt64 `db:"user_id" json:"user_id"`
-}
-
-func (q *Queries) GetTicket(ctx context.Context, arg GetTicketParams) (Ticket, error) {
-	row := q.db.QueryRowContext(ctx, getTicket,
-		arg.ID,
-		arg.StatusID,
-		arg.BoardID,
-		arg.UserID,
-	)
+func (q *Queries) GetTicketByID(ctx context.Context, id uint64) (Ticket, error) {
+	row := q.db.QueryRowContext(ctx, getTicketByID, id)
 	var i Ticket
 	err := row.Scan(
 		&i.ID,
@@ -132,6 +115,53 @@ func (q *Queries) GetTicket(ctx context.Context, arg GetTicketParams) (Ticket, e
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getTicketWithBoard = `-- name: GetTicketWithBoard :one
+SELECT
+  tickets.id, tickets.status_id, tickets.title, tickets.description, tickets.contact, tickets.sort_order, tickets.created_at, tickets.updated_at,
+  boards.id, boards.user_id, boards.title, boards.sort_order, boards.created_at, boards.updated_at
+FROM
+  tickets
+  JOIN statuses ON tickets.status_id = statuses.id
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  tickets.id = ?
+  AND statuses.board_id = ?
+  AND boards.user_id = ?
+`
+
+type GetTicketWithBoardParams struct {
+	ID      uint64 `db:"id" json:"id"`
+	BoardID uint32 `db:"board_id" json:"board_id"`
+	UserID  uint64 `db:"user_id" json:"user_id"`
+}
+
+type GetTicketWithBoardRow struct {
+	Ticket Ticket `db:"ticket" json:"ticket"`
+	Board  Board  `db:"board" json:"board"`
+}
+
+func (q *Queries) GetTicketWithBoard(ctx context.Context, arg GetTicketWithBoardParams) (GetTicketWithBoardRow, error) {
+	row := q.db.QueryRowContext(ctx, getTicketWithBoard, arg.ID, arg.BoardID, arg.UserID)
+	var i GetTicketWithBoardRow
+	err := row.Scan(
+		&i.Ticket.ID,
+		&i.Ticket.StatusID,
+		&i.Ticket.Title,
+		&i.Ticket.Description,
+		&i.Ticket.Contact,
+		&i.Ticket.SortOrder,
+		&i.Ticket.CreatedAt,
+		&i.Ticket.UpdatedAt,
+		&i.Board.ID,
+		&i.Board.UserID,
+		&i.Board.Title,
+		&i.Board.SortOrder,
+		&i.Board.CreatedAt,
+		&i.Board.UpdatedAt,
 	)
 	return i, err
 }
@@ -165,6 +195,81 @@ func (q *Queries) GetTicketsByStatusID(ctx context.Context, statusID uint32) ([]
 			&i.SortOrder,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTicketsWithBoard = `-- name: GetTicketsWithBoard :many
+SELECT
+  tickets.id, tickets.status_id, tickets.title, tickets.description, tickets.contact, tickets.sort_order, tickets.created_at, tickets.updated_at,
+  boards.id, boards.user_id, boards.title, boards.sort_order, boards.created_at, boards.updated_at
+FROM
+  tickets
+  JOIN statuses ON tickets.status_id = statuses.id
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  tickets.id IN (/*SLICE:ids*/?)
+  AND statuses.board_id = ?
+  AND boards.user_id = ?
+`
+
+type GetTicketsWithBoardParams struct {
+	Ids     []uint64 `db:"ids" json:"ids"`
+	BoardID uint32   `db:"board_id" json:"board_id"`
+	UserID  uint64   `db:"user_id" json:"user_id"`
+}
+
+type GetTicketsWithBoardRow struct {
+	Ticket Ticket `db:"ticket" json:"ticket"`
+	Board  Board  `db:"board" json:"board"`
+}
+
+func (q *Queries) GetTicketsWithBoard(ctx context.Context, arg GetTicketsWithBoardParams) ([]GetTicketsWithBoardRow, error) {
+	query := getTicketsWithBoard
+	var queryParams []interface{}
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.BoardID)
+	queryParams = append(queryParams, arg.UserID)
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetTicketsWithBoardRow{}
+	for rows.Next() {
+		var i GetTicketsWithBoardRow
+		if err := rows.Scan(
+			&i.Ticket.ID,
+			&i.Ticket.StatusID,
+			&i.Ticket.Title,
+			&i.Ticket.Description,
+			&i.Ticket.Contact,
+			&i.Ticket.SortOrder,
+			&i.Ticket.CreatedAt,
+			&i.Ticket.UpdatedAt,
+			&i.Board.ID,
+			&i.Board.UserID,
+			&i.Board.Title,
+			&i.Board.SortOrder,
+			&i.Board.CreatedAt,
+			&i.Board.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -278,21 +383,32 @@ func (q *Queries) UpdateTicket(ctx context.Context, arg UpdateTicketParams) erro
 	return err
 }
 
-const updateTicketSortOrder = `-- name: UpdateTicketSortOrder :exec
+const updateTicketSortOrderAndStatusID = `-- name: UpdateTicketSortOrderAndStatusID :exec
 UPDATE
   tickets
 SET
-  sort_order = ?
+  sort_order = ?,
+  status_id = ?,
+  updated_at = CASE
+    WHEN ? <> tickets.status_id THEN NOW()
+    ELSE updated_at
+  END
 WHERE
   id = ?
 `
 
-type UpdateTicketSortOrderParams struct {
+type UpdateTicketSortOrderAndStatusIDParams struct {
 	SortOrder uint32 `db:"sort_order" json:"sort_order"`
+	StatusID  uint32 `db:"status_id" json:"status_id"`
 	ID        uint64 `db:"id" json:"id"`
 }
 
-func (q *Queries) UpdateTicketSortOrder(ctx context.Context, arg UpdateTicketSortOrderParams) error {
-	_, err := q.db.ExecContext(ctx, updateTicketSortOrder, arg.SortOrder, arg.ID)
+func (q *Queries) UpdateTicketSortOrderAndStatusID(ctx context.Context, arg UpdateTicketSortOrderAndStatusIDParams) error {
+	_, err := q.db.ExecContext(ctx, updateTicketSortOrderAndStatusID,
+		arg.SortOrder,
+		arg.StatusID,
+		arg.StatusID,
+		arg.ID,
+	)
 	return err
 }

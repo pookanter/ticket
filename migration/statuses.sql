@@ -1,13 +1,14 @@
--- name: GetStatus :one
+-- name: GetStatusWithBoard :one
 SELECT
-  statuses.*
+  sqlc.embed(statuses),
+  sqlc.embed(boards)
 FROM
   statuses
   JOIN boards ON statuses.board_id = boards.id
 WHERE
   statuses.id = ?
-  AND statuses.board_id = coalesce(sqlc.narg('board_id'), statuses.board_id)
-  AND boards.user_id = coalesce(sqlc.narg('user_id'), boards.user_id);
+  AND statuses.board_id = ?
+  AND boards.user_id = ?;
 
 -- name: GetStatusesByBoardID :many
 SELECT
