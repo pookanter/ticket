@@ -9,7 +9,7 @@ import (
 	"ticket/pkg/db"
 	"ticket/pkg/dbutil"
 
-	"github.com/guregu/null"
+	"github.com/guregu/null/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -61,20 +61,20 @@ func (h *Handler) GetBoardByID(c echo.Context) error {
 
 	statuses, err := h.Queries.GetStatuses(ctx, db.GetStatusesParams{
 		BoardID:            sql.NullInt32{Int32: int32(board.ID), Valid: true},
-		SortOrderDirection: null.StringFrom("ASC"),
+		SortOrderDirection: null.StringFrom("asc"),
 	})
 	if err != nil && err != sql.ErrNoRows {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	var statusIDs []uint32
+	var statusIDs []null.Int32
 	for _, s := range statuses {
-		statusIDs = append(statusIDs, s.ID)
+		statusIDs = append(statusIDs, null.NewInt32(int32(s.ID), true))
 	}
 
 	tickets, err := h.Queries.GetTickets(ctx, db.GetTicketsParams{
 		StatusIds:          statusIDs,
-		SortOrderDirection: null.StringFrom("ASC"),
+		SortOrderDirection: null.StringFrom("asc"),
 	})
 	if err != nil && err != sql.ErrNoRows {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

@@ -10,7 +10,7 @@ import (
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
 
-	"github.com/guregu/null"
+	"github.com/guregu/null/v5"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/sync/errgroup"
 )
@@ -81,13 +81,13 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	count, err := qtx.CountTicketByStatusID(ctx, status.Status.ID)
+	count, err := qtx.CountTicketByStatusID(ctx, null.NewInt32(int32(status.Status.ID), true))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	err = qtx.CreateTicket(ctx, db.CreateTicketParams{
-		StatusID:    uint32(status.Status.ID),
+		StatusID:    null.NewInt32(int32(status.Status.ID), true),
 		Title:       null.NewString(body.Title, true),
 		Description: null.NewString(body.Description, true),
 		Contact:     null.NewString(body.Contact, true),
@@ -97,7 +97,7 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	ticket, err := qtx.GetLastInsertTicketByStatusID(ctx, uint32(status.Status.ID))
+	ticket, err := qtx.GetLastInsertTicketByStatusID(ctx, null.NewInt32(int32(status.Status.ID), true))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -167,7 +167,7 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	if statusID != uint64(ticket.Ticket.StatusID) {
+	if statusID != uint64(ticket.Ticket.StatusID.Int32) {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("status_id is not match, expected: %d", ticket.Ticket.StatusID))
 	}
 
@@ -257,6 +257,55 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
+
+	prectx, cancel := context.WithCancel(ctx)
+	g, prectx := errgroup.WithContext(prectx)
+	defer cancel()
+
+	chtotal := make(chan int64)
+
+	g.Go(func() error {
+		total, err := h.Queries.CountTicketWithBoard(ctx, db.CountTicketWithBoardParams{
+			Ids:     ticketIDs,
+			BoardID: uint32(boardID),
+			UserID:  claims.UserID,
+		})
+		if err != nil {
+			return err
+		}
+
+		chtotal <- total
+
+		return nil
+	})
+
+	statusWithBoard, err := h.Queries.GetStatusWithBoard(ctx, db.GetStatusWithBoardParams{
+		ID:      uint32(statusID),
+		BoardID: uint32(boardID),
+		UserID:  claims.UserID,
+	})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusNotFound, "status not found")
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	select {
+	case <-prectx.Done():
+		return echo.NewHTTPError(http.StatusInternalServerError, prectx.Err().Error())
+	case total := <-chtotal:
+		if total != int64(len(ticketIDs)) {
+			return echo.NewHTTPError(http.StatusBadRequest, "some ticket's id does exist")
+		}
+	}
+
+	err = g.Wait()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
 	tx, err := h.DB.Begin()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -264,73 +313,15 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 	defer tx.Rollback()
 	qtx := h.Queries.WithTx(tx)
 
-	subctx1, cancel := context.WithCancel(ctx)
-	g, subctx1 := errgroup.WithContext(subctx1)
+	subctx, cancel := context.WithCancel(ctx)
+	g, subctx = errgroup.WithContext(subctx)
 	defer cancel()
-
-	chstatus := make(chan db.GetStatusWithBoardRow, len(body.Tickets))
-
-	g.Go(func() error {
-		status, err := qtx.GetStatusWithBoard(subctx1, db.GetStatusWithBoardParams{
-			ID:      uint32(statusID),
-			BoardID: uint32(boardID),
-			UserID:  claims.UserID,
-		})
-
-		if err != nil {
-			return err
-		}
-
-		chstatus <- status
-
-		return nil
-	})
-
-	ticketWithBoards, err := qtx.GetTicketsWithBoard(subctx1, db.GetTicketsWithBoardParams{
-		BoardID: uint32(boardID),
-		UserID:  claims.UserID,
-		Ids:     ticketIDs,
-	})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	if len(ticketWithBoards) != len(ticketIDs) {
-		for _, t := range ticketWithBoards {
-			if _, exists := ticketIDMap[t.Ticket.ID]; !exists {
-				return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("The ticket with ID %d was not found on the board with ID %d, or the board does not exist.", t.Ticket.ID, boardID))
-			}
-		}
-
-		return echo.NewHTTPError(http.StatusNotFound, "ticket not found")
-	}
-
-	var status db.GetStatusWithBoardRow
-	select {
-	case <-subctx1.Done():
-		return echo.NewHTTPError(http.StatusInternalServerError, subctx1.Err().Error())
-	case status = <-chstatus:
-	}
-
-	err = g.Wait()
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("The status with ID %d was not found on the board with ID %d, or the board does not exist.", statusID, boardID))
-		}
-
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	subctx2, cancel := context.WithCancel(ctx)
-	g, subctx2 = errgroup.WithContext(subctx2)
-	defer cancel()
-
 	for i, t := range body.Tickets {
 		i := i
 		t := t
 		g.Go(func() error {
-			err = qtx.UpdateTicketSortOrderAndStatusID(subctx2, db.UpdateTicketSortOrderAndStatusIDParams{
-				StatusID:  status.Status.ID,
+			err = qtx.UpdateTicketSortOrderAndStatusID(subctx, db.UpdateTicketSortOrderAndStatusIDParams{
+				StatusID:  null.NewInt32(int32(statusWithBoard.Status.ID), true),
 				SortOrder: uint32(i + 1),
 				ID:        t.ID,
 			})
@@ -342,6 +333,28 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 		})
 	}
 
+	g.Go(func() error {
+		removeTickets, err := qtx.GetTickets(subctx, db.GetTicketsParams{
+			StatusIds:  []null.Int32{null.NewInt32(int32(statusID), true)},
+			ExcludeIds: ticketIDs,
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, t := range removeTickets {
+			err = qtx.UpdateTicketStatusID(subctx, db.UpdateTicketStatusIDParams{
+				StatusID: null.Int32{},
+				ID:       uint64(t.ID),
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
 	err = g.Wait()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -352,10 +365,13 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	tickets, err := qtx.GetTickets(ctx, db.GetTicketsParams{
-		StatusIds:          []uint32{uint32(statusID)},
-		SortOrderDirection: null.StringFrom("ASC"),
+	tickets, err := h.Queries.GetTickets(ctx, db.GetTicketsParams{
+		StatusIds:          []null.Int32{null.NewInt32(int32(statusID), true)},
+		SortOrderDirection: null.StringFrom("asc"),
 	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 
 	return c.JSON(http.StatusOK, tickets)
 }

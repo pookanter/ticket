@@ -10,7 +10,7 @@ import (
 	"ticket/pkg/db"
 	"time"
 
-	"github.com/guregu/null"
+	"github.com/guregu/null/v5"
 	"github.com/labstack/echo/v4"
 )
 

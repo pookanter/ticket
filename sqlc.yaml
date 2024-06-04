@@ -17,10 +17,20 @@ sql:
         overrides:
           - db_type: varchar
             nullable: true
-            go_type: "github.com/guregu/null.String"
+            go_type:
+              import: "github.com/guregu/null/v5"
+              type: "String"
           - db_type: text
             nullable: true
-            go_type: "github.com/guregu/null.String"
+            go_type:
+              import: "github.com/guregu/null/v5"
+              type: "String"
           - db_type: datetime
             nullable: true
-            go_type: "github.com/guregu/null.Time"
+            go_type:
+              import: "github.com/guregu/null/v5"
+              type: "Time"
+          - column: "tickets.status_id"
+            go_type:
+              import: "github.com/guregu/null/v5"
+              type: "Int32"

@@ -18,15 +18,76 @@
 	import StatusCreateDialogContent from '$lib/components/status-save-dialog-content/status-create-dialog-content.svelte';
 	import * as Scroll from '$lib/components/ui/scroll-area';
 	import TicketCreateDialogContent from '$lib/components/ticket-save-dialog-content/ticket-create-dialog-content.svelte';
-	import { cloneDeep } from 'lodash';
+	import { cloneDeep, merge } from 'lodash';
+	import {
+		Subject,
+		Subscription,
+		catchError,
+		combineLatest,
+		concatMap,
+		from,
+		map,
+		mergeAll,
+		mergeMap,
+		of,
+		toArray,
+		tap,
+		bufferTime,
+		buffer,
+		timer,
+		debounceTime
+	} from 'rxjs';
 
 	const { ScrollArea } = Scroll;
 
 	let unsubscribes: Unsubscriber[] = [];
 	let boardState = BoardStore.defaultState();
 	let tempBoardState = BoardStore.defaultState();
-	let srcTicket: TicketService.Ticket = null;
+	const ticketSubject = new Subject<Parameters<typeof TicketService.updateTicketsSortOrder>>();
+	let tickets$: Subscription;
+	const releaseBufferSubject = new Subject<void>();
 	onMount(async () => {
+		tickets$ = ticketSubject
+			.pipe(
+				mergeMap(([params, body]) =>
+					from(TicketService.updateTicketsSortOrder(params, body)).pipe(
+						map(({ data }) => {
+							setTimeout(() => {
+								releaseBufferSubject.next();
+							}, 500);
+
+							const { status_id } = params;
+
+							return { status_id, data };
+						}),
+						catchError((error) => {
+							AlertStore.error(error);
+
+							return of();
+						})
+					)
+				),
+				buffer(releaseBufferSubject.pipe(debounceTime(1000)))
+			)
+			.subscribe((values) => {
+				if (values.length === 0) return;
+				console.log('values', values);
+				BoardStore.update((state) => {
+					const selected = cloneDeep(state.selected);
+					for (const { status_id, data } of values) {
+						const idx = selected.statuses.findIndex((status) => status.id === status_id);
+
+						if (idx > -1) {
+							selected.statuses[idx].tickets = data;
+						}
+					}
+
+					state.selected = selected;
+
+					return state;
+				});
+			});
+
 		unsubscribes.push(
 			authStore.subscribe((state) => {
 				console.log('APP MOUNT', state);
@@ -68,9 +129,8 @@
 
 	onDestroy(() => {
 		unsubscribes.forEach((unsubscribe) => unsubscribe());
-		BoardStore.update((state) => {
-			return state;
-		});
+		console.log('unsubscribes');
+		tickets$.unsubscribe();
 	});
 
 	async function fetchBoardFullDetail(board: TicketService.Board) {
@@ -83,80 +143,6 @@
 		}
 	}
 
-	async function detectStatusChanges() {
-		if (!boardState.selected || !tempBoardState.selected) return;
-		console.log('detectStatusChanges');
-
-		const prevStatuses = tempBoardState.selected.statuses;
-		const currStatuses = boardState.selected.statuses;
-
-		for (let i = 0; i < prevStatuses.length; i++) {
-			if (prevStatuses[i].id !== currStatuses[i].id) {
-				const moveStatus = currStatuses[i];
-				console.log(`status id ${moveStatus.id} order changed to position to ${i}`);
-
-				try {
-					const { data: status } = await TicketService.updateStatusPartial(
-						{
-							board_id: boardState.selected.id,
-							status_id: moveStatus.id
-						},
-						{ sort_order: i }
-					);
-
-					BoardStore.updateStatus({ status });
-				} catch (error: any) {
-					AlertStore.error(error);
-					BoardStore.selectBoard(tempBoardState.selected);
-				}
-				return;
-			}
-		}
-	}
-	async function updateTicket(
-		...params: Parameters<(typeof TicketService)['updateTicketPartial']>
-	) {
-		try {
-			await TicketService.updateTicketPartial(...params);
-		} catch (error: any) {
-			AlertStore.error(error);
-			tempBoardState.selected && BoardStore.selectBoard(tempBoardState.selected);
-		}
-	}
-
-	function detectTicketChanges(statusID: number) {
-		const status = boardState.selected.statuses.find((x) => x.id == statusID);
-
-		if (!status) return;
-
-		const index = status.tickets.findIndex((x) => x.id == srcTicket.id);
-
-		if (index == -1) return;
-
-		const targetTicket = status.tickets[index];
-
-		const data = {
-			sort_order: index + 1
-		} as Parameters<(typeof TicketService)['updateTicketPartial']>[1];
-
-		if (targetTicket.status_id !== statusID) {
-			data.status_id = statusID;
-		}
-
-		console.log('detectTicketChanges', targetTicket);
-
-		updateTicket(
-			{
-				board_id: boardState.selected.id,
-				status_id: targetTicket.status_id,
-				ticket_id: targetTicket.id
-			},
-			data
-		);
-
-		srcTicket = null;
-	}
-
 	const flipDurationMs = 200;
 
 	type ColumnEvent = CustomEvent & { detail: { items: TicketService.Status[] } };
@@ -164,27 +150,75 @@
 		if (!boardState.selected) return;
 		boardState.selected.statuses = [...e.detail.items];
 	}
-	function handleDndFinalizeColumns(e: ColumnEvent) {
+	async function handleDndFinalizeColumns(e: ColumnEvent) {
 		if (!boardState.selected) return;
 		boardState.selected.statuses = [...e.detail.items];
-		detectStatusChanges();
+		try {
+			const { data: statuses } = await TicketService.updateStatusesSortOrder(
+				{
+					board_id: boardState.selected.id
+				},
+				{ statuses: boardState.selected.statuses }
+			);
+
+			BoardStore.update((state) => {
+				state.selected.statuses = statuses as TicketService.Status[];
+
+				return state;
+			});
+		} catch (error) {
+			AlertStore.error(error);
+
+			BoardStore.selectBoard(tempBoardState.selected);
+		}
 	}
 
 	type CardEvent = CustomEvent & { detail: { items: TicketService.Ticket[] } };
 	function handleDndConsiderCards(cid: number, e: CardEvent) {
-		console.log('handleDndConsiderCards', cid, e.detail.items);
 		if (!boardState.selected) return;
 		const colIdx = boardState.selected.statuses?.findIndex((c) => c.id === cid);
 		boardState.selected.statuses[colIdx].tickets = e.detail.items;
 		boardState.selected.statuses = [...boardState.selected.statuses];
 	}
-	function handleDndFinalizeCards(cid: number, e: CardEvent) {
-		console.log('handleDndFinalizeCards', cid, e.detail.items);
+	async function handleDndFinalizeCards(cid: number, e: CardEvent) {
 		if (!boardState.selected) return;
 		const colIdx = boardState.selected.statuses.findIndex((c) => c.id === cid);
 		boardState.selected.statuses[colIdx].tickets = e.detail.items;
 		boardState.selected.statuses = [...boardState.selected.statuses];
-		detectTicketChanges(cid);
+
+		console.log('handleDndFinalizeCards');
+		ticketSubject.next([
+			{
+				board_id: boardState.selected.id,
+				status_id: cid
+			},
+			{ tickets: boardState.selected.statuses[colIdx].tickets }
+		]);
+		// try {
+		// 	const { data: tickets } = await TicketService.updateTicketsSortOrder(
+		// 		{
+		// 			board_id: boardState.selected.id,
+		// 			status_id: cid
+		// 		},
+		// 		{ tickets: boardState.selected.statuses[colIdx].tickets }
+		// 	);
+
+		// 	BoardStore.update((state) => {
+		// 		const targetStatus = boardState.selected.statuses[colIdx];
+
+		// 		state.selected.statuses.forEach((status) => {
+		// 			if (status.id === targetStatus.id) {
+		// 				status.tickets = tickets;
+		// 			}
+		// 		});
+
+		// 		return state;
+		// 	});
+		// } catch (error) {
+		// 	AlertStore.error(error);
+
+		// 	BoardStore.selectBoard(tempBoardState.selected);
+		// }
 	}
 
 	enum Resource {
@@ -301,10 +335,6 @@
 													tabindex={ticket.id}
 													role="button"
 													animate:flip={{ duration: flipDurationMs }}
-													on:mousedown={(e) => {
-														srcTicket = ticket;
-														console.log('srcTicket', srcTicket);
-													}}
 												>
 													<TicketCard {ticket} edit={editTicket} />
 												</div>

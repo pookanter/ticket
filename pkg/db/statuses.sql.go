@@ -9,7 +9,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/guregu/null"
+	null "github.com/guregu/null/v5"
 )
 
 const countStatusByBoardID = `-- name: CountStatusByBoardID :one
@@ -211,13 +211,11 @@ FROM
   statuses
   JOIN boards ON statuses.board_id = boards.id
 WHERE
-  statuses.id = ?
-  AND statuses.board_id = ?
+  statuses.board_id = ?
   AND boards.user_id = ?
 `
 
 type GetStatusesWithBoardParams struct {
-	ID      uint32 `db:"id" json:"id"`
 	BoardID uint32 `db:"board_id" json:"board_id"`
 	UserID  uint64 `db:"user_id" json:"user_id"`
 }
@@ -228,7 +226,7 @@ type GetStatusesWithBoardRow struct {
 }
 
 func (q *Queries) GetStatusesWithBoard(ctx context.Context, arg GetStatusesWithBoardParams) ([]GetStatusesWithBoardRow, error) {
-	rows, err := q.db.QueryContext(ctx, getStatusesWithBoard, arg.ID, arg.BoardID, arg.UserID)
+	rows, err := q.db.QueryContext(ctx, getStatusesWithBoard, arg.BoardID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}

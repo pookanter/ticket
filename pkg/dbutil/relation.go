@@ -19,19 +19,23 @@ func NewBoardWithRelated(b db.Board, s []db.Status, t []db.Ticket) BoardWithRela
 	}
 
 	for _, status := range s {
-		sw := StatusWithRelated{
-			Status:  status,
-			Tickets: []db.Ticket{},
-		}
-
-		for _, ticket := range t {
-			if ticket.StatusID == status.ID {
-				sw.Tickets = append(sw.Tickets, ticket)
-			}
-		}
-
-		bw.Statuses = append(bw.Statuses, sw)
+		bw.Statuses = append(bw.Statuses, NewStatusWithRelated(status, t))
 	}
 
 	return bw
+}
+
+func NewStatusWithRelated(s db.Status, t []db.Ticket) StatusWithRelated {
+	sw := StatusWithRelated{
+		Status:  s,
+		Tickets: []db.Ticket{},
+	}
+
+	for _, ticket := range t {
+		if uint32(ticket.StatusID.Int32) == s.ID {
+			sw.Tickets = append(sw.Tickets, ticket)
+		}
+	}
+
+	return sw
 }

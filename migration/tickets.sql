@@ -38,7 +38,14 @@ SELECT
 FROM
   tickets
 WHERE
-  status_id IN (sqlc.slice('status_ids'))
+  (
+    status_id = coalesce(sqlc.slice('status_ids'), status_id)
+    OR status_id IN (sqlc.slice('status_ids'))
+  )
+  AND (
+    id = coalesce(sqlc.slice('exclude_ids'), id)
+    OR id NOT IN (sqlc.slice('exclude_ids'))
+  )
 ORDER BY
   status_id ASC,
   (
@@ -130,6 +137,15 @@ SET
 WHERE
   id = ?;
 
+-- name: UpdateTicketStatusID :exec
+UPDATE
+  tickets
+SET
+  status_id = ?,
+  updated_at = NOW()
+WHERE
+  id = ?;
+
 -- name: CountTicketByStatusID :one
 SELECT
   COUNT(*)
@@ -137,6 +153,18 @@ FROM
   tickets
 WHERE
   status_id = ?;
+
+-- name: CountTicketWithBoard :one
+SELECT
+  COUNT(tickets.id)
+FROM
+  tickets
+  JOIN statuses ON tickets.status_id = statuses.id
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  tickets.id IN (sqlc.slice('ids'))
+  AND statuses.board_id = ?
+  AND boards.user_id = ?;
 
 -- name: GetLastInsertTicketByStatusID :one
 SELECT

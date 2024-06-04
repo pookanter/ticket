@@ -73,6 +73,16 @@ function updateStatusPartial(
 	);
 }
 
+function updateStatusesSortOrder(
+	{ board_id }: { board_id: number },
+	data: { statuses: TicketService.Status[] }
+) {
+	return http().put<TicketService.Status[]>(
+		`/${TICKET_SERVICE}/boards/${board_id}/statuses/sort_orders`,
+		data
+	);
+}
+
 function createTicket(
 	{ board_id, status_id }: { board_id: number; status_id: number },
 	data: { title: string; description: string; contact: string }
@@ -99,12 +109,24 @@ function updateTicketPartial(
 	);
 }
 
+function updateTicketsSortOrder(
+	{ board_id, status_id }: { board_id: number; status_id: number },
+	data: { tickets: TicketService.Ticket[] }
+) {
+	return http().put<TicketService.Ticket[]>(
+		`/${TICKET_SERVICE}/boards/${board_id}/statuses/${status_id}/tickets/sort_orders`,
+		data
+	);
+}
+
 export const TicketService = {
 	getBoards,
 	getBoardById,
 	createBoard,
 	createStatus,
 	updateStatusPartial,
+	updateStatusesSortOrder,
 	createTicket,
-	updateTicketPartial
+	updateTicketPartial,
+	updateTicketsSortOrder
 };

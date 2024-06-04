@@ -5,7 +5,7 @@
 package db
 
 import (
-	"github.com/guregu/null"
+	null "github.com/guregu/null/v5"
 )
 
 type Board struct {
@@ -28,7 +28,7 @@ type Status struct {
 
 type Ticket struct {
 	ID          uint64      `db:"id" json:"id"`
-	StatusID    uint32      `db:"status_id" json:"status_id"`
+	StatusID    null.Int32  `db:"status_id" json:"status_id"`
 	Title       null.String `db:"title" json:"title"`
 	Description null.String `db:"description" json:"description"`
 	Contact     null.String `db:"contact" json:"contact"`

@@ -9,7 +9,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/guregu/null"
+	null "github.com/guregu/null/v5"
 )
 
 const countTicketByStatusID = `-- name: CountTicketByStatusID :one
@@ -21,8 +21,46 @@ WHERE
   status_id = ?
 `
 
-func (q *Queries) CountTicketByStatusID(ctx context.Context, statusID uint32) (int64, error) {
+func (q *Queries) CountTicketByStatusID(ctx context.Context, statusID null.Int32) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countTicketByStatusID, statusID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTicketWithBoard = `-- name: CountTicketWithBoard :one
+SELECT
+  COUNT(tickets.id)
+FROM
+  tickets
+  JOIN statuses ON tickets.status_id = statuses.id
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  tickets.id IN (/*SLICE:ids*/?)
+  AND statuses.board_id = ?
+  AND boards.user_id = ?
+`
+
+type CountTicketWithBoardParams struct {
+	Ids     []uint64 `db:"ids" json:"ids"`
+	BoardID uint32   `db:"board_id" json:"board_id"`
+	UserID  uint64   `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) CountTicketWithBoard(ctx context.Context, arg CountTicketWithBoardParams) (int64, error) {
+	query := countTicketWithBoard
+	var queryParams []interface{}
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.BoardID)
+	queryParams = append(queryParams, arg.UserID)
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -43,7 +81,7 @@ VALUES
 `
 
 type CreateTicketParams struct {
-	StatusID    uint32      `db:"status_id" json:"status_id"`
+	StatusID    null.Int32  `db:"status_id" json:"status_id"`
 	Title       null.String `db:"title" json:"title"`
 	Description null.String `db:"description" json:"description"`
 	Contact     null.String `db:"contact" json:"contact"`
@@ -78,7 +116,7 @@ WHERE
   )
 `
 
-func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID uint32) (Ticket, error) {
+func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID null.Int32) (Ticket, error) {
 	row := q.db.QueryRowContext(ctx, getLastInsertTicketByStatusID, statusID)
 	var i Ticket
 	err := row.Scan(
@@ -172,7 +210,14 @@ SELECT
 FROM
   tickets
 WHERE
-  status_id IN (/*SLICE:status_ids*/?)
+  (
+    status_id = coalesce(/*SLICE:status_ids*/?, status_id)
+    OR status_id IN (/*SLICE:status_ids*/?)
+  )
+  AND (
+    id = coalesce(/*SLICE:exclude_ids*/?, id)
+    OR id NOT IN (/*SLICE:exclude_ids*/?)
+  )
 ORDER BY
   status_id ASC,
   (
@@ -188,8 +233,9 @@ ORDER BY
 `
 
 type GetTicketsParams struct {
-	StatusIds          []uint32    `db:"status_ids" json:"status_ids"`
-	SortOrderDirection interface{} `db:"sort_order_direction" json:"sort_order_direction"`
+	StatusIds          []null.Int32 `db:"status_ids" json:"status_ids"`
+	ExcludeIds         []uint64     `db:"exclude_ids" json:"exclude_ids"`
+	SortOrderDirection interface{}  `db:"sort_order_direction" json:"sort_order_direction"`
 }
 
 func (q *Queries) GetTickets(ctx context.Context, arg GetTicketsParams) ([]Ticket, error) {
@@ -202,6 +248,30 @@ func (q *Queries) GetTickets(ctx context.Context, arg GetTicketsParams) ([]Ticke
 		query = strings.Replace(query, "/*SLICE:status_ids*/?", strings.Repeat(",?", len(arg.StatusIds))[1:], 1)
 	} else {
 		query = strings.Replace(query, "/*SLICE:status_ids*/?", "NULL", 1)
+	}
+	if len(arg.StatusIds) > 0 {
+		for _, v := range arg.StatusIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:status_ids*/?", strings.Repeat(",?", len(arg.StatusIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:status_ids*/?", "NULL", 1)
+	}
+	if len(arg.ExcludeIds) > 0 {
+		for _, v := range arg.ExcludeIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:exclude_ids*/?", strings.Repeat(",?", len(arg.ExcludeIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:exclude_ids*/?", "NULL", 1)
+	}
+	if len(arg.ExcludeIds) > 0 {
+		for _, v := range arg.ExcludeIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:exclude_ids*/?", strings.Repeat(",?", len(arg.ExcludeIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:exclude_ids*/?", "NULL", 1)
 	}
 	queryParams = append(queryParams, arg.SortOrderDirection)
 	queryParams = append(queryParams, arg.SortOrderDirection)
@@ -248,7 +318,7 @@ WHERE
 
 type GetTicketsByBoardIDRow struct {
 	ID          uint64      `db:"id" json:"id"`
-	StatusID    uint32      `db:"status_id" json:"status_id"`
+	StatusID    null.Int32  `db:"status_id" json:"status_id"`
 	Title       null.String `db:"title" json:"title"`
 	Description null.String `db:"description" json:"description"`
 	Contact     null.String `db:"contact" json:"contact"`
@@ -312,7 +382,7 @@ ORDER BY
   sort_order ASC
 `
 
-func (q *Queries) GetTicketsByStatusID(ctx context.Context, statusID uint32) ([]Ticket, error) {
+func (q *Queries) GetTicketsByStatusID(ctx context.Context, statusID null.Int32) ([]Ticket, error) {
 	rows, err := q.db.QueryContext(ctx, getTicketsByStatusID, statusID)
 	if err != nil {
 		return nil, err
@@ -441,7 +511,7 @@ ORDER BY
 `
 
 type GetTicketsWithMinimumSortOrderParams struct {
-	StatusID           uint32      `db:"status_id" json:"status_id"`
+	StatusID           null.Int32  `db:"status_id" json:"status_id"`
 	SortOrder          uint32      `db:"sort_order" json:"sort_order"`
 	SortOrderDirection interface{} `db:"sort_order_direction" json:"sort_order_direction"`
 }
@@ -498,7 +568,7 @@ WHERE
 `
 
 type UpdateTicketParams struct {
-	StatusID    uint32      `db:"status_id" json:"status_id"`
+	StatusID    null.Int32  `db:"status_id" json:"status_id"`
 	Title       null.String `db:"title" json:"title"`
 	Description null.String `db:"description" json:"description"`
 	Contact     null.String `db:"contact" json:"contact"`
@@ -533,9 +603,9 @@ WHERE
 `
 
 type UpdateTicketSortOrderAndStatusIDParams struct {
-	SortOrder uint32 `db:"sort_order" json:"sort_order"`
-	StatusID  uint32 `db:"status_id" json:"status_id"`
-	ID        uint64 `db:"id" json:"id"`
+	SortOrder uint32     `db:"sort_order" json:"sort_order"`
+	StatusID  null.Int32 `db:"status_id" json:"status_id"`
+	ID        uint64     `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateTicketSortOrderAndStatusID(ctx context.Context, arg UpdateTicketSortOrderAndStatusIDParams) error {
@@ -545,5 +615,25 @@ func (q *Queries) UpdateTicketSortOrderAndStatusID(ctx context.Context, arg Upda
 		arg.StatusID,
 		arg.ID,
 	)
+	return err
+}
+
+const updateTicketStatusID = `-- name: UpdateTicketStatusID :exec
+UPDATE
+  tickets
+SET
+  status_id = ?,
+  updated_at = NOW()
+WHERE
+  id = ?
+`
+
+type UpdateTicketStatusIDParams struct {
+	StatusID null.Int32 `db:"status_id" json:"status_id"`
+	ID       uint64     `db:"id" json:"id"`
+}
+
+func (q *Queries) UpdateTicketStatusID(ctx context.Context, arg UpdateTicketStatusIDParams) error {
+	_, err := q.db.ExecContext(ctx, updateTicketStatusID, arg.StatusID, arg.ID)
 	return err
 }

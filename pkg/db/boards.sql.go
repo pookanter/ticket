@@ -8,7 +8,7 @@ package db
 import (
 	"context"
 
-	"github.com/guregu/null"
+	null "github.com/guregu/null/v5"
 )
 
 const countBoardByUserID = `-- name: CountBoardByUserID :one
