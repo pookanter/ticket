@@ -26,5 +26,6 @@ func Router(api *apikit.API) {
 	t := tickets.New(api)
 	tg := sg.Group("/:status_id/tickets")
 	tg.POST("", t.CreateTicket)
+	tg.PUT("/sort_order", t.SortTicketsOrder)
 	tg.PATCH("/:ticket_id", t.UpdateTicketPartial)
 }

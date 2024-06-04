@@ -1,9 +1,7 @@
 package statuses
 
 import (
-	"context"
 	"database/sql"
-	"fmt"
 	"net/http"
 	"strconv"
 	"ticket/pkg/apikit"
@@ -12,7 +10,6 @@ import (
 
 	"github.com/guregu/null"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/sync/errgroup"
 )
 
 type Handler struct {
@@ -185,141 +182,4 @@ func (h *Handler) UpdateStatusPartial(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, status)
-}
-
-func (h *Handler) SortTickets(c echo.Context) error {
-	claims := c.Get("claims").(*auth.Claims)
-
-	boardID, err := strconv.ParseUint(c.Param("board_id"), 10, 32)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	statusID, err := strconv.ParseUint(c.Param("status_id"), 10, 32)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	var body struct {
-		Tickets []struct {
-			ID uint64 `json:"id" validate:"required"`
-		} `json:"tickets" validate:"required,dive"`
-	}
-
-	err = c.Bind(&body)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	err = c.Validate(&body)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	var ticketIDs []uint64
-	ticketIDMap := make(map[uint64]bool)
-	for _, ticket := range body.Tickets {
-		if _, exists := ticketIDMap[ticket.ID]; exists {
-			return echo.NewHTTPError(http.StatusBadRequest, "ticket id must be unique")
-		}
-
-		ticketIDMap[ticket.ID] = true
-		ticketIDs = append(ticketIDs, ticket.ID)
-	}
-
-	ctx := c.Request().Context()
-	tx, err := h.DB.Begin()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	defer tx.Rollback()
-	qtx := h.Queries.WithTx(tx)
-
-	subctx1, cancel := context.WithCancel(ctx)
-	g, subctx1 := errgroup.WithContext(subctx1)
-	defer cancel()
-
-	chstatus := make(chan db.GetStatusWithBoardRow, len(body.Tickets))
-
-	g.Go(func() error {
-		status, err := qtx.GetStatusWithBoard(subctx1, db.GetStatusWithBoardParams{
-			ID:      uint32(statusID),
-			BoardID: uint32(boardID),
-			UserID:  claims.UserID,
-		})
-
-		if err != nil {
-			return err
-		}
-
-		chstatus <- status
-
-		return nil
-	})
-
-	tickets, err := qtx.GetTicketsWithBoard(subctx1, db.GetTicketsWithBoardParams{
-		BoardID: uint32(boardID),
-		UserID:  claims.UserID,
-		Ids:     ticketIDs,
-	})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	if len(tickets) != len(ticketIDs) {
-		for _, t := range tickets {
-			if _, exists := ticketIDMap[t.Ticket.ID]; !exists {
-				return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("The ticket with ID %d was not found on the board with ID %d, or the board does not exist.", t.Ticket.ID, boardID))
-			}
-		}
-
-		return echo.NewHTTPError(http.StatusNotFound, "ticket not found")
-	}
-
-	var status db.GetStatusWithBoardRow
-	select {
-	case <-subctx1.Done():
-		return echo.NewHTTPError(http.StatusInternalServerError, subctx1.Err().Error())
-	case status = <-chstatus:
-	}
-
-	err = g.Wait()
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("The status with ID %d was not found on the board with ID %d, or the board does not exist.", statusID, boardID))
-		}
-
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	subctx2, cancel := context.WithCancel(ctx)
-	g, subctx2 = errgroup.WithContext(subctx2)
-	defer cancel()
-
-	for i, t := range body.Tickets {
-		g.Go(func() error {
-			err = qtx.UpdateTicketSortOrderAndStatusID(subctx2, db.UpdateTicketSortOrderAndStatusIDParams{
-				StatusID:  status.Status.ID,
-				SortOrder: uint32(i + 1),
-				ID:        t.ID,
-			})
-			if err != nil {
-				return err
-			}
-
-			return nil
-		})
-	}
-
-	err = g.Wait()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.NoContent(http.StatusNoContent)
 }
