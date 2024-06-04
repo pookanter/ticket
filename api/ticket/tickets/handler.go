@@ -333,9 +333,11 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 		})
 	}
 
+	statusIds := []null.Int32{null.NewInt32(int32(statusWithBoard.Status.ID), true)}
+
 	g.Go(func() error {
 		removeTickets, err := qtx.GetTickets(subctx, db.GetTicketsParams{
-			StatusIds:  []null.Int32{null.NewInt32(int32(statusID), true)},
+			StatusIds:  statusIds,
 			ExcludeIds: ticketIDs,
 		})
 		if err != nil {
@@ -366,7 +368,7 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 	}
 
 	tickets, err := h.Queries.GetTickets(ctx, db.GetTicketsParams{
-		StatusIds:          []null.Int32{null.NewInt32(int32(statusID), true)},
+		StatusIds:          statusIds,
 		SortOrderDirection: null.StringFrom("asc"),
 	})
 	if err != nil {
