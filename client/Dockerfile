@@ -1,4 +1,4 @@
-FROM node:18.12-alpine AS development
+FROM node:20.14.0-alpine AS development
 
 WORKDIR /app
 
@@ -6,11 +6,13 @@ COPY ./client .
 
 RUN npm install -g pnpm
 RUN pnpm install
+RUN npm uninstall @rollup/rollup-linux-arm64-musl
+RUN npm i
 RUN pnpm build
 
 CMD ["pnpm", "dev"]
 
-FROM node:18.12-alpine
+FROM node:20.14.0-alpine AS production
 
 ARG timezone=Asia/Bangkok
 ENV LANG C.UTF-8

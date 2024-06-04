@@ -15,3 +15,5 @@ vite.config.ts.timestamp-*
 tmp
 # ignore the private key directory
 certs
+# ignore pnpm cache
+.pnpm-store

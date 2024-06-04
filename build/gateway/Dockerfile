@@ -15,7 +15,7 @@ RUN go build -v -o ./dist/gateway
 
 CMD ["air", "-c", ".air.toml"]
 
-FROM debian:bookworm
+FROM debian:bookworm  AS production
 
 ARG timezone=Asia/Bangkok
 ARG hotreload=false
