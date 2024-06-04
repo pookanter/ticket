@@ -291,7 +291,7 @@
 					on:consider={handleDndConsiderColumns}
 					on:finalize={handleDndFinalizeColumns}
 				>
-					{#each boardState.selected.statuses as status (status.id)}
+					{#each boardState.selected.statuses as status, i (status)}
 						<div animate:flip={{ duration: flipDurationMs }}>
 							<ScrollArea
 								orientation="vertical"
