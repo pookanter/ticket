@@ -5,8 +5,6 @@
 package db
 
 import (
-	"encoding/json"
-
 	"github.com/guregu/null"
 )
 
@@ -19,16 +17,6 @@ type Board struct {
 	UpdatedAt null.Time   `db:"updated_at" json:"updated_at"`
 }
 
-type BoardView struct {
-	ID        uint32          `db:"id" json:"id"`
-	UserID    uint64          `db:"user_id" json:"user_id"`
-	Title     null.String     `db:"title" json:"title"`
-	SortOrder uint32          `db:"sort_order" json:"sort_order"`
-	CreatedAt null.Time       `db:"created_at" json:"created_at"`
-	UpdatedAt null.Time       `db:"updated_at" json:"updated_at"`
-	Statuses  json.RawMessage `db:"statuses" json:"statuses"`
-}
-
 type Status struct {
 	ID        uint32      `db:"id" json:"id"`
 	BoardID   uint32      `db:"board_id" json:"board_id"`
@@ -36,16 +24,6 @@ type Status struct {
 	SortOrder uint32      `db:"sort_order" json:"sort_order"`
 	CreatedAt null.Time   `db:"created_at" json:"created_at"`
 	UpdatedAt null.Time   `db:"updated_at" json:"updated_at"`
-}
-
-type StatusView struct {
-	ID        uint32          `db:"id" json:"id"`
-	BoardID   uint32          `db:"board_id" json:"board_id"`
-	Title     null.String     `db:"title" json:"title"`
-	SortOrder uint32          `db:"sort_order" json:"sort_order"`
-	CreatedAt null.Time       `db:"created_at" json:"created_at"`
-	UpdatedAt null.Time       `db:"updated_at" json:"updated_at"`
-	Tickets   json.RawMessage `db:"tickets" json:"tickets"`
 }
 
 type Ticket struct {

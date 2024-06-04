@@ -32,6 +32,26 @@ WHERE
   AND statuses.board_id = ?
   AND boards.user_id = ?;
 
+-- name: GetTickets :many
+SELECT
+  *
+FROM
+  tickets
+WHERE
+  status_id IN (sqlc.slice('status_ids'))
+ORDER BY
+  status_id ASC,
+  (
+    CASE
+      WHEN sqlc.arg('sort_order_direction') = 'asc' THEN sort_order
+    END
+  ) ASC,
+  (
+    CASE
+      WHEN sqlc.arg('sort_order_direction') = 'desc' THEN sort_order
+    END
+  ) DESC;
+
 -- name: GetTicketsByStatusID :many
 SELECT
   *
@@ -41,6 +61,15 @@ WHERE
   status_id = ?
 ORDER BY
   sort_order ASC;
+
+-- name: GetTicketsByBoardID :many
+SELECT
+  *
+FROM
+  tickets
+  JOIN statuses ON tickets.status_id = statuses.id
+WHERE
+  statuses.board_id = ?;
 
 -- name: GetTicketsWithMinimumSortOrder :many
 SELECT

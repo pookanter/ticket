@@ -7,7 +7,7 @@ import (
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
-	"ticket/pkg/usecases"
+	"ticket/pkg/dbutil"
 
 	"github.com/guregu/null"
 	"github.com/labstack/echo/v4"
@@ -47,7 +47,7 @@ func (h *Handler) GetBoardByID(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	dbboard, err := h.Queries.GetBoard(ctx, db.GetBoardParams{
+	board, err := h.Queries.GetBoard(ctx, db.GetBoardParams{
 		ID:     uint32(boardID),
 		UserID: claims.UserID,
 	})
@@ -59,30 +59,28 @@ func (h *Handler) GetBoardByID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	board := usecases.NewBoardFullDetail(dbboard)
-
-	statuses, err := h.Queries.GetStatusesByBoardID(ctx, dbboard.ID)
+	statuses, err := h.Queries.GetStatuses(ctx, db.GetStatusesParams{
+		BoardID:            sql.NullInt32{Int32: int32(board.ID), Valid: true},
+		SortOrderDirection: null.StringFrom("ASC"),
+	})
 	if err != nil && err != sql.ErrNoRows {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	for i, s := range statuses {
-		status := usecases.NewStatusFullDetail(s)
-
-		tickets, err := h.Queries.GetTicketsByStatusID(ctx, s.ID)
-		if err != nil && err != sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-		}
-
-		for _, t := range tickets {
-			t.SortOrder = uint32(i)
-			status.Tickets = append(status.Tickets, usecases.NewTicket(t))
-		}
-
-		board.Statuses = append(board.Statuses, status)
+	var statusIDs []uint32
+	for _, s := range statuses {
+		statusIDs = append(statusIDs, s.ID)
 	}
 
-	return c.JSON(http.StatusOK, board)
+	tickets, err := h.Queries.GetTickets(ctx, db.GetTicketsParams{
+		StatusIds:          statusIDs,
+		SortOrderDirection: null.StringFrom("ASC"),
+	})
+	if err != nil && err != sql.ErrNoRows {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, dbutil.NewBoardWithRelated(board, statuses, tickets))
 }
 
 func (h *Handler) CreateBoard(c echo.Context) error {
@@ -134,7 +132,14 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	board, err := qtx.GetLastInsertBoardViewByUserID(ctx, user.ID)
+	boardID, err := qtx.GetLastInsertBoardID(ctx)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	board, err := qtx.GetBoard(ctx, db.GetBoardParams{
+		ID: uint32(boardID),
+	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}

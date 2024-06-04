@@ -86,38 +86,6 @@ func (q *Queries) GetBoard(ctx context.Context, arg GetBoardParams) (Board, erro
 	return i, err
 }
 
-const getBoardView = `-- name: GetBoardView :one
-SELECT
-  id, user_id, title, sort_order, created_at, updated_at, statuses
-FROM
-  board_view
-WHERE
-  user_id = ?
-  AND id = ?
-ORDER BY
-  sort_order ASC
-`
-
-type GetBoardViewParams struct {
-	UserID uint64 `db:"user_id" json:"user_id"`
-	ID     uint32 `db:"id" json:"id"`
-}
-
-func (q *Queries) GetBoardView(ctx context.Context, arg GetBoardViewParams) (BoardView, error) {
-	row := q.db.QueryRowContext(ctx, getBoardView, arg.UserID, arg.ID)
-	var i BoardView
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Title,
-		&i.SortOrder,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Statuses,
-	)
-	return i, err
-}
-
 const getBoardsByUserID = `-- name: GetBoardsByUserID :many
 SELECT
   id, user_id, title, sort_order, created_at, updated_at
@@ -157,78 +125,20 @@ func (q *Queries) GetBoardsByUserID(ctx context.Context, userID uint64) ([]Board
 	return items, nil
 }
 
-const getLastInsertBoardViewByUserID = `-- name: GetLastInsertBoardViewByUserID :one
+const getLastInsertBoardID = `-- name: GetLastInsertBoardID :one
 SELECT
-  id, user_id, title, sort_order, created_at, updated_at, statuses
+  LAST_INSERT_ID()
 FROM
-  board_view
-WHERE
-  board_view.user_id = ?
-  AND id = (
-    SELECT
-      LAST_INSERT_ID()
-    FROM
-      boards
-    LIMIT
-      1
-  )
+  statuses
+LIMIT
+  1
 `
 
-func (q *Queries) GetLastInsertBoardViewByUserID(ctx context.Context, userID uint64) (BoardView, error) {
-	row := q.db.QueryRowContext(ctx, getLastInsertBoardViewByUserID, userID)
-	var i BoardView
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Title,
-		&i.SortOrder,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Statuses,
-	)
-	return i, err
-}
-
-const listBoardViewByUserID = `-- name: ListBoardViewByUserID :many
-SELECT
-  id, user_id, title, sort_order, created_at, updated_at, statuses
-FROM
-  board_view
-WHERE
-  user_id = ?
-ORDER BY
-  sort_order ASC
-`
-
-func (q *Queries) ListBoardViewByUserID(ctx context.Context, userID uint64) ([]BoardView, error) {
-	rows, err := q.db.QueryContext(ctx, listBoardViewByUserID, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []BoardView{}
-	for rows.Next() {
-		var i BoardView
-		if err := rows.Scan(
-			&i.ID,
-			&i.UserID,
-			&i.Title,
-			&i.SortOrder,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Statuses,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetLastInsertBoardID(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertBoardID)
+	var last_insert_id int64
+	err := row.Scan(&last_insert_id)
+	return last_insert_id, err
 }
 
 const updateBoard = `-- name: UpdateBoard :exec

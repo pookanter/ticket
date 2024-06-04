@@ -14,7 +14,7 @@ FROM
 WHERE
   id = ?
   AND user_id = ?;
-
+ 
 -- name: CreateBoard :exec
 INSERT INTO
   boards (user_id, title, sort_order, created_at)
@@ -44,39 +44,10 @@ FROM
 WHERE
   user_id = ?;
 
--- name: ListBoardViewByUserID :many
+-- name: GetLastInsertBoardID :one
 SELECT
-  *
+  LAST_INSERT_ID()
 FROM
-  board_view
-WHERE
-  user_id = ?
-ORDER BY
-  sort_order ASC;
-
--- name: GetBoardView :one
-SELECT
-  *
-FROM
-  board_view
-WHERE
-  user_id = ?
-  AND id = ?
-ORDER BY
-  sort_order ASC;
-
--- name: GetLastInsertBoardViewByUserID :one
-SELECT
-  *
-FROM
-  board_view
-WHERE
-  board_view.user_id = ?
-  AND id = (
-    SELECT
-      LAST_INSERT_ID()
-    FROM
-      boards
-    LIMIT
-      1
-  );
+  statuses
+LIMIT
+  1;

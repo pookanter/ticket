@@ -10,15 +10,34 @@ WHERE
   AND statuses.board_id = ?
   AND boards.user_id = ?;
 
--- name: GetStatusesByBoardID :many
+-- name: GetStatus :one
 SELECT
   *
 FROM
   statuses
 WHERE
-  board_id = ?
+  id = coalesce(sqlc.narg('id'), id)
+  AND board_id = coalesce(sqlc.narg('board_id'), board_id);
+
+-- name: GetStatuses :many
+SELECT
+  *
+FROM
+  statuses
+WHERE
+  board_id = coalesce(sqlc.narg('board_id'), board_id)
 ORDER BY
-  sort_order ASC;
+  board_id ASC,
+  (
+    CASE
+      WHEN sqlc.arg('sort_order_direction') = 'asc' THEN sort_order
+    END
+  ) ASC,
+  (
+    CASE
+      WHEN sqlc.arg('sort_order_direction') = 'desc' THEN sort_order
+    END
+  ) DESC;
 
 -- name: GetStatusesWithMinimumSortOrder :many
 SELECT
@@ -78,28 +97,10 @@ FROM
 WHERE
   board_id = ?;
 
--- name: GetStatusView :one
+-- name: GetLastInsertStatusID :one
 SELECT
-  *
+  LAST_INSERT_ID()
 FROM
-  status_view
-WHERE
-  id = ?
-ORDER BY
-  sort_order ASC;
-
--- name: GetLastInsertStatusViewByBoardID :one
-SELECT
-  *
-FROM
-  status_view
-WHERE
-  status_view.board_id = ?
-  AND id = (
-    SELECT
-      LAST_INSERT_ID()
-    FROM
-      statuses
-    LIMIT
-      1
-  );
+  statuses
+LIMIT
+  1;

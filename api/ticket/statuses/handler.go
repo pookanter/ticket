@@ -85,7 +85,14 @@ func (h *Handler) CreateStatus(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	status, err := qtx.GetLastInsertStatusViewByBoardID(ctx, board.ID)
+	statusID, err := qtx.GetLastInsertStatusID(ctx)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	status, err := qtx.GetStatus(ctx, db.GetStatusParams{
+		ID: sql.NullInt32{Int32: int32(statusID), Valid: true},
+	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -133,7 +140,7 @@ func (h *Handler) UpdateStatusPartial(c echo.Context) error {
 	defer tx.Rollback()
 	qtx := h.Queries.WithTx(tx)
 
-	status, err := qtx.GetStatusWithBoard(ctx, db.GetStatusWithBoardParams{
+	statusWithBoard, err := qtx.GetStatusWithBoard(ctx, db.GetStatusWithBoardParams{
 		ID:      uint32(statusID),
 		BoardID: uint32(boardID),
 		UserID:  claims.UserID,
@@ -148,9 +155,9 @@ func (h *Handler) UpdateStatusPartial(c echo.Context) error {
 
 	isChanged := false
 	statusParams := db.UpdateStatusParams{
-		ID:        status.Status.ID,
-		Title:     status.Status.Title,
-		SortOrder: status.Status.SortOrder,
+		ID:        statusWithBoard.Status.ID,
+		Title:     statusWithBoard.Status.Title,
+		SortOrder: statusWithBoard.Status.SortOrder,
 	}
 
 	if body.Title != nil {
@@ -170,12 +177,14 @@ func (h *Handler) UpdateStatusPartial(c echo.Context) error {
 		}
 	}
 
-	statusView, err := qtx.GetStatusView(ctx, uint32(statusID))
+	status, err := qtx.GetStatus(ctx, db.GetStatusParams{
+		ID: sql.NullInt32{Int32: int32(statusID), Valid: true},
+	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, statusView)
+	return c.JSON(http.StatusOK, status)
 }
 
 func (h *Handler) SortTickets(c echo.Context) error {

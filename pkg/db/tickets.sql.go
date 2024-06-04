@@ -166,6 +166,141 @@ func (q *Queries) GetTicketWithBoard(ctx context.Context, arg GetTicketWithBoard
 	return i, err
 }
 
+const getTickets = `-- name: GetTickets :many
+SELECT
+  id, status_id, title, description, contact, sort_order, created_at, updated_at
+FROM
+  tickets
+WHERE
+  status_id IN (/*SLICE:status_ids*/?)
+ORDER BY
+  status_id ASC,
+  (
+    CASE
+      WHEN ? = 'asc' THEN sort_order
+    END
+  ) ASC,
+  (
+    CASE
+      WHEN ? = 'desc' THEN sort_order
+    END
+  ) DESC
+`
+
+type GetTicketsParams struct {
+	StatusIds          []uint32    `db:"status_ids" json:"status_ids"`
+	SortOrderDirection interface{} `db:"sort_order_direction" json:"sort_order_direction"`
+}
+
+func (q *Queries) GetTickets(ctx context.Context, arg GetTicketsParams) ([]Ticket, error) {
+	query := getTickets
+	var queryParams []interface{}
+	if len(arg.StatusIds) > 0 {
+		for _, v := range arg.StatusIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:status_ids*/?", strings.Repeat(",?", len(arg.StatusIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:status_ids*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.SortOrderDirection)
+	queryParams = append(queryParams, arg.SortOrderDirection)
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Ticket{}
+	for rows.Next() {
+		var i Ticket
+		if err := rows.Scan(
+			&i.ID,
+			&i.StatusID,
+			&i.Title,
+			&i.Description,
+			&i.Contact,
+			&i.SortOrder,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTicketsByBoardID = `-- name: GetTicketsByBoardID :many
+SELECT
+  tickets.id, status_id, tickets.title, description, contact, tickets.sort_order, tickets.created_at, tickets.updated_at, statuses.id, board_id, statuses.title, statuses.sort_order, statuses.created_at, statuses.updated_at
+FROM
+  tickets
+  JOIN statuses ON tickets.status_id = statuses.id
+WHERE
+  statuses.board_id = ?
+`
+
+type GetTicketsByBoardIDRow struct {
+	ID          uint64      `db:"id" json:"id"`
+	StatusID    uint32      `db:"status_id" json:"status_id"`
+	Title       null.String `db:"title" json:"title"`
+	Description null.String `db:"description" json:"description"`
+	Contact     null.String `db:"contact" json:"contact"`
+	SortOrder   uint32      `db:"sort_order" json:"sort_order"`
+	CreatedAt   null.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt   null.Time   `db:"updated_at" json:"updated_at"`
+	ID_2        uint32      `db:"id_2" json:"id_2"`
+	BoardID     uint32      `db:"board_id" json:"board_id"`
+	Title_2     null.String `db:"title_2" json:"title_2"`
+	SortOrder_2 uint32      `db:"sort_order_2" json:"sort_order_2"`
+	CreatedAt_2 null.Time   `db:"created_at_2" json:"created_at_2"`
+	UpdatedAt_2 null.Time   `db:"updated_at_2" json:"updated_at_2"`
+}
+
+func (q *Queries) GetTicketsByBoardID(ctx context.Context, boardID uint32) ([]GetTicketsByBoardIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getTicketsByBoardID, boardID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetTicketsByBoardIDRow{}
+	for rows.Next() {
+		var i GetTicketsByBoardIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.StatusID,
+			&i.Title,
+			&i.Description,
+			&i.Contact,
+			&i.SortOrder,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ID_2,
+			&i.BoardID,
+			&i.Title_2,
+			&i.SortOrder_2,
+			&i.CreatedAt_2,
+			&i.UpdatedAt_2,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTicketsByStatusID = `-- name: GetTicketsByStatusID :many
 SELECT
   id, status_id, title, description, contact, sort_order, created_at, updated_at

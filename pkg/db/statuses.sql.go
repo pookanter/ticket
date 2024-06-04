@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/guregu/null"
 )
@@ -57,52 +58,40 @@ func (q *Queries) DeleteStatus(ctx context.Context, id uint32) error {
 	return err
 }
 
-const getLastInsertStatusViewByBoardID = `-- name: GetLastInsertStatusViewByBoardID :one
+const getLastInsertStatusID = `-- name: GetLastInsertStatusID :one
 SELECT
-  id, board_id, title, sort_order, created_at, updated_at, tickets
+  LAST_INSERT_ID()
 FROM
-  status_view
-WHERE
-  status_view.board_id = ?
-  AND id = (
-    SELECT
-      LAST_INSERT_ID()
-    FROM
-      statuses
-    LIMIT
-      1
-  )
+  statuses
+LIMIT
+  1
 `
 
-func (q *Queries) GetLastInsertStatusViewByBoardID(ctx context.Context, boardID uint32) (StatusView, error) {
-	row := q.db.QueryRowContext(ctx, getLastInsertStatusViewByBoardID, boardID)
-	var i StatusView
-	err := row.Scan(
-		&i.ID,
-		&i.BoardID,
-		&i.Title,
-		&i.SortOrder,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Tickets,
-	)
-	return i, err
+func (q *Queries) GetLastInsertStatusID(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertStatusID)
+	var last_insert_id int64
+	err := row.Scan(&last_insert_id)
+	return last_insert_id, err
 }
 
-const getStatusView = `-- name: GetStatusView :one
+const getStatus = `-- name: GetStatus :one
 SELECT
-  id, board_id, title, sort_order, created_at, updated_at, tickets
+  id, board_id, title, sort_order, created_at, updated_at
 FROM
-  status_view
+  statuses
 WHERE
-  id = ?
-ORDER BY
-  sort_order ASC
+  id = coalesce(?, id)
+  AND board_id = coalesce(?, board_id)
 `
 
-func (q *Queries) GetStatusView(ctx context.Context, id uint32) (StatusView, error) {
-	row := q.db.QueryRowContext(ctx, getStatusView, id)
-	var i StatusView
+type GetStatusParams struct {
+	ID      sql.NullInt32 `db:"id" json:"id"`
+	BoardID sql.NullInt32 `db:"board_id" json:"board_id"`
+}
+
+func (q *Queries) GetStatus(ctx context.Context, arg GetStatusParams) (Status, error) {
+	row := q.db.QueryRowContext(ctx, getStatus, arg.ID, arg.BoardID)
+	var i Status
 	err := row.Scan(
 		&i.ID,
 		&i.BoardID,
@@ -110,7 +99,6 @@ func (q *Queries) GetStatusView(ctx context.Context, id uint32) (StatusView, err
 		&i.SortOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Tickets,
 	)
 	return i, err
 }
@@ -159,19 +147,34 @@ func (q *Queries) GetStatusWithBoard(ctx context.Context, arg GetStatusWithBoard
 	return i, err
 }
 
-const getStatusesByBoardID = `-- name: GetStatusesByBoardID :many
+const getStatuses = `-- name: GetStatuses :many
 SELECT
   id, board_id, title, sort_order, created_at, updated_at
 FROM
   statuses
 WHERE
-  board_id = ?
+  board_id = coalesce(?, board_id)
 ORDER BY
-  sort_order ASC
+  board_id ASC,
+  (
+    CASE
+      WHEN ? = 'asc' THEN sort_order
+    END
+  ) ASC,
+  (
+    CASE
+      WHEN ? = 'desc' THEN sort_order
+    END
+  ) DESC
 `
 
-func (q *Queries) GetStatusesByBoardID(ctx context.Context, boardID uint32) ([]Status, error) {
-	rows, err := q.db.QueryContext(ctx, getStatusesByBoardID, boardID)
+type GetStatusesParams struct {
+	BoardID            sql.NullInt32 `db:"board_id" json:"board_id"`
+	SortOrderDirection interface{}   `db:"sort_order_direction" json:"sort_order_direction"`
+}
+
+func (q *Queries) GetStatuses(ctx context.Context, arg GetStatusesParams) ([]Status, error) {
+	rows, err := q.db.QueryContext(ctx, getStatuses, arg.BoardID, arg.SortOrderDirection, arg.SortOrderDirection)
 	if err != nil {
 		return nil, err
 	}
