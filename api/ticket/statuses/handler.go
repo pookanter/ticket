@@ -13,7 +13,6 @@ import (
 	"github.com/guregu/null"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc/status"
 )
 
 type Handler struct {
@@ -231,11 +230,7 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 	defer tx.Rollback()
 	qtx := h.Queries.WithTx(tx)
 
-	subctx1, cancel := context.WithCancel(ctx)
-	g, subctx1 := errgroup.WithContext(subctx1)
-	defer cancel()
-
-	stausesWithBoard, err := qtx.GetStatusesWithBoard(subctx1, db.GetStatusesWithBoardParams{
+	stausesWithBoard, err := qtx.GetStatusesWithBoard(ctx, db.GetStatusesWithBoardParams{
 		BoardID: uint32(boardID),
 		UserID:  claims.UserID,
 	})
@@ -256,21 +251,17 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "ticket not found")
 	}
 
-	err = g.Wait()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	subctx2, cancel := context.WithCancel(ctx)
-	g, subctx2 = errgroup.WithContext(subctx2)
+	subctx, cancel := context.WithCancel(ctx)
+	g, subctx := errgroup.WithContext(subctx)
 	defer cancel()
 
-	for i, t := range body.Statuses {
+	for i, s := range body.Statuses {
+		i := i
+		s := s
 		g.Go(func() error {
-			err = qtx.UpdateTicketSortOrderAndStatusID(subctx2, db.UpdateTicketSortOrderAndStatusIDParams{
-				StatusID:  status.Status.ID,
+			err = qtx.UpdateStatusSortOrder(subctx, db.UpdateStatusSortOrderParams{
 				SortOrder: uint32(i + 1),
-				ID:        t.ID,
+				ID:        uint32(s.ID),
 			})
 			if err != nil {
 				return err
@@ -290,10 +281,10 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	tickets, err := qtx.GetTickets(ctx, db.GetTicketsParams{
-		StatusIds:          []uint32{uint32(statusID)},
-		SortOrderDirection: null.StringFrom("ASC"),
+	statuses, err := qtx.GetStatus(ctx, db.GetStatusParams{
+		ID:      sql.NullInt32{Int32: int32(statusIDs[0]), Valid: true},
+		BoardID: sql.NullInt32{Int32: int32(boardID), Valid: true},
 	})
 
-	return c.JSON(http.StatusOK, tickets)
+	return c.JSON(http.StatusOK, statuses)
 }

@@ -326,6 +326,8 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 	defer cancel()
 
 	for i, t := range body.Tickets {
+		i := i
+		t := t
 		g.Go(func() error {
 			err = qtx.UpdateTicketSortOrderAndStatusID(subctx2, db.UpdateTicketSortOrderAndStatusIDParams{
 				StatusID:  status.Status.ID,
