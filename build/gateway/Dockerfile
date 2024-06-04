@@ -3,7 +3,7 @@ FROM cosmtrek/air AS development
 WORKDIR /app
 
 COPY cmd/gateway ./
-COPY api/gateway api/gateway
+
 COPY pkg pkg
 COPY go.mod go.sum ./
 COPY config config
