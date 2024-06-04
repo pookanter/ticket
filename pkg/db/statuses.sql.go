@@ -203,6 +203,66 @@ func (q *Queries) GetStatuses(ctx context.Context, arg GetStatusesParams) ([]Sta
 	return items, nil
 }
 
+const getStatusesWithBoard = `-- name: GetStatusesWithBoard :many
+SELECT
+  statuses.id, statuses.board_id, statuses.title, statuses.sort_order, statuses.created_at, statuses.updated_at,
+  boards.id, boards.user_id, boards.title, boards.sort_order, boards.created_at, boards.updated_at
+FROM
+  statuses
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  statuses.id = ?
+  AND statuses.board_id = ?
+  AND boards.user_id = ?
+`
+
+type GetStatusesWithBoardParams struct {
+	ID      uint32 `db:"id" json:"id"`
+	BoardID uint32 `db:"board_id" json:"board_id"`
+	UserID  uint64 `db:"user_id" json:"user_id"`
+}
+
+type GetStatusesWithBoardRow struct {
+	Status Status `db:"status" json:"status"`
+	Board  Board  `db:"board" json:"board"`
+}
+
+func (q *Queries) GetStatusesWithBoard(ctx context.Context, arg GetStatusesWithBoardParams) ([]GetStatusesWithBoardRow, error) {
+	rows, err := q.db.QueryContext(ctx, getStatusesWithBoard, arg.ID, arg.BoardID, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetStatusesWithBoardRow{}
+	for rows.Next() {
+		var i GetStatusesWithBoardRow
+		if err := rows.Scan(
+			&i.Status.ID,
+			&i.Status.BoardID,
+			&i.Status.Title,
+			&i.Status.SortOrder,
+			&i.Status.CreatedAt,
+			&i.Status.UpdatedAt,
+			&i.Board.ID,
+			&i.Board.UserID,
+			&i.Board.Title,
+			&i.Board.SortOrder,
+			&i.Board.CreatedAt,
+			&i.Board.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getStatusesWithMinimumSortOrder = `-- name: GetStatusesWithMinimumSortOrder :many
 SELECT
   id, board_id, title, sort_order, created_at, updated_at

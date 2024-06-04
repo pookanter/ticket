@@ -10,6 +10,18 @@ WHERE
   AND statuses.board_id = ?
   AND boards.user_id = ?;
 
+-- name: GetStatusesWithBoard :many
+SELECT
+  sqlc.embed(statuses),
+  sqlc.embed(boards)
+FROM
+  statuses
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  statuses.id = ?
+  AND statuses.board_id = ?
+  AND boards.user_id = ?;
+
 -- name: GetStatus :one
 SELECT
   *
