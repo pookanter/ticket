@@ -52,14 +52,8 @@ func (h *Handler) CreateStatus(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	tx, err := h.DB.Begin()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	defer tx.Rollback()
-	qtx := h.Queries.WithTx(tx)
 
-	board, err := qtx.GetBoard(ctx, db.GetBoardParams{
+	board, err := h.Queries.GetBoard(ctx, db.GetBoardParams{
 		ID:     uint32(boardID),
 		UserID: claims.UserID,
 	})
@@ -71,28 +65,28 @@ func (h *Handler) CreateStatus(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	count, err := qtx.CountStatusByBoardID(ctx, board.ID)
+	count, err := h.Queries.CountStatusByBoardID(ctx, board.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer tx.Rollback()
+	qtx := h.Queries.WithTx(tx)
 
 	err = qtx.CreateStatus(ctx, db.CreateStatusParams{
 		BoardID:   board.ID,
 		Title:     null.NewString(body.Title, true),
-		SortOrder: uint32(count),
+		SortOrder: uint32(count + 1),
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	statusID, err := qtx.GetLastInsertStatusID(ctx)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	status, err := qtx.GetStatus(ctx, db.GetStatusParams{
-		ID: sql.NullInt32{Int32: int32(statusID), Valid: true},
-	})
+	status, err := qtx.GetLastInsertStatus(ctx)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -102,7 +96,7 @@ func (h *Handler) CreateStatus(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusCreated, status)
+	return c.JSON(http.StatusCreated, db.NewStatusWithRelated(status, nil))
 }
 
 func (h *Handler) UpdateStatusPartial(c echo.Context) error {

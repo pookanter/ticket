@@ -123,10 +123,17 @@ WHERE
   AND statuses.board_id = ?
   AND boards.user_id = ?;
 
--- name: GetLastInsertStatusID :one
+-- name: GetLastInsertStatus :one
 SELECT
-  LAST_INSERT_ID()
+  *
 FROM
   statuses
-LIMIT
-  1;
+WHERE
+  id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      statuses AS s
+    LIMIT
+      1
+  );

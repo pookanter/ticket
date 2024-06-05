@@ -99,14 +99,13 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) erro
 	return err
 }
 
-const getLastInsertTicketByStatusID = `-- name: GetLastInsertTicketByStatusID :one
+const getLastInsertTicket = `-- name: GetLastInsertTicket :one
 SELECT
   id, status_id, title, description, contact, sort_order, created_at, updated_at
 FROM
   tickets
 WHERE
-  tickets.status_id = ?
-  AND id = (
+  id = (
     SELECT
       LAST_INSERT_ID()
     FROM
@@ -116,8 +115,8 @@ WHERE
   )
 `
 
-func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID uint32) (Ticket, error) {
-	row := q.db.QueryRowContext(ctx, getLastInsertTicketByStatusID, statusID)
+func (q *Queries) GetLastInsertTicket(ctx context.Context) (Ticket, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertTicket)
 	var i Ticket
 	err := row.Scan(
 		&i.ID,

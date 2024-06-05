@@ -61,14 +61,8 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	tx, err := h.DB.Begin()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	defer tx.Rollback()
-	qtx := h.Queries.WithTx(tx)
 
-	status, err := qtx.GetStatusWithBoard(ctx, db.GetStatusWithBoardParams{
+	status, err := h.Queries.GetStatusWithBoard(ctx, db.GetStatusWithBoardParams{
 		ID:      uint32(statusID),
 		BoardID: uint32(boardID),
 		UserID:  claims.UserID,
@@ -81,10 +75,17 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	count, err := qtx.CountTicketByStatusID(ctx, uint32(status.Status.ID))
+	count, err := h.Queries.CountTicketByStatusID(ctx, uint32(status.Status.ID))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer tx.Rollback()
+	qtx := h.Queries.WithTx(tx)
 
 	err = qtx.CreateTicket(ctx, db.CreateTicketParams{
 		StatusID:    uint32(status.Status.ID),
@@ -97,7 +98,7 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	ticket, err := qtx.GetLastInsertTicketByStatusID(ctx, uint32(status.Status.ID))
+	ticket, err := qtx.GetLastInsertTicket(ctx)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}

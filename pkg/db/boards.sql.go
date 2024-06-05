@@ -125,21 +125,24 @@ func (q *Queries) GetBoardsByUserID(ctx context.Context, userID uint64) ([]Board
 	return items, nil
 }
 
-const getLastCreatedBoardByUserID = `-- name: GetLastCreatedBoardByUserID :one
+const getLastInsertBoard = `-- name: GetLastInsertBoard :one
 SELECT
   id, user_id, title, sort_order, created_at, updated_at
 FROM
   boards
 WHERE
-  user_id = ?
-ORDER BY
-  created_at DESC
-LIMIT
-  1
+  id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      boards AS b
+    LIMIT
+      1
+  )
 `
 
-func (q *Queries) GetLastCreatedBoardByUserID(ctx context.Context, userID uint64) (Board, error) {
-	row := q.db.QueryRowContext(ctx, getLastCreatedBoardByUserID, userID)
+func (q *Queries) GetLastInsertBoard(ctx context.Context) (Board, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertBoard)
 	var i Board
 	err := row.Scan(
 		&i.ID,

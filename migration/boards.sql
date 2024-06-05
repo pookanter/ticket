@@ -44,14 +44,17 @@ FROM
 WHERE
   user_id = ?;
 
--- name: GetLastCreatedBoardByUserID :one
+-- name: GetLastInsertBoard :one
 SELECT
   *
 FROM
   boards
 WHERE
-  user_id = ?
-ORDER BY
-  created_at DESC
-LIMIT
-  1;
+  id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      boards AS b
+    LIMIT
+      1
+  );

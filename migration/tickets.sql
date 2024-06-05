@@ -166,14 +166,13 @@ WHERE
   AND statuses.board_id = ?
   AND boards.user_id = ?;
 
--- name: GetLastInsertTicketByStatusID :one
+-- name: GetLastInsertTicket :one
 SELECT
   *
 FROM
   tickets
 WHERE
-  tickets.status_id = ?
-  AND id = (
+  id = (
     SELECT
       LAST_INSERT_ID()
     FROM

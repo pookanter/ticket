@@ -22,7 +22,7 @@ func NewBoardWithRelated(b Board, s []Status, t []Ticket) BoardWithRelated {
 }
 
 func NewStatusesWithRelated(s []Status, t []Ticket) []StatusWithRelated {
-	var sws []StatusWithRelated
+	sws := make([]StatusWithRelated, 0)
 	for _, status := range s {
 		sw := NewStatusWithRelated(status, t)
 		sws = append(sws, sw)

@@ -101,14 +101,7 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	tx, err := h.DB.Begin()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	defer tx.Rollback()
-	qtx := h.Queries.WithTx(tx)
-
-	user, err := qtx.FindUserByID(ctx, claims.UserID)
+	user, err := h.Queries.FindUserByID(ctx, claims.UserID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "user not found")
@@ -117,10 +110,17 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	count, err := qtx.CountBoardByUserID(ctx, user.ID)
+	count, err := h.Queries.CountBoardByUserID(ctx, user.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer tx.Rollback()
+	qtx := h.Queries.WithTx(tx)
 
 	err = qtx.CreateBoard(ctx, db.CreateBoardParams{
 		UserID:    user.ID,
@@ -131,12 +131,12 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	err = tx.Commit()
+	board, err := qtx.GetLastInsertBoard(ctx)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	board, err := h.Queries.GetLastCreatedBoardByUserID(ctx, claims.UserID)
+	err = tx.Commit()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}

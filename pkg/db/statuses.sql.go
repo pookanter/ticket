@@ -96,20 +96,34 @@ func (q *Queries) DeleteStatus(ctx context.Context, id uint32) error {
 	return err
 }
 
-const getLastInsertStatusID = `-- name: GetLastInsertStatusID :one
+const getLastInsertStatus = `-- name: GetLastInsertStatus :one
 SELECT
-  LAST_INSERT_ID()
+  id, board_id, title, sort_order, created_at, updated_at
 FROM
   statuses
-LIMIT
-  1
+WHERE
+  id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      statuses AS s
+    LIMIT
+      1
+  )
 `
 
-func (q *Queries) GetLastInsertStatusID(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getLastInsertStatusID)
-	var last_insert_id int64
-	err := row.Scan(&last_insert_id)
-	return last_insert_id, err
+func (q *Queries) GetLastInsertStatus(ctx context.Context) (Status, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertStatus)
+	var i Status
+	err := row.Scan(
+		&i.ID,
+		&i.BoardID,
+		&i.Title,
+		&i.SortOrder,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getStatus = `-- name: GetStatus :one
