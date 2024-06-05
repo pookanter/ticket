@@ -146,7 +146,8 @@
 	<footer class="box-content w-full bg-background/95 h-[var(--footer-height)]">
 		<div class="w-full max-w-screen-xl p-4 mx-auto md:flex md:items-center md:justify-between">
 			<span class="text-sm text-gray-500 sm:text-center dark:text-gray-400"
-				>Made by <b>Sippakorn Phuakpong</b> with SvelteKit and TailwindCSS with back-end write in Go.
+				>Made by <b>Sippakorn Phuakpong</b> using SvelteKit and TailwindCSS, with the back-end written
+				in Go.
 			</span>
 			<ul
 				class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 sm:mt-0 dark:text-gray-400"
