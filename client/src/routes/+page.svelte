@@ -7,7 +7,6 @@
 	import TicketCard from '$lib/components/ticket-card/ticket-card.svelte';
 	import type { Unsubscriber } from 'svelte/motion';
 	import { onDestroy, onMount } from 'svelte';
-	import authStore from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { TicketService } from '$lib/services/ticket-service';
 	import { BoardStore } from '$lib/stores/board';
@@ -31,10 +30,11 @@
 		debounceTime
 	} from 'rxjs';
 	import StatusSaveDialogContent from '$lib/components/status-save-dialog-content/status-save-dialog-content.svelte';
+	import { AuthStore } from '$lib/stores/auth';
 
 	const { ScrollArea } = Scroll;
 
-	let unsubscribes: Unsubscriber[] = [];
+	let unsubscribers: Unsubscriber[] = [];
 	let boardState = BoardStore.defaultState();
 	let tempBoardState = BoardStore.defaultState();
 	const ticketSubject = new Subject<{
@@ -45,6 +45,7 @@
 
 	const releaseBufferSubject = new Subject<void>();
 	onMount(async () => {
+		unsubscribers.push(AuthStore.Use());
 		tickets$ = ticketSubject
 			.pipe(
 				map((value) => {
@@ -95,16 +96,7 @@
 				});
 			});
 
-		unsubscribes.push(
-			authStore.subscribe((state) => {
-				console.log('APP MOUNT', state);
-				if (!state.user) {
-					goto('/');
-				}
-			})
-		);
-
-		unsubscribes.push(
+		unsubscribers.push(
 			BoardStore.subscribe(async (state) => {
 				console.log('board state change', state);
 
@@ -135,7 +127,7 @@
 	});
 
 	onDestroy(() => {
-		unsubscribes.forEach((unsubscribe) => unsubscribe());
+		unsubscribers.forEach((unsubscriber) => unsubscriber());
 		console.log('unsubscribes');
 		tickets$.unsubscribe();
 	});

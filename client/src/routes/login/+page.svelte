@@ -6,25 +6,25 @@
 	import Label from '$lib/components/ui/label/label.svelte';
 	import { AuthenService } from '$lib/services/authen-service';
 	import { AlertStore } from '$lib/stores/alert';
-	import authStore from '$lib/stores/auth';
+	import { AuthStore } from '$lib/stores/auth';
 	import { DialogStore } from '$lib/stores/dialog';
 	import { onDestroy, onMount } from 'svelte';
 	import type { Unsubscriber } from 'svelte/store';
 
 	let loading = false;
 
-	let unsubscribe: Unsubscriber;
-	// onMount(() => {
-	// 	unsubscribe = authStore.subscribe((state) => {
-	// 		console.log('LOGIN MOUNT', state);
-	// 		if (state.user) {
-	// 			goto('/');
-	// 		}
-	// 	});
-	// });
+	let unsubscriber: Unsubscriber;
+	onMount(() => {
+		unsubscriber = AuthStore.subscribe((state) => {
+			console.log('state', state);
+			if (state.user) {
+				goto('/');
+			}
+		});
+	});
 
 	onDestroy(() => {
-		unsubscribe();
+		unsubscriber();
 	});
 
 	const data = {
@@ -63,7 +63,7 @@
 
 			const { data: user } = await AuthenService.getMe();
 
-			authStore.set({ initializing: false, user });
+			AuthStore.set({ initializing: false, user });
 			goto('/');
 		} catch ({ error, message }: any) {
 			AlertStore.create({

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import '../app.css';
-	import authStore, { type AuthStore } from '$lib/stores/auth';
+	import { AuthStore, type AuthState } from '$lib/stores/auth';
 	import { AuthenService } from '$lib/services/authen-service';
 	import { goto } from '$app/navigation';
 	import type { Unsubscriber } from 'svelte/store';
@@ -11,18 +11,19 @@
 	import { AlertStore } from '$lib/stores/alert';
 	import { ModeWatcher, toggleMode } from 'mode-watcher';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { Moon, Sun } from 'lucide-svelte';
+	import { LogOutIcon, Moon, Sun } from 'lucide-svelte';
 
-	let unsubscribes: Unsubscriber[] = [];
+	let unsubscribers: Unsubscriber[] = [];
 	let alertState = AlertStore.defaultState();
 	let dialogState = DialogStore.defaultState();
+	let user: AuthState['user'] = null;
 	onMount(() => {
-		unsubscribes.push(
-			authStore.subscribe(async (state) => {
+		unsubscribers.push(
+			AuthStore.subscribe(async (state) => {
 				if (state.initializing) {
-					console.log('state.initializing...');
+					console.log('AuthStore.initializing...');
 					const token = AuthenService.getAuthorization();
-					const storeValue: AuthStore = {
+					const storeValue: AuthState = {
 						initializing: false,
 						user: null
 					};
@@ -36,20 +37,14 @@
 						}
 					}
 
-					authStore.set(storeValue);
-
-					// setTimeout(() => {
-					// 	if (storeValue.user) {
-					// 		goto('/');
-					// 	} else {
-					// 		goto('/login');
-					// 	}
-					// }, 0);
+					AuthStore.set(storeValue);
 				}
+
+				user = state.user;
 			})
 		);
 
-		unsubscribes.push(
+		unsubscribers.push(
 			DialogStore.subscribe((state) => {
 				if (state.initializing) {
 					DialogStore.update((store) => {
@@ -65,7 +60,7 @@
 			})
 		);
 
-		unsubscribes.push(
+		unsubscribers.push(
 			AlertStore.subscribe((state) => {
 				if (state.initializing) {
 					AlertStore.update((store) => {
@@ -83,8 +78,8 @@
 	});
 
 	onDestroy(() => {
-		unsubscribes.forEach((unsubscribe) => {
-			unsubscribe();
+		unsubscribers.forEach((unsubscriber) => {
+			unsubscriber();
 		});
 	});
 </script>
@@ -92,8 +87,26 @@
 <ModeWatcher />
 <div class="relative flex flex-col justify-between min-h-screen bg-background">
 	<header
-		class="box-content h-[var(--header-height)] z-50 w-full border-b border-border/40 bg-background/95"
+		class="box-content h-[var(--header-height)] z-50 w-full border-b border-border/40 bg-background/95 flex justify-end"
 	>
+		{#if user}
+			<div class="flex items-center justify-end h-full">
+				<Button
+					on:click={() => {
+						AuthenService.removeAuthorization();
+						AuthStore.update((state) => {
+							state.user = null;
+							return state;
+						});
+					}}
+					variant="outline"
+					size="icon"
+				>
+					<LogOutIcon class="size-4" />
+					<span class="sr-only">Sign Out</span>
+				</Button>
+			</div>
+		{/if}
 		<div class="flex items-center justify-end h-full px-3">
 			<Button on:click={toggleMode} variant="outline" size="icon">
 				<Sun
