@@ -17,7 +17,7 @@
 	import BoardSaveDialogContent from '$lib/components/board-save-dialog-content/board-save-dialog-content.svelte';
 	import StatusCreateDialogContent from '$lib/components/status-save-dialog-content/status-create-dialog-content.svelte';
 	import * as Scroll from '$lib/components/ui/scroll-area';
-	import TicketCreateDialogContent from '$lib/components/ticket-save-dialog-content/ticket-create-dialog-content.svelte';
+	import TicketCreateDialogContent from '$lib/components/ticket-save-dialog-content/ticket-save-dialog-content.svelte';
 	import { cloneDeep, merge } from 'lodash';
 	import {
 		Subject,
@@ -215,19 +215,6 @@
 		Create = 'create',
 		Update = 'update'
 	}
-
-	const dialogState = {
-		open: false,
-		resrc_type: Resource.Board,
-		method: Method.Create,
-		data: null as any
-	};
-
-	function editTicket(ticket: TicketService.Ticket) {
-		console.log('editTicket', ticket);
-		dialogState.resrc_type = Resource.Ticket;
-		dialogState.open = true;
-	}
 </script>
 
 <section class="grid flex-1 grid-cols-12">
@@ -346,7 +333,7 @@
 													role="button"
 													animate:flip={{ duration: flipDurationMs }}
 												>
-													<TicketCard {ticket} edit={editTicket} />
+													<TicketCard {ticket} board_id={status.board_id} />
 												</div>
 											{/each}
 										</div>

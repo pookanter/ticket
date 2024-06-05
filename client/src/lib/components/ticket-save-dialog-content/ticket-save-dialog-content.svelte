@@ -8,9 +8,23 @@
 	import { TicketService } from '$lib/services/ticket-service';
 	import { BoardStore } from '$lib/stores/board';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
+	import { onMount } from 'svelte';
 
 	export let board_id: number;
 	export let status_id: number;
+	export let model = {
+		id: 0,
+		status_id: 0,
+		title: '',
+		description: '',
+		contact: ''
+	};
+
+	onMount(() => {
+		data.title = model.title;
+		data.description = model.description;
+		data.contact = model.contact;
+	});
 
 	let data: Parameters<typeof TicketService.createTicket>[1] = {
 		title: '',
@@ -19,6 +33,21 @@
 	};
 
 	async function handleSubmit() {
+		if (model.id > 0) {
+			try {
+				const { data: ticket } = await TicketService.updateTicketPartial(
+					{ board_id, status_id: model.status_id, ticket_id: model.id },
+					data
+				);
+
+				BoardStore.updateTicket({ ticket });
+				DialogStore.close();
+			} catch (error: any) {
+				AlertStore.error(error);
+			}
+			return;
+		}
+
 		try {
 			const { data: ticket } = await TicketService.createTicket({ board_id, status_id }, data);
 
@@ -32,7 +61,7 @@
 
 <Dialog.Content>
 	<Dialog.Header>
-		<Dialog.Title>Add ticket</Dialog.Title>
+		<Dialog.Title>{model.id > 0 ? 'Edit' : 'Add'} ticket</Dialog.Title>
 	</Dialog.Header>
 	<div class="grid gap-4 py-4">
 		<div class="grid gap-4 py-4">
@@ -51,6 +80,6 @@
 		</div>
 	</div>
 	<Dialog.Footer>
-		<Button type="submit" on:click={handleSubmit}>Add</Button>
+		<Button type="submit" on:click={handleSubmit}>{model.id > 0 ? 'Edit' : 'Add'}</Button>
 	</Dialog.Footer>
 </Dialog.Content>

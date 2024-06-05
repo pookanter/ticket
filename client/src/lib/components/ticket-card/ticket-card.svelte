@@ -3,12 +3,14 @@
 	import type { TicketService } from '$lib/services/ticket-service';
 	import { DotsHorizontalOutline } from 'flowbite-svelte-icons';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { DialogStore } from '$lib/stores/dialog';
+	import TicketSaveDialogContent from '../ticket-save-dialog-content/ticket-save-dialog-content.svelte';
+	export let board_id: number;
 	export let ticket = {
 		id: 0,
 		title: '',
 		description: ''
 	} as TicketService.Ticket;
-	export let edit = (ticket: TicketService.Ticket) => {};
 </script>
 
 <Card.Root class="p-3">
@@ -19,6 +21,11 @@
 				<Button
 					variant="ghost"
 					class="flex items-center justify-center invisible h-auto p-1 hover:bg-opacity-10 hover:bg-accent-foreground group-hover:visible"
+					on:click={() =>
+						DialogStore.create({
+							component: TicketSaveDialogContent,
+							params: { model: ticket, board_id }
+						})}
 				>
 					<DotsHorizontalOutline class="size-4" />
 				</Button>
