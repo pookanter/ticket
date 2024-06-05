@@ -37,6 +37,10 @@ FROM
   statuses
 WHERE
   board_id = coalesce(sqlc.narg('board_id'), board_id)
+  AND (
+    id = coalesce(sqlc.slice('ids'), id)
+    OR id IN (sqlc.slice('ids'))
+  )
 ORDER BY
   board_id ASC,
   (
@@ -107,6 +111,17 @@ FROM
   statuses
 WHERE
   board_id = ?;
+
+-- name: CountStatusWithBoard :one
+SELECT
+  COUNT(statuses.id)
+FROM
+  statuses
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  statuses.id IN (sqlc.slice('ids'))
+  AND statuses.board_id = ?
+  AND boards.user_id = ?;
 
 -- name: GetLastInsertStatusID :one
 SELECT

@@ -82,7 +82,17 @@ function updateStatusesSortOrder(
 	data: { statuses: TicketService.Status[] }
 ) {
 	return http().put<TicketService.Status[]>(
-		`/${TICKET_SERVICE}/boards/${board_id}/statuses/sort_orders`,
+		`/${TICKET_SERVICE}/boards/${board_id}/statuses/sort-orders`,
+		data
+	);
+}
+
+function bulkUpdateTicketOrderInStatuses(
+	{ board_id }: { board_id: number },
+	data: { statuses: TicketService.Status[] }
+) {
+	return http().put<TicketService.Ticket[]>(
+		`/${TICKET_SERVICE}/boards/${board_id}/statuses/tickets/bulk-reorder`,
 		data
 	);
 }
@@ -118,7 +128,7 @@ function updateTicketsSortOrder(
 	data: { tickets: TicketService.Ticket[] }
 ) {
 	return http().put<TicketService.Ticket[]>(
-		`/${TICKET_SERVICE}/boards/${board_id}/statuses/${status_id}/tickets/sort_orders`,
+		`/${TICKET_SERVICE}/boards/${board_id}/statuses/${status_id}/tickets/sort-orders`,
 		data
 	);
 }
@@ -133,5 +143,6 @@ export const TicketService = {
 	updateStatusesSortOrder,
 	createTicket,
 	updateTicketPartial,
-	updateTicketsSortOrder
+	updateTicketsSortOrder,
+	bulkUpdateTicketOrderInStatuses
 };

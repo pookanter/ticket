@@ -292,6 +292,8 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 			SortOrderDirection: null.StringFrom("asc"),
 		})
 		if err != nil {
+			cancel()
+
 			return err
 		}
 
@@ -326,4 +328,188 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, statusesWithRelated)
+}
+
+func (h *Handler) BulkUpdateTicketOrderInStatuses(c echo.Context) error {
+	claims := c.Get("claims").(*auth.Claims)
+
+	boardID, err := strconv.ParseUint(c.Param("board_id"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	var body struct {
+		Statuses []struct {
+			ID        uint64   `json:"id" validate:"required"`
+			TicketIDs []uint64 `json:"ticket_ids" validate:"required,dive"`
+		}
+	}
+
+	err = c.Bind(&body)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	err = c.Validate(&body)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	var statusIDs []uint32
+	var ticketIDs []uint64
+	statusIDMap := make(map[uint64]bool)
+	ticketIDMap := make(map[uint64]bool)
+	for _, status := range body.Statuses {
+		for _, ID := range ticketIDs {
+			if _, exists := ticketIDMap[ID]; exists {
+				return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("ticket id %d must be unique", ID))
+			}
+
+			ticketIDMap[ID] = true
+		}
+
+		if _, exists := statusIDMap[status.ID]; exists {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("status id %d must be unique", status.ID))
+		}
+
+		statusIDs = append(statusIDs, uint32(status.ID))
+		ticketIDs = append(ticketIDs, status.TicketIDs...)
+	}
+
+	ctx := c.Request().Context()
+	prectx, cancel := context.WithCancel(ctx)
+	g, prectx := errgroup.WithContext(prectx)
+	defer cancel()
+
+	chtotal := make(chan int64)
+
+	g.Go(func() error {
+		total, err := h.Queries.CountTicketWithBoard(ctx, db.CountTicketWithBoardParams{
+			Ids:     ticketIDs,
+			BoardID: uint32(boardID),
+			UserID:  claims.UserID,
+		})
+		if err != nil {
+			cancel()
+
+			return err
+		}
+
+		chtotal <- total
+
+		return nil
+	})
+
+	total, err := h.Queries.CountStatusWithBoard(ctx, db.CountStatusWithBoardParams{
+		Ids:     statusIDs,
+		BoardID: uint32(boardID),
+		UserID:  claims.UserID,
+	})
+	if err != nil {
+		return err
+	}
+
+	if total != int64(len(statusIDs)) {
+		return fmt.Errorf(fmt.Sprintf("ticket id %d not found", ticketIDs))
+	}
+
+	select {
+	case <-prectx.Done():
+		return echo.NewHTTPError(http.StatusInternalServerError, prectx.Err().Error())
+	case total := <-chtotal:
+		if total != int64(len(ticketIDs)) {
+			return echo.NewHTTPError(http.StatusBadRequest, "some ticket's id does exist")
+		}
+	}
+
+	err = g.Wait()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer tx.Rollback()
+	qtx := h.Queries.WithTx(tx)
+
+	subctx, cancel := context.WithCancel(ctx)
+	g, subctx = errgroup.WithContext(subctx)
+	defer cancel()
+
+	for _, s := range body.Statuses {
+		statusID := s.ID
+
+		for i, ID := range s.TicketIDs {
+			i := i
+			ID := ID
+			g.Go(func() error {
+				err = qtx.UpdateTicketSortOrderAndStatusID(subctx, db.UpdateTicketSortOrderAndStatusIDParams{
+					StatusID:  uint32(statusID),
+					SortOrder: uint32(i + 1),
+					ID:        ID,
+				})
+				if err != nil {
+					return err
+				}
+
+				return nil
+			})
+		}
+	}
+
+	err = g.Wait()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	posctx, cancel := context.WithCancel(ctx)
+	g, posctx = errgroup.WithContext(posctx)
+	defer cancel()
+
+	chtickets := make(chan []db.Ticket)
+
+	g.Go(func() error {
+		tickets, err := h.Queries.GetTickets(posctx, db.GetTicketsParams{
+			StatusIds:          statusIDs,
+			SortOrderDirection: null.StringFrom("asc"),
+		})
+		if err != nil {
+			cancel()
+
+			return err
+		}
+
+		chtickets <- tickets
+
+		return nil
+	})
+
+	statuses, err := h.Queries.GetStatuses(ctx, db.GetStatusesParams{
+		Ids:                statusIDs,
+		SortOrderDirection: null.StringFrom("asc"),
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	var tickets []db.Ticket
+	select {
+	case <-posctx.Done():
+		return echo.NewHTTPError(http.StatusInternalServerError, posctx.Err().Error())
+	case tickets = <-chtickets:
+	}
+
+	err = g.Wait()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, db.NewStatusesWithRelated(statuses, tickets))
 }

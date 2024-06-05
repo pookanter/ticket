@@ -16,11 +16,19 @@ func NewBoardWithRelated(b Board, s []Status, t []Ticket) BoardWithRelated {
 		Statuses: []StatusWithRelated{},
 	}
 
-	for _, status := range s {
-		bw.Statuses = append(bw.Statuses, NewStatusWithRelated(status, t))
-	}
+	bw.Statuses = NewStatusesWithRelated(s, t)
 
 	return bw
+}
+
+func NewStatusesWithRelated(s []Status, t []Ticket) []StatusWithRelated {
+	var sws []StatusWithRelated
+	for _, status := range s {
+		sw := NewStatusWithRelated(status, t)
+		sws = append(sws, sw)
+	}
+
+	return sws
 }
 
 func NewStatusWithRelated(s Status, t []Ticket) StatusWithRelated {

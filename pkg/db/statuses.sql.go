@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	null "github.com/guregu/null/v5"
 )
@@ -23,6 +24,43 @@ WHERE
 
 func (q *Queries) CountStatusByBoardID(ctx context.Context, boardID uint32) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countStatusByBoardID, boardID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countStatusWithBoard = `-- name: CountStatusWithBoard :one
+SELECT
+  COUNT(statuses.id)
+FROM
+  statuses
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  statuses.id IN (/*SLICE:ids*/?)
+  AND statuses.board_id = ?
+  AND boards.user_id = ?
+`
+
+type CountStatusWithBoardParams struct {
+	Ids     []uint32 `db:"ids" json:"ids"`
+	BoardID uint32   `db:"board_id" json:"board_id"`
+	UserID  uint64   `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) CountStatusWithBoard(ctx context.Context, arg CountStatusWithBoardParams) (int64, error) {
+	query := countStatusWithBoard
+	var queryParams []interface{}
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.BoardID)
+	queryParams = append(queryParams, arg.UserID)
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -154,6 +192,10 @@ FROM
   statuses
 WHERE
   board_id = coalesce(?, board_id)
+  AND (
+    id = coalesce(/*SLICE:ids*/?, id)
+    OR id IN (/*SLICE:ids*/?)
+  )
 ORDER BY
   board_id ASC,
   (
@@ -170,11 +212,33 @@ ORDER BY
 
 type GetStatusesParams struct {
 	BoardID            sql.NullInt32 `db:"board_id" json:"board_id"`
+	Ids                []uint32      `db:"ids" json:"ids"`
 	SortOrderDirection interface{}   `db:"sort_order_direction" json:"sort_order_direction"`
 }
 
 func (q *Queries) GetStatuses(ctx context.Context, arg GetStatusesParams) ([]Status, error) {
-	rows, err := q.db.QueryContext(ctx, getStatuses, arg.BoardID, arg.SortOrderDirection, arg.SortOrderDirection)
+	query := getStatuses
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.BoardID)
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.SortOrderDirection)
+	queryParams = append(queryParams, arg.SortOrderDirection)
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}

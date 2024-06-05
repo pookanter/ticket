@@ -49,7 +49,7 @@
 	onMount(async () => {
 		tickets$ = ticketSubject
 			.pipe(
-				mergeMap(([params, body]) =>
+				concatMap(([params, body]) =>
 					from(TicketService.updateTicketsSortOrder(params, body)).pipe(
 						map(({ data }) => {
 							setTimeout(() => {
@@ -194,31 +194,6 @@
 			},
 			{ tickets: boardState.selected.statuses[colIdx].tickets }
 		]);
-		// try {
-		// 	const { data: tickets } = await TicketService.updateTicketsSortOrder(
-		// 		{
-		// 			board_id: boardState.selected.id,
-		// 			status_id: cid
-		// 		},
-		// 		{ tickets: boardState.selected.statuses[colIdx].tickets }
-		// 	);
-
-		// 	BoardStore.update((state) => {
-		// 		const targetStatus = boardState.selected.statuses[colIdx];
-
-		// 		state.selected.statuses.forEach((status) => {
-		// 			if (status.id === targetStatus.id) {
-		// 				status.tickets = tickets;
-		// 			}
-		// 		});
-
-		// 		return state;
-		// 	});
-		// } catch (error) {
-		// 	AlertStore.error(error);
-
-		// 	BoardStore.selectBoard(tempBoardState.selected);
-		// }
 	}
 
 	enum Resource {

@@ -271,6 +271,8 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 			UserID:  claims.UserID,
 		})
 		if err != nil {
+			cancel()
+
 			return err
 		}
 
