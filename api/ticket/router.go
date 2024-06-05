@@ -22,12 +22,12 @@ func Router(api *apikit.API) {
 
 	sg := bg.Group("/:board_id/statuses")
 	sg.POST("", s.CreateStatus)
-	sg.PUT("/sort_orders", s.SortStatusesOrder)
+	sg.PUT("/sort-orders", s.SortStatusesOrder)
 	sg.PATCH("/:status_id", s.UpdateStatusPartial)
 
 	t := tickets.New(api)
 	tg := sg.Group("/:status_id/tickets")
 	tg.POST("", t.CreateTicket)
-	tg.PUT("/sort_orders", t.SortTicketsOrder)
+	tg.PUT("/sort-orders", t.SortTicketsOrder)
 	tg.PATCH("/:ticket_id", t.UpdateTicketPartial)
 }

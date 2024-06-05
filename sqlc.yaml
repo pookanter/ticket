@@ -32,7 +32,3 @@ sql:
             go_type:
               import: "github.com/guregu/null/v5"
               type: "Time"
-          - column: "tickets.status_id"
-            go_type:
-              import: "github.com/guregu/null/v5"
-              type: "Int32"

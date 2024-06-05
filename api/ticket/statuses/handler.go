@@ -211,7 +211,7 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	var statusIDs []null.Int32
+	var statusIDs []uint32
 	statusIDMap := make(map[uint64]bool)
 	for _, status := range body.Statuses {
 		if _, exists := statusIDMap[status.ID]; exists {
@@ -219,7 +219,7 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 		}
 
 		statusIDMap[status.ID] = true
-		statusIDs = append(statusIDs, null.NewInt32(int32(status.ID), true))
+		statusIDs = append(statusIDs, uint32(status.ID))
 	}
 
 	ctx := c.Request().Context()

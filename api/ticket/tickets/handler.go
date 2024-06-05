@@ -81,13 +81,13 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	count, err := qtx.CountTicketByStatusID(ctx, null.NewInt32(int32(status.Status.ID), true))
+	count, err := qtx.CountTicketByStatusID(ctx, uint32(status.Status.ID))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	err = qtx.CreateTicket(ctx, db.CreateTicketParams{
-		StatusID:    null.NewInt32(int32(status.Status.ID), true),
+		StatusID:    uint32(status.Status.ID),
 		Title:       null.NewString(body.Title, true),
 		Description: null.NewString(body.Description, true),
 		Contact:     null.NewString(body.Contact, true),
@@ -97,7 +97,7 @@ func (h *Handler) CreateTicket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	ticket, err := qtx.GetLastInsertTicketByStatusID(ctx, null.NewInt32(int32(status.Status.ID), true))
+	ticket, err := qtx.GetLastInsertTicketByStatusID(ctx, uint32(status.Status.ID))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -167,7 +167,7 @@ func (h *Handler) UpdateTicketPartial(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	if statusID != uint64(ticket.Ticket.StatusID.Int32) {
+	if statusID != uint64(ticket.Ticket.StatusID) {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("status_id is not match, expected: %d", ticket.Ticket.StatusID))
 	}
 
@@ -321,7 +321,7 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 		t := t
 		g.Go(func() error {
 			err = qtx.UpdateTicketSortOrderAndStatusID(subctx, db.UpdateTicketSortOrderAndStatusIDParams{
-				StatusID:  null.NewInt32(int32(statusWithBoard.Status.ID), true),
+				StatusID:  uint32(statusWithBoard.Status.ID),
 				SortOrder: uint32(i + 1),
 				ID:        t.ID,
 			})
@@ -333,29 +333,7 @@ func (h *Handler) SortTicketsOrder(c echo.Context) error {
 		})
 	}
 
-	statusIds := []null.Int32{null.NewInt32(int32(statusWithBoard.Status.ID), true)}
-
-	g.Go(func() error {
-		removeTickets, err := qtx.GetTickets(subctx, db.GetTicketsParams{
-			StatusIds:  statusIds,
-			ExcludeIds: ticketIDs,
-		})
-		if err != nil {
-			return err
-		}
-
-		for _, t := range removeTickets {
-			err = qtx.UpdateTicketStatusID(subctx, db.UpdateTicketStatusIDParams{
-				StatusID: null.Int32{},
-				ID:       uint64(t.ID),
-			})
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
+	statusIds := []uint32{uint32(statusID)}
 
 	err = g.Wait()
 	if err != nil {

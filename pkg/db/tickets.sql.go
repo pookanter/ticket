@@ -21,7 +21,7 @@ WHERE
   status_id = ?
 `
 
-func (q *Queries) CountTicketByStatusID(ctx context.Context, statusID null.Int32) (int64, error) {
+func (q *Queries) CountTicketByStatusID(ctx context.Context, statusID uint32) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countTicketByStatusID, statusID)
 	var count int64
 	err := row.Scan(&count)
@@ -81,7 +81,7 @@ VALUES
 `
 
 type CreateTicketParams struct {
-	StatusID    null.Int32  `db:"status_id" json:"status_id"`
+	StatusID    uint32      `db:"status_id" json:"status_id"`
 	Title       null.String `db:"title" json:"title"`
 	Description null.String `db:"description" json:"description"`
 	Contact     null.String `db:"contact" json:"contact"`
@@ -116,7 +116,7 @@ WHERE
   )
 `
 
-func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID null.Int32) (Ticket, error) {
+func (q *Queries) GetLastInsertTicketByStatusID(ctx context.Context, statusID uint32) (Ticket, error) {
 	row := q.db.QueryRowContext(ctx, getLastInsertTicketByStatusID, statusID)
 	var i Ticket
 	err := row.Scan(
@@ -233,9 +233,9 @@ ORDER BY
 `
 
 type GetTicketsParams struct {
-	StatusIds          []null.Int32 `db:"status_ids" json:"status_ids"`
-	ExcludeIds         []uint64     `db:"exclude_ids" json:"exclude_ids"`
-	SortOrderDirection interface{}  `db:"sort_order_direction" json:"sort_order_direction"`
+	StatusIds          []uint32    `db:"status_ids" json:"status_ids"`
+	ExcludeIds         []uint64    `db:"exclude_ids" json:"exclude_ids"`
+	SortOrderDirection interface{} `db:"sort_order_direction" json:"sort_order_direction"`
 }
 
 func (q *Queries) GetTickets(ctx context.Context, arg GetTicketsParams) ([]Ticket, error) {
@@ -318,7 +318,7 @@ WHERE
 
 type GetTicketsByBoardIDRow struct {
 	ID          uint64      `db:"id" json:"id"`
-	StatusID    null.Int32  `db:"status_id" json:"status_id"`
+	StatusID    uint32      `db:"status_id" json:"status_id"`
 	Title       null.String `db:"title" json:"title"`
 	Description null.String `db:"description" json:"description"`
 	Contact     null.String `db:"contact" json:"contact"`
@@ -382,7 +382,7 @@ ORDER BY
   sort_order ASC
 `
 
-func (q *Queries) GetTicketsByStatusID(ctx context.Context, statusID null.Int32) ([]Ticket, error) {
+func (q *Queries) GetTicketsByStatusID(ctx context.Context, statusID uint32) ([]Ticket, error) {
 	rows, err := q.db.QueryContext(ctx, getTicketsByStatusID, statusID)
 	if err != nil {
 		return nil, err
@@ -511,7 +511,7 @@ ORDER BY
 `
 
 type GetTicketsWithMinimumSortOrderParams struct {
-	StatusID           null.Int32  `db:"status_id" json:"status_id"`
+	StatusID           uint32      `db:"status_id" json:"status_id"`
 	SortOrder          uint32      `db:"sort_order" json:"sort_order"`
 	SortOrderDirection interface{} `db:"sort_order_direction" json:"sort_order_direction"`
 }
@@ -568,7 +568,7 @@ WHERE
 `
 
 type UpdateTicketParams struct {
-	StatusID    null.Int32  `db:"status_id" json:"status_id"`
+	StatusID    uint32      `db:"status_id" json:"status_id"`
 	Title       null.String `db:"title" json:"title"`
 	Description null.String `db:"description" json:"description"`
 	Contact     null.String `db:"contact" json:"contact"`
@@ -603,9 +603,9 @@ WHERE
 `
 
 type UpdateTicketSortOrderAndStatusIDParams struct {
-	SortOrder uint32     `db:"sort_order" json:"sort_order"`
-	StatusID  null.Int32 `db:"status_id" json:"status_id"`
-	ID        uint64     `db:"id" json:"id"`
+	SortOrder uint32 `db:"sort_order" json:"sort_order"`
+	StatusID  uint32 `db:"status_id" json:"status_id"`
+	ID        uint64 `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateTicketSortOrderAndStatusID(ctx context.Context, arg UpdateTicketSortOrderAndStatusIDParams) error {
@@ -629,8 +629,8 @@ WHERE
 `
 
 type UpdateTicketStatusIDParams struct {
-	StatusID null.Int32 `db:"status_id" json:"status_id"`
-	ID       uint64     `db:"id" json:"id"`
+	StatusID uint32 `db:"status_id" json:"status_id"`
+	ID       uint64 `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateTicketStatusID(ctx context.Context, arg UpdateTicketStatusIDParams) error {
