@@ -66,9 +66,9 @@ func (h *Handler) GetBoardByID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	var statusIDs []null.Int32
+	var statusIDs []uint32
 	for _, s := range statuses {
-		statusIDs = append(statusIDs, null.NewInt32(int32(s.ID), true))
+		statusIDs = append(statusIDs, uint32(s.ID))
 	}
 
 	tickets, err := h.Queries.GetTickets(ctx, db.GetTicketsParams{
@@ -212,9 +212,9 @@ func (h *Handler) UpdateBoardByID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	var statusIDs []null.Int32
+	var statusIDs []uint32
 	for _, s := range statuses {
-		statusIDs = append(statusIDs, null.NewInt32(int32(s.ID), true))
+		statusIDs = append(statusIDs, uint32(s.ID))
 	}
 
 	tickets, err := h.Queries.GetTickets(ctx, db.GetTicketsParams{
