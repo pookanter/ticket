@@ -7,14 +7,40 @@
 	import { BoardStore } from '$lib/stores/board';
 	import { AlertStore } from '$lib/stores/alert';
 	import { DialogStore } from '$lib/stores/dialog';
+	import { onMount } from 'svelte';
 
 	export let board_id: number;
+	export let model = {
+		id: 0,
+		board_id: 0,
+		title: ''
+	};
+
+	onMount(() => {
+		console.log(model);
+		data.title = model.title;
+	});
 
 	let data = {
 		title: ''
 	};
 
 	async function handleSubmit() {
+		if (model.id > 0) {
+			try {
+				const { data: status } = await TicketService.updateStatusPartial(
+					{ board_id: model.board_id, status_id: model.id },
+					data
+				);
+
+				BoardStore.updateStatus({ status });
+				DialogStore.close();
+			} catch (error: any) {
+				AlertStore.error(error);
+			}
+			return;
+		}
+
 		try {
 			const { data: status } = await TicketService.createStatus({ board_id }, data);
 
@@ -28,7 +54,7 @@
 
 <Dialog.Content>
 	<Dialog.Header>
-		<Dialog.Title>Add status</Dialog.Title>
+		<Dialog.Title>{model.id > 0 ? 'Edit' : 'Add'} status</Dialog.Title>
 	</Dialog.Header>
 	<div class="grid gap-4 py-4">
 		<div class="grid gap-4 py-4">
@@ -39,6 +65,6 @@
 		</div>
 	</div>
 	<Dialog.Footer>
-		<Button type="submit" on:click={handleSubmit}>Add</Button>
+		<Button type="submit" on:click={handleSubmit}>{model.id > 0 ? 'Edit' : 'Add'}</Button>
 	</Dialog.Footer>
 </Dialog.Content>

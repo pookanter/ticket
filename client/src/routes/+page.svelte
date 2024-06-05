@@ -1,5 +1,4 @@
 <script lang="ts">
-	import * as BoardTabs from '$lib/components/board-tabs/index';
 	import { DotsHorizontalOutline, PlusOutline } from 'flowbite-svelte-icons';
 	import * as Card from '$lib/components/ui/card/index';
 	import { flip } from 'svelte/animate';
@@ -11,32 +10,27 @@
 	import authStore from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { TicketService } from '$lib/services/ticket-service';
-	import { BoardStore, type BoardState } from '$lib/stores/board';
+	import { BoardStore } from '$lib/stores/board';
 	import { AlertStore } from '$lib/stores/alert';
 	import { DialogStore } from '$lib/stores/dialog';
 	import BoardSaveDialogContent from '$lib/components/board-save-dialog-content/board-save-dialog-content.svelte';
-	import StatusCreateDialogContent from '$lib/components/status-save-dialog-content/status-create-dialog-content.svelte';
+	import StatusCreateDialogContent from '$lib/components/status-save-dialog-content/status-save-dialog-content.svelte';
 	import * as Scroll from '$lib/components/ui/scroll-area';
-	import TicketCreateDialogContent from '$lib/components/ticket-save-dialog-content/ticket-save-dialog-content.svelte';
-	import { cloneDeep, merge } from 'lodash';
+	import TicketSaveDialogContent from '$lib/components/ticket-save-dialog-content/ticket-save-dialog-content.svelte';
+	import { cloneDeep } from 'lodash';
 	import {
 		Subject,
 		Subscription,
 		catchError,
-		combineLatest,
 		concatMap,
 		from,
 		map,
-		mergeAll,
-		mergeMap,
 		of,
-		toArray,
 		tap,
-		bufferTime,
 		buffer,
-		timer,
 		debounceTime
 	} from 'rxjs';
+	import StatusSaveDialogContent from '$lib/components/status-save-dialog-content/status-save-dialog-content.svelte';
 
 	const { ScrollArea } = Scroll;
 
@@ -279,21 +273,36 @@
 								class="h-[calc(100vh-(var(--header-height)+var(--footer-height))-2rem-1px)]"
 							>
 								<Card.Root class="p-2 w-80">
-									<Card.Header class="px-2 py-2 pt-0">
+									<Card.Header class="px-2 py-2 pt-0 group">
 										<Card.Title>
 											<div class="flex items-center justify-between">
 												<span class="text-base">{status.title}</span>
-												<button
-													class="p-1 ml-4 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
-													on:click={() => {
-														DialogStore.create({
-															component: TicketCreateDialogContent,
-															params: { board_id: boardState?.selected?.id, status_id: status.id }
-														});
-													}}
-												>
-													<PlusOutline class="size-4" />
-												</button>
+												<div class="flex">
+													<Button
+														variant="ghost"
+														class="flex items-center justify-center invisible h-auto p-1 ml-4 rounded cursor-pointer group-hover:visible hover:text-accent-foreground hover:bg-accent"
+														on:click={() => {
+															DialogStore.create({
+																component: StatusSaveDialogContent,
+																params: { model: status }
+															});
+														}}
+													>
+														<DotsHorizontalOutline class="size-4" />
+													</Button>
+													<Button
+														variant="ghost"
+														class="flex items-center justify-center h-auto p-1 ml-2 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
+														on:click={() => {
+															DialogStore.create({
+																component: TicketSaveDialogContent,
+																params: { board_id: boardState?.selected?.id, status_id: status.id }
+															});
+														}}
+													>
+														<PlusOutline class="size-4" />
+													</Button>
+												</div>
 											</div>
 										</Card.Title>
 									</Card.Header>
@@ -302,10 +311,10 @@
 										{#if status.tickets.length === 0}
 											<Button
 												variant="ghost"
-												class="flex items-center justify-start w-full p-2 rounded hover:bg-accent"
+												class="flex items-center justify-start w-full h-auto p-1 rounded hover:bg-accent"
 												on:click={() => {
 													DialogStore.create({
-														component: TicketCreateDialogContent,
+														component: TicketSaveDialogContent,
 														params: { board_id: boardState?.selected?.id, status_id: status.id }
 													});
 												}}

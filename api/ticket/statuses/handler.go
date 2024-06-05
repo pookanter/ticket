@@ -171,14 +171,22 @@ func (h *Handler) UpdateStatusPartial(c echo.Context) error {
 		}
 	}
 
-	status, err := qtx.GetStatus(ctx, db.GetStatusParams{
+	status, err := h.Queries.GetStatus(ctx, db.GetStatusParams{
 		ID: sql.NullInt32{Int32: int32(statusID), Valid: true},
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, status)
+	tickets, err := h.Queries.GetTickets(ctx, db.GetTicketsParams{
+		StatusIds:          []uint32{status.ID},
+		SortOrderDirection: null.StringFrom("asc"),
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, db.NewStatusWithRelated(status, tickets))
 }
 
 func (h *Handler) SortStatusesOrder(c echo.Context) error {

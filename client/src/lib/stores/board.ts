@@ -63,17 +63,17 @@ function addStatus({ status }: { status: TicketService.Status }) {
 }
 
 function updateStatus({ status }: { status: TicketService.Status }) {
-	// boardStore.update((state) => {
-	// 	const selected = cloneDeep(state.selected);
-	// 	if (selected) {
-	// 		const index = selected.statuses.findIndex((s) => s.id === status.id);
-	// 		if (index !== -1) {
-	// 			selected.statuses[index] = status;
-	// 		}
-	// 	}
-	// 	state.selected = selected;
-	// 	return state;
-	// });
+	boardStore.update((state) => {
+		const selected = cloneDeep(state.selected);
+		const index = selected.statuses.findIndex((s) => s.id === status.id);
+		if (index !== -1) {
+			selected.statuses[index] = status;
+		}
+
+		state.selected = selected;
+
+		return state;
+	});
 }
 
 function addTicket({ board_id, ticket }: { board_id: number; ticket: TicketService.Ticket }) {
