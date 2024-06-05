@@ -24,6 +24,7 @@ func Router(api *apikit.API) {
 	sg.POST("", s.CreateStatus)
 	sg.PUT("/sort-orders", s.SortStatusesOrder)
 	sg.PATCH("/:status_id", s.UpdateStatusPartial)
+	sg.PUT("/tickets/bulk-reorder", s.BulkUpdateTicketOrderInStatuses)
 
 	t := tickets.New(api)
 	tg := sg.Group("/:status_id/tickets")

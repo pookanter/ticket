@@ -43,22 +43,36 @@
 	let unsubscribes: Unsubscriber[] = [];
 	let boardState = BoardStore.defaultState();
 	let tempBoardState = BoardStore.defaultState();
-	const ticketSubject = new Subject<Parameters<typeof TicketService.updateTicketsSortOrder>>();
+	const ticketSubject = new Subject<{
+		id: number;
+		ticket_ids: number[];
+	}>();
 	let tickets$: Subscription;
+
 	const releaseBufferSubject = new Subject<void>();
 	onMount(async () => {
 		tickets$ = ticketSubject
 			.pipe(
-				concatMap(([params, body]) =>
-					from(TicketService.updateTicketsSortOrder(params, body)).pipe(
+				map((value) => {
+					setTimeout(() => {
+						releaseBufferSubject.next();
+					}, 10);
+
+					return value;
+				}),
+				buffer(releaseBufferSubject.pipe(debounceTime(1000))),
+				tap((values) => {
+					console.log('buffer', values);
+				}),
+				concatMap((values) =>
+					from(
+						TicketService.bulkUpdateTicketOrderInStatuses(
+							{ board_id: boardState.selected.id },
+							{ statuses: values }
+						)
+					).pipe(
 						map(({ data }) => {
-							setTimeout(() => {
-								releaseBufferSubject.next();
-							}, 500);
-
-							const { status_id } = params;
-
-							return { status_id, data };
+							return data;
 						}),
 						catchError((error) => {
 							AlertStore.error(error);
@@ -66,19 +80,18 @@
 							return of();
 						})
 					)
-				),
-				buffer(releaseBufferSubject.pipe(debounceTime(1000)))
+				)
 			)
 			.subscribe((values) => {
 				if (values.length === 0) return;
 				console.log('values', values);
 				BoardStore.update((state) => {
 					const selected = cloneDeep(state.selected);
-					for (const { status_id, data } of values) {
-						const idx = selected.statuses.findIndex((status) => status.id === status_id);
+					for (const { id, tickets } of values) {
+						const idx = selected.statuses.findIndex((status) => status.id === id);
 
 						if (idx > -1) {
-							selected.statuses[idx].tickets = data;
+							selected.statuses[idx].tickets = tickets;
 						}
 					}
 
@@ -187,13 +200,10 @@
 		boardState.selected.statuses = [...boardState.selected.statuses];
 
 		console.log('handleDndFinalizeCards');
-		ticketSubject.next([
-			{
-				board_id: boardState.selected.id,
-				status_id: cid
-			},
-			{ tickets: boardState.selected.statuses[colIdx].tickets }
-		]);
+		ticketSubject.next({
+			id: cid,
+			ticket_ids: boardState.selected.statuses[colIdx].tickets.map((t) => t.id)
+		});
 	}
 
 	enum Resource {

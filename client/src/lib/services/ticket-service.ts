@@ -89,9 +89,14 @@ function updateStatusesSortOrder(
 
 function bulkUpdateTicketOrderInStatuses(
 	{ board_id }: { board_id: number },
-	data: { statuses: TicketService.Status[] }
+	data: {
+		statuses: {
+			id: number;
+			ticket_ids: number[];
+		}[];
+	}
 ) {
-	return http().put<TicketService.Ticket[]>(
+	return http().put<TicketService.Status[]>(
 		`/${TICKET_SERVICE}/boards/${board_id}/statuses/tickets/bulk-reorder`,
 		data
 	);

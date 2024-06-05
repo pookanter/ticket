@@ -342,7 +342,7 @@ func (h *Handler) BulkUpdateTicketOrderInStatuses(c echo.Context) error {
 		Statuses []struct {
 			ID        uint64   `json:"id" validate:"required"`
 			TicketIDs []uint64 `json:"ticket_ids" validate:"required,dive"`
-		}
+		} `json:"statuses" validate:"required,dive"`
 	}
 
 	err = c.Bind(&body)
