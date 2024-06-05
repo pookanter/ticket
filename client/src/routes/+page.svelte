@@ -327,10 +327,26 @@
 									</Card.Header>
 
 									<Card.Content class="relative px-0 py-0">
+										{#if status.tickets.length === 0}
+											<Button
+												variant="ghost"
+												class="flex items-center justify-start w-full p-2 rounded hover:bg-accent"
+												on:click={() => {
+													DialogStore.create({
+														component: TicketCreateDialogContent,
+														params: { board_id: boardState?.selected?.id, status_id: status.id }
+													});
+												}}
+											>
+												<PlusOutline class="size-4" />
+												<span class="ml-2">Add ticket</span>
+											</Button>
+										{/if}
 										<div
-											class="absolute top-0 left-0 flex flex-col w-full gap-2"
+											class="absolute top-0 left-0 flex flex-col w-full gap-2 border border-red-400"
 											class:absolute={status.tickets.length === 0}
 											class:h-20={status.tickets.length === 0}
+											class:mt-12={status.tickets.length === 0}
 											use:dndzone={{
 												items: status.tickets,
 												flipDurationMs,
@@ -349,20 +365,6 @@
 												</div>
 											{/each}
 										</div>
-										{#if status.tickets.length === 0}
-											<button
-												class="flex items-center justify-start w-full p-2 rounded hover:bg-accent"
-												on:click={() => {
-													DialogStore.create({
-														component: TicketCreateDialogContent,
-														params: { board_id: boardState?.selected?.id, status_id: status.id }
-													});
-												}}
-											>
-												<PlusOutline class="size-4" />
-												<span class="ml-2">Add ticket</span>
-											</button>
-										{/if}
 									</Card.Content>
 								</Card.Root>
 							</ScrollArea>
