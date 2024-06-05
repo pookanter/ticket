@@ -11,6 +11,8 @@ sql:
       go:
         package: "db"
         out: "pkg/db"
+        sql_package: "database/sql"
+        sql_driver: "github.com/go-sql-driver/mysql"
         emit_empty_slices: true
         emit_db_tags: true
         emit_json_tags: true

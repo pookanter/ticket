@@ -246,7 +246,7 @@
 </script>
 
 <section class="grid flex-1 grid-cols-12">
-	<div class="relative col-span-2 px-2 bg-muted">
+	<div class="relative col-span-2 pl-2 bg-muted">
 		<Button
 			variant="ghost"
 			class="absolute top-0 right-0 flex items-center justify-center h-auto p-1 m-1.5 hover:bg-opacity-10 hover:bg-accent-foreground"
@@ -256,32 +256,38 @@
 		>
 			<PlusOutline class="size-4" />
 		</Button>
-		<div class="flex flex-col w-full gap-2 mt-8">
-			{#each boardState.boards as board (board.id)}
-				<Button
-					variant="ghost"
-					class="justify-between py-2 hover:bg-opacity-10 hover:bg-accent-foreground group/sidemenu {boardState.selected &&
-					boardState.selected.id === board.id
-						? 'bg-accent-foreground bg-opacity-10 text-accent-foreground'
-						: ''}"
-					on:click={() => fetchBoardFullDetail(board)}
-				>
-					{board.title}
+		<ScrollArea
+			class="mt-8 mr-2 w-full h-[calc(100vh-(var(--header-height)+var(--footer-height))-2rem-1px)] [&>[data-melt-scroll-area-thumb]]:bg-red-400"
+			orientation="vertical"
+			scrollbarYClasses="dark:[&>[data-melt-scroll-area-thumb]]:bg-primary-foreground"
+		>
+			<div class="flex flex-col w-full gap-2">
+				{#each boardState.boards as board (board.id)}
 					<Button
 						variant="ghost"
-						class="flex items-center justify-center invisible h-auto p-1 hover:bg-opacity-10 hover:bg-accent-foreground group-hover/sidemenu:visible"
+						class="justify-between py-2 hover:bg-opacity-10 hover:bg-accent-foreground group/sidemenu {boardState.selected &&
+						boardState.selected.id === board.id
+							? 'bg-accent-foreground bg-opacity-10 text-accent-foreground'
+							: ''}"
+						on:click={() => fetchBoardFullDetail(board)}
 					>
-						<DotsHorizontalOutline class="size-4" />
+						{board.title}
+						<Button
+							variant="ghost"
+							class="flex items-center justify-center invisible h-auto p-1 hover:bg-opacity-10 hover:bg-accent-foreground group-hover/sidemenu:visible"
+						>
+							<DotsHorizontalOutline class="size-4" />
+						</Button>
 					</Button>
-				</Button>
-			{/each}
-		</div>
+				{/each}
+			</div>
+		</ScrollArea>
 	</div>
 	<div class="h-full col-span-10">
 		<ScrollArea orientation="horizontal" class="has-[>div>div>div]:h-full">
 			{#if boardState.selected}
 				<div
-					class="grid grid-flow-col gap-4 p-4 overflow-x-auto overflow-y-hidden"
+					class="flex justify-start gap-4 p-4 overflow-x-auto overflow-y-hidden"
 					use:dndzone={{
 						items: boardState.selected.statuses,
 						flipDurationMs,

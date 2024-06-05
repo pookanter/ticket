@@ -14,7 +14,7 @@ FROM
 WHERE
   id = ?
   AND user_id = ?;
- 
+
 -- name: CreateBoard :exec
 INSERT INTO
   boards (user_id, title, sort_order, created_at)
@@ -44,10 +44,14 @@ FROM
 WHERE
   user_id = ?;
 
--- name: GetLastInsertBoardID :one
+-- name: GetLastCreatedBoardByUserID :one
 SELECT
-  LAST_INSERT_ID()
+  *
 FROM
-  statuses
+  boards
+WHERE
+  user_id = ?
+ORDER BY
+  created_at DESC
 LIMIT
   1;

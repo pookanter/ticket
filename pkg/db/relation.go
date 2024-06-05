@@ -1,18 +1,16 @@
-package dbutil
-
-import "ticket/pkg/db"
+package db
 
 type StatusWithRelated struct {
-	db.Status
-	Tickets []db.Ticket `json:"tickets"`
+	Status
+	Tickets []Ticket `json:"tickets"`
 }
 
 type BoardWithRelated struct {
-	db.Board
+	Board
 	Statuses []StatusWithRelated `json:"statuses"`
 }
 
-func NewBoardWithRelated(b db.Board, s []db.Status, t []db.Ticket) BoardWithRelated {
+func NewBoardWithRelated(b Board, s []Status, t []Ticket) BoardWithRelated {
 	bw := BoardWithRelated{
 		Board:    b,
 		Statuses: []StatusWithRelated{},
@@ -25,10 +23,10 @@ func NewBoardWithRelated(b db.Board, s []db.Status, t []db.Ticket) BoardWithRela
 	return bw
 }
 
-func NewStatusWithRelated(s db.Status, t []db.Ticket) StatusWithRelated {
+func NewStatusWithRelated(s Status, t []Ticket) StatusWithRelated {
 	sw := StatusWithRelated{
 		Status:  s,
-		Tickets: []db.Ticket{},
+		Tickets: []Ticket{},
 	}
 
 	for _, ticket := range t {

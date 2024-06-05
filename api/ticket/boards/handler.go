@@ -2,12 +2,12 @@ package boards
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strconv"
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
-	"ticket/pkg/dbutil"
 
 	"github.com/guregu/null/v5"
 	"github.com/labstack/echo/v4"
@@ -80,7 +80,7 @@ func (h *Handler) GetBoardByID(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, dbutil.NewBoardWithRelated(board, statuses, tickets))
+	return c.JSON(http.StatusOK, db.NewBoardWithRelated(board, statuses, tickets))
 }
 
 func (h *Handler) CreateBoard(c echo.Context) error {
@@ -119,6 +119,7 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 	}
 
 	count, err := qtx.CountBoardByUserID(ctx, user.ID)
+	fmt.Printf("count: %d\n", count)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -132,22 +133,15 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	boardID, err := qtx.GetLastInsertBoardID(ctx)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	board, err := qtx.GetBoard(ctx, db.GetBoardParams{
-		ID: uint32(boardID),
-	})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
 	err = tx.Commit()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusCreated, board)
+	board, err := h.Queries.GetLastCreatedBoardByUserID(ctx, claims.UserID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusCreated, db.NewBoardWithRelated(board, []db.Status{}, []db.Ticket{}))
 }

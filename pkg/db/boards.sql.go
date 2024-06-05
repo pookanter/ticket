@@ -125,20 +125,31 @@ func (q *Queries) GetBoardsByUserID(ctx context.Context, userID uint64) ([]Board
 	return items, nil
 }
 
-const getLastInsertBoardID = `-- name: GetLastInsertBoardID :one
+const getLastCreatedBoardByUserID = `-- name: GetLastCreatedBoardByUserID :one
 SELECT
-  LAST_INSERT_ID()
+  id, user_id, title, sort_order, created_at, updated_at
 FROM
-  statuses
+  boards
+WHERE
+  user_id = ?
+ORDER BY
+  created_at DESC
 LIMIT
   1
 `
 
-func (q *Queries) GetLastInsertBoardID(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getLastInsertBoardID)
-	var last_insert_id int64
-	err := row.Scan(&last_insert_id)
-	return last_insert_id, err
+func (q *Queries) GetLastCreatedBoardByUserID(ctx context.Context, userID uint64) (Board, error) {
+	row := q.db.QueryRowContext(ctx, getLastCreatedBoardByUserID, userID)
+	var i Board
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.SortOrder,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateBoard = `-- name: UpdateBoard :exec

@@ -9,7 +9,6 @@ import (
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
 	"ticket/pkg/db"
-	"ticket/pkg/dbutil"
 
 	"github.com/guregu/null/v5"
 	"github.com/labstack/echo/v4"
@@ -321,9 +320,9 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	var statusesWithRelated []dbutil.StatusWithRelated
+	var statusesWithRelated []db.StatusWithRelated
 	for _, status := range statuses {
-		statusesWithRelated = append(statusesWithRelated, dbutil.NewStatusWithRelated(status, tickets))
+		statusesWithRelated = append(statusesWithRelated, db.NewStatusWithRelated(status, tickets))
 	}
 
 	return c.JSON(http.StatusOK, statusesWithRelated)
