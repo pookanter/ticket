@@ -30,7 +30,7 @@ func NewStatusWithRelated(s Status, t []Ticket) StatusWithRelated {
 	}
 
 	for _, ticket := range t {
-		if uint32(ticket.StatusID.Int32) == s.ID {
+		if uint32(ticket.StatusID) == s.ID {
 			sw.Tickets = append(sw.Tickets, ticket)
 		}
 	}
