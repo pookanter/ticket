@@ -2,7 +2,6 @@ package boards
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"strconv"
 	"ticket/pkg/apikit"
@@ -119,7 +118,6 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 	}
 
 	count, err := qtx.CountBoardByUserID(ctx, user.ID)
-	fmt.Printf("count: %d\n", count)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -127,7 +125,7 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 	err = qtx.CreateBoard(ctx, db.CreateBoardParams{
 		UserID:    user.ID,
 		Title:     null.NewString(body.Title, true),
-		SortOrder: uint32(count),
+		SortOrder: uint32(count + 1),
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -144,4 +142,88 @@ func (h *Handler) CreateBoard(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, db.NewBoardWithRelated(board, []db.Status{}, []db.Ticket{}))
+}
+
+func (h *Handler) UpdateBoardByID(c echo.Context) error {
+	claims := c.Get("claims").(*auth.Claims)
+
+	boardID, err := strconv.ParseUint(c.Param("board_id"), 10, 32)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	var body struct {
+		Title string `json:"title" validate:"required,min=3,max=100"`
+	}
+
+	err = c.Bind(&body)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	err = c.Validate(&body)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	ctx := c.Request().Context()
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer tx.Rollback()
+	qtx := h.Queries.WithTx(tx)
+
+	board, err := h.Queries.GetBoard(ctx, db.GetBoardParams{
+		ID:     uint32(boardID),
+		UserID: claims.UserID,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	err = qtx.UpdateBoard(ctx, db.UpdateBoardParams{
+		ID:    board.ID,
+		Title: null.NewString(body.Title, true),
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	board, err = h.Queries.GetBoard(ctx, db.GetBoardParams{
+		ID:     uint32(boardID),
+		UserID: claims.UserID,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	statuses, err := h.Queries.GetStatuses(ctx, db.GetStatusesParams{
+		BoardID:            sql.NullInt32{Int32: int32(board.ID), Valid: true},
+		SortOrderDirection: null.StringFrom("asc"),
+	})
+	if err != nil && err != sql.ErrNoRows {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	var statusIDs []null.Int32
+	for _, s := range statuses {
+		statusIDs = append(statusIDs, null.NewInt32(int32(s.ID), true))
+	}
+
+	tickets, err := h.Queries.GetTickets(ctx, db.GetTicketsParams{
+		StatusIds:          statusIDs,
+		SortOrderDirection: null.StringFrom("asc"),
+	})
+	if err != nil && err != sql.ErrNoRows {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusCreated, db.NewBoardWithRelated(board, statuses, tickets))
 }

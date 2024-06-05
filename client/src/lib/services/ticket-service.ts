@@ -56,6 +56,10 @@ function createBoard(data: { title: string }) {
 	return http().post<TicketService.Board>(`/${TICKET_SERVICE}/boards`, data);
 }
 
+function updateBoard({ board_id }: { board_id: number }, data: { title: string }) {
+	return http().put<TicketService.Board>(`/${TICKET_SERVICE}/boards/${board_id}`, data);
+}
+
 function createStatus({ board_id }: { board_id: number }, data: { title: string }) {
 	return http().post<TicketService.Status>(`/${TICKET_SERVICE}/boards/${board_id}/statuses`, data);
 }
@@ -123,6 +127,7 @@ export const TicketService = {
 	getBoards,
 	getBoardById,
 	createBoard,
+	updateBoard,
 	createStatus,
 	updateStatusPartial,
 	updateStatusesSortOrder,

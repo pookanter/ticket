@@ -7,12 +7,34 @@
 	import { BoardStore } from '$lib/stores/board';
 	import { AlertStore } from '$lib/stores/alert';
 	import { DialogStore } from '$lib/stores/dialog';
+	import { onMount } from 'svelte';
+
+	export let model = {
+		id: 0,
+		title: ''
+	};
+
+	onMount(() => {
+		data.title = model.title;
+	});
 
 	let data = {
 		title: ''
 	};
 
 	async function handleSubmit() {
+		if (model.id > 0) {
+			try {
+				const { data: board } = await TicketService.updateBoard({ board_id: model.id }, data);
+
+				BoardStore.updateBoard({ board });
+				DialogStore.close();
+			} catch (error: any) {
+				AlertStore.error(error);
+			}
+			return;
+		}
+
 		try {
 			const { data: board } = await TicketService.createBoard(data);
 
@@ -26,7 +48,7 @@
 
 <Dialog.Content>
 	<Dialog.Header>
-		<Dialog.Title>Create board</Dialog.Title>
+		<Dialog.Title>{model.id > 0 ? 'Update' : 'Create'} board</Dialog.Title>
 	</Dialog.Header>
 	<div class="grid gap-4 py-4">
 		<div class="grid gap-4 py-4">

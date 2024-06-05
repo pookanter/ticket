@@ -34,6 +34,21 @@ function addBoard({ board }: { board: TicketService.Board }) {
 	});
 }
 
+function updateBoard({ board }: { board: TicketService.Board }) {
+	boardStore.update((state) => {
+		const boards = cloneDeep(state.boards);
+
+		const index = boards.findIndex((b) => b.id === board.id);
+		if (index !== -1) {
+			boards[index] = board;
+		}
+
+		state.boards = boards;
+
+		return state;
+	});
+}
+
 function addStatus({ status }: { status: TicketService.Status }) {
 	boardStore.update((state) => {
 		const selected = cloneDeep(state.selected);
@@ -106,6 +121,7 @@ export const BoardStore = {
 	defaultState,
 	selectBoard,
 	addBoard,
+	updateBoard,
 	addStatus,
 	updateStatus,
 	addTicket,

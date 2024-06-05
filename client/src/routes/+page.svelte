@@ -14,7 +14,7 @@
 	import { BoardStore, type BoardState } from '$lib/stores/board';
 	import { AlertStore } from '$lib/stores/alert';
 	import { DialogStore } from '$lib/stores/dialog';
-	import BoardCreateDialogContent from '$lib/components/board-save-dialog-content/board-create-dialog-content.svelte';
+	import BoardSaveDialogContent from '$lib/components/board-save-dialog-content/board-save-dialog-content.svelte';
 	import StatusCreateDialogContent from '$lib/components/status-save-dialog-content/status-create-dialog-content.svelte';
 	import * as Scroll from '$lib/components/ui/scroll-area';
 	import TicketCreateDialogContent from '$lib/components/ticket-save-dialog-content/ticket-create-dialog-content.svelte';
@@ -251,7 +251,7 @@
 			variant="ghost"
 			class="absolute top-0 right-0 flex items-center justify-center h-auto p-1 m-1.5 hover:bg-opacity-10 hover:bg-accent-foreground"
 			on:click={() => {
-				DialogStore.create({ component: BoardCreateDialogContent });
+				DialogStore.create({ component: BoardSaveDialogContent });
 			}}
 		>
 			<PlusOutline class="size-4" />
@@ -275,6 +275,9 @@
 						<Button
 							variant="ghost"
 							class="flex items-center justify-center invisible h-auto p-1 hover:bg-opacity-10 hover:bg-accent-foreground group-hover/sidemenu:visible"
+							on:click={() => {
+								DialogStore.create({ component: BoardSaveDialogContent, params: { model: board } });
+							}}
 						>
 							<DotsHorizontalOutline class="size-4" />
 						</Button>

@@ -16,6 +16,7 @@ func Router(api *apikit.API) {
 	bg.GET("", b.GetBoards)
 	bg.GET("/:board_id", b.GetBoardByID)
 	bg.POST("", b.CreateBoard)
+	bg.PUT("/:board_id", b.UpdateBoardByID)
 
 	s := statuses.New(api)
 
