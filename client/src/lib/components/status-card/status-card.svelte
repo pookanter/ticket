@@ -33,7 +33,7 @@
 	export let onSortTicketsInStatus: (status: TicketService.Status) => void;
 </script>
 
-<Card.Root class="p-2 w-80">
+<Card.Root class="p-2 mt-4 w-80">
 	<Card.Header class="px-2 py-2 pt-0 group">
 		<Card.Title>
 			<div class="flex items-center justify-between">

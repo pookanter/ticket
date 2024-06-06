@@ -31,15 +31,14 @@
 	} from 'rxjs';
 	import { AuthStore } from '$lib/stores/auth';
 	import StatusCard from '$lib/components/status-card/status-card.svelte';
+	import * as Select from '$lib/components/ui/select/index.js';
 
 	const { ScrollArea } = Scroll;
 
 	let unsubscribers: Unsubscriber[] = [];
 	let localState = {
 		...BoardStore.defaultState(),
-		filter: {
-			status_ids: [] as number[]
-		}
+		selected_status: null as TicketService.Status | null
 	};
 	const statusSubject = new Subject<{ id: number; status_ids: number[] }>();
 	const ticketSubject = new Subject<{
@@ -208,17 +207,19 @@
 
 <section class="grid flex-1 grid-cols-12">
 	<div class="relative col-span-2 pl-2 bg-muted">
-		<Button
-			variant="ghost"
-			class="absolute top-0 right-0 flex items-center justify-center h-auto p-1 m-1.5 hover:bg-opacity-10 hover:bg-accent-foreground"
-			on:click={() => {
-				DialogStore.create({ component: BoardSaveDialogContent });
-			}}
-		>
-			<PlusOutline class="size-4" />
-		</Button>
+		<div class="flex justify-end w-full h-10">
+			<Button
+				variant="ghost"
+				class="flex items-center justify-center h-auto p-1 my-auto mr-2 hover:bg-opacity-10 hover:bg-accent-foreground"
+				on:click={() => {
+					DialogStore.create({ component: BoardSaveDialogContent });
+				}}
+			>
+				<PlusOutline class="size-4" />
+			</Button>
+		</div>
 		<ScrollArea
-			class="mt-8 mr-2 w-full h-[calc(100vh-(var(--header-height)+var(--footer-height))-2rem-1px)] [&>[data-melt-scroll-area-thumb]]:bg-red-400"
+			class=" mr-2 w-full h-[calc(100vh-(var(--header-height)+var(--footer-height))-2.5rem-1px)] [&>[data-melt-scroll-area-thumb]]:bg-red-400"
 			orientation="vertical"
 			scrollbarYClasses="dark:[&>[data-melt-scroll-area-thumb]]:bg-primary-foreground"
 		>
@@ -248,10 +249,41 @@
 		</ScrollArea>
 	</div>
 	<div class="h-full col-span-10">
-		<ScrollArea orientation="horizontal" class="has-[>div>div>div]:h-full">
+		<div class="flex items-center justify-start w-full h-10">
+			<Select.Root
+				selected={{
+					label: 'All status',
+					value: 0
+				}}
+				onSelectedChange={(e) => {
+					if (e.value) {
+						localState.selected_status = localState.selected?.statuses.find(
+							(s) => s.id === e.value
+						);
+					} else {
+						localState.selected_status = null;
+					}
+				}}
+			>
+				<Select.Trigger class="w-[180px] max-h-8 ml-2">
+					<Select.Value placeholder="All status" />
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Group>
+						{#each localState.selected.statuses as status}
+							<Select.Item value={status.id} label={status.title} class="cursor-pointer">
+								{status.title}
+							</Select.Item>
+						{/each}
+					</Select.Group>
+				</Select.Content>
+				<Select.Input name="favoriteFruit" />
+			</Select.Root>
+		</div>
+		<ScrollArea orientation="horizontal">
 			{#if localState.selected}
 				<div
-					class="flex justify-start gap-4 p-4 overflow-x-auto overflow-y-hidden"
+					class="flex justify-start gap-4 pl-4 overflow-x-auto overflow-y-hidden"
 					use:dndzone={{
 						items: localState.selected.statuses,
 						flipDurationMs,
@@ -265,7 +297,7 @@
 						<div animate:flip={{ duration: flipDurationMs }}>
 							<ScrollArea
 								orientation="vertical"
-								class="h-[calc(100vh-(var(--header-height)+var(--footer-height))-2rem-1px)]"
+								class="h-[calc(100vh-(var(--header-height)+var(--footer-height))-2.5rem-1px)]"
 							>
 								<StatusCard {status} {onSortTicketsInStatus}>
 									{#if status.tickets.length === 0}
@@ -284,7 +316,7 @@
 										</Button>
 									{/if}
 									<div
-										class="absolute top-0 left-0 flex flex-col w-full gap-2 border border-red-600 h-"
+										class="absolute top-0 left-0 flex flex-col w-full gap-2"
 										class:absolute={status.tickets.length === 0}
 										class:h-32={status.tickets.length === 0}
 										use:dndzone={{
