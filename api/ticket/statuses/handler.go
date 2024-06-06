@@ -198,9 +198,7 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 	}
 
 	var body struct {
-		Statuses []struct {
-			ID uint64 `json:"id" validate:"required"`
-		} `json:"statuses" validate:"required,dive"`
+		StatuseIDs []uint64 `json:"status_ids" validate:"required,dive"`
 	}
 
 	err = c.Bind(&body)
@@ -215,16 +213,43 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 
 	var statusIDs []uint32
 	statusIDMap := make(map[uint64]bool)
-	for _, status := range body.Statuses {
-		if _, exists := statusIDMap[status.ID]; exists {
+	for _, statusID := range body.StatuseIDs {
+		if _, exists := statusIDMap[statusID]; exists {
 			return echo.NewHTTPError(http.StatusBadRequest, "status id must be unique")
 		}
 
-		statusIDMap[status.ID] = true
-		statusIDs = append(statusIDs, uint32(status.ID))
+		statusIDMap[statusID] = true
+		statusIDs = append(statusIDs, uint32(statusID))
 	}
 
 	ctx := c.Request().Context()
+
+	count, err := h.Queries.CountStatusWithBoard(ctx, db.CountStatusWithBoardParams{
+		Ids:     statusIDs,
+		BoardID: uint32(boardID),
+		UserID:  claims.UserID,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if count != int64(len(statusIDs)) {
+		return echo.NewHTTPError(http.StatusNotFound, "some status id not exist")
+	}
+
+	count, err = h.Queries.CountStatusWithBoardExclude(ctx, db.CountStatusWithBoardExcludeParams{
+		Ids:     statusIDs,
+		BoardID: uint32(boardID),
+		UserID:  claims.UserID,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if count > 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "some status id is missing")
+	}
+
 	tx, err := h.DB.Begin()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -232,38 +257,17 @@ func (h *Handler) SortStatusesOrder(c echo.Context) error {
 	defer tx.Rollback()
 	qtx := h.Queries.WithTx(tx)
 
-	stausesWithBoard, err := qtx.GetStatusesWithBoard(ctx, db.GetStatusesWithBoardParams{
-		BoardID: uint32(boardID),
-		UserID:  claims.UserID,
-	})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	fmt.Println(len(stausesWithBoard), len(statusIDs))
-	if len(stausesWithBoard) != len(statusIDs) {
-		for _, s := range stausesWithBoard {
-			if _, exists := statusIDMap[uint64(s.Status.ID)]; !exists {
-				return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("The status with ID %d was not found on the board with ID %d, or the board does not exist.", s.Status.ID, boardID))
-			}
-		}
-
-		return echo.NewHTTPError(http.StatusNotFound, "status not found")
-	}
-
 	subctx1, cancel := context.WithCancel(ctx)
 	g, subctx1 := errgroup.WithContext(subctx1)
 	defer cancel()
 
-	for i, s := range body.Statuses {
+	for i, statusID := range body.StatuseIDs {
 		i := i
-		s := s
+		s := statusID
 		g.Go(func() error {
 			err = qtx.UpdateStatusSortOrder(subctx1, db.UpdateStatusSortOrderParams{
 				SortOrder: uint32(i + 1),
-				ID:        uint32(s.ID),
+				ID:        uint32(s),
 			})
 			if err != nil {
 				return err

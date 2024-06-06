@@ -38,14 +38,29 @@ SELECT
 FROM
   tickets
 WHERE
+  status_id = coalesce(sqlc.slice('status_ids'), status_id)
+  OR status_id IN (sqlc.slice('status_ids'))
+ORDER BY
+  status_id ASC,
   (
-    status_id = coalesce(sqlc.slice('status_ids'), status_id)
-    OR status_id IN (sqlc.slice('status_ids'))
-  )
-  AND (
-    id = coalesce(sqlc.slice('exclude_ids'), id)
-    OR id NOT IN (sqlc.slice('exclude_ids'))
-  )
+    CASE
+      WHEN sqlc.arg('sort_order_direction') = 'asc' THEN sort_order
+    END
+  ) ASC,
+  (
+    CASE
+      WHEN sqlc.arg('sort_order_direction') = 'desc' THEN sort_order
+    END
+  ) DESC;
+
+-- name: GetTicketsExclude :many
+SELECT
+  *
+FROM
+  tickets
+WHERE
+  id = coalesce(sqlc.slice('ids'), id)
+  OR id NOT IN (sqlc.slice('ids'))
 ORDER BY
   status_id ASC,
   (

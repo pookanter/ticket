@@ -66,6 +66,43 @@ func (q *Queries) CountStatusWithBoard(ctx context.Context, arg CountStatusWithB
 	return count, err
 }
 
+const countStatusWithBoardExclude = `-- name: CountStatusWithBoardExclude :one
+SELECT
+  COUNT(statuses.id)
+FROM
+  statuses
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  statuses.id NOT IN (/*SLICE:ids*/?)
+  AND statuses.board_id = ?
+  AND boards.user_id = ?
+`
+
+type CountStatusWithBoardExcludeParams struct {
+	Ids     []uint32 `db:"ids" json:"ids"`
+	BoardID uint32   `db:"board_id" json:"board_id"`
+	UserID  uint64   `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) CountStatusWithBoardExclude(ctx context.Context, arg CountStatusWithBoardExcludeParams) (int64, error) {
+	query := countStatusWithBoardExclude
+	var queryParams []interface{}
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.BoardID)
+	queryParams = append(queryParams, arg.UserID)
+	row := q.db.QueryRowContext(ctx, query, queryParams...)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createStatus = `-- name: CreateStatus :exec
 INSERT INTO
   statuses (board_id, title, sort_order, created_at)

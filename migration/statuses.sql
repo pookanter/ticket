@@ -123,6 +123,17 @@ WHERE
   AND statuses.board_id = ?
   AND boards.user_id = ?;
 
+-- name: CountStatusWithBoardExclude :one
+SELECT
+  COUNT(statuses.id)
+FROM
+  statuses
+  JOIN boards ON statuses.board_id = boards.id
+WHERE
+  statuses.id NOT IN (sqlc.slice('ids'))
+  AND statuses.board_id = ?
+  AND boards.user_id = ?;
+
 -- name: GetLastInsertStatus :one
 SELECT
   *

@@ -1,13 +1,11 @@
 <script lang="ts">
-	import { DotsHorizontalOutline, PlusOutline, SortOutline } from 'flowbite-svelte-icons';
-	import * as Card from '$lib/components/ui/card/index';
+	import { DotsHorizontalOutline, PlusOutline } from 'flowbite-svelte-icons';
 	import { flip } from 'svelte/animate';
 	import { dndzone } from 'svelte-dnd-action';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import TicketCard from '$lib/components/ticket-card/ticket-card.svelte';
 	import type { Unsubscriber } from 'svelte/motion';
 	import { onDestroy, onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import { TicketService } from '$lib/services/ticket-service';
 	import { BoardStore } from '$lib/stores/board';
 	import { AlertStore } from '$lib/stores/alert';
@@ -27,28 +25,54 @@
 		of,
 		tap,
 		buffer,
-		debounceTime
+		debounceTime,
+		switchMap,
+		takeUntil
 	} from 'rxjs';
-	import StatusSaveDialogContent from '$lib/components/status-save-dialog-content/status-save-dialog-content.svelte';
 	import { AuthStore } from '$lib/stores/auth';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index';
 	import StatusCard from '$lib/components/status-card/status-card.svelte';
 
 	const { ScrollArea } = Scroll;
 
 	let unsubscribers: Unsubscriber[] = [];
-	let boardState = BoardStore.defaultState();
-	let tempBoardState = BoardStore.defaultState();
+	let localState = {
+		...BoardStore.defaultState(),
+		filter: {
+			status_ids: [] as number[]
+		}
+	};
+	const statusSubject = new Subject<{ id: number; status_ids: number[] }>();
 	const ticketSubject = new Subject<{
 		id: number;
 		ticket_ids: number[];
 	}>();
-	let tickets$: Subscription;
+	let status$: Subscription;
+	let ticket$: Subscription;
 
 	const releaseBufferSubject = new Subject<void>();
 	onMount(async () => {
 		unsubscribers.push(AuthStore.Use());
-		tickets$ = ticketSubject
+		status$ = statusSubject
+			.pipe(
+				debounceTime(1000),
+				switchMap(({ id, status_ids }) =>
+					from(TicketService.updateStatusesSortOrder({ board_id: id }, { status_ids })).pipe(
+						map(({ data }) => {
+							return data;
+						}),
+						catchError((error) => {
+							AlertStore.error(error);
+							fetchBoardFullDetail(localState.selected);
+
+							return of();
+						}),
+						takeUntil(statusSubject)
+					)
+				)
+			)
+			.subscribe();
+
+		ticket$ = ticketSubject
 			.pipe(
 				map((value) => {
 					setTimeout(() => {
@@ -64,7 +88,7 @@
 				concatMap((values) =>
 					from(
 						TicketService.bulkUpdateTicketOrderInStatuses(
-							{ board_id: boardState.selected.id },
+							{ board_id: localState.selected.id },
 							{ statuses: values }
 						)
 					).pipe(
@@ -73,37 +97,23 @@
 						}),
 						catchError((error) => {
 							AlertStore.error(error);
+							fetchBoardFullDetail(localState.selected);
 
 							return of();
 						})
 					)
 				)
 			)
-			.subscribe((values) => {
-				if (values.length === 0) return;
-				console.log('values', values);
-				BoardStore.update((state) => {
-					const selected = cloneDeep(state.selected);
-					for (const { id, tickets } of values) {
-						const idx = selected.statuses.findIndex((status) => status.id === id);
-
-						if (idx > -1) {
-							selected.statuses[idx].tickets = tickets;
-						}
-					}
-
-					state.selected = selected;
-
-					return state;
-				});
-			});
+			.subscribe();
 
 		unsubscribers.push(
-			BoardStore.subscribe(async (state) => {
+			BoardStore.subscribe((state) => {
 				console.log('board state change', state);
 
-				boardState = cloneDeep(state);
-				tempBoardState = cloneDeep(state);
+				localState = {
+					...localState,
+					...cloneDeep(state)
+				};
 			})
 		);
 
@@ -131,7 +141,8 @@
 	onDestroy(() => {
 		unsubscribers.forEach((unsubscriber) => unsubscriber());
 		console.log('unsubscribes');
-		tickets$.unsubscribe();
+		status$.unsubscribe();
+		ticket$.unsubscribe();
 	});
 
 	async function fetchBoardFullDetail(board: TicketService.Board) {
@@ -148,58 +159,45 @@
 
 	type ColumnEvent = CustomEvent & { detail: { items: TicketService.Status[] } };
 	function handleDndConsiderColumns(e: ColumnEvent) {
-		if (!boardState.selected) return;
-		boardState.selected.statuses = [...e.detail.items];
+		if (!localState.selected) return;
+		localState.selected.statuses = [...e.detail.items];
 	}
 	async function handleDndFinalizeColumns(e: ColumnEvent) {
-		if (!boardState.selected) return;
-		boardState.selected.statuses = [...e.detail.items];
-		try {
-			const { data: statuses } = await TicketService.updateStatusesSortOrder(
-				{
-					board_id: boardState.selected.id
-				},
-				{ statuses: boardState.selected.statuses }
-			);
+		if (!localState.selected) return;
+		localState.selected.statuses = [...e.detail.items];
 
-			BoardStore.update((state) => {
-				state.selected.statuses = statuses as TicketService.Status[];
-
-				return state;
-			});
-		} catch (error) {
-			AlertStore.error(error);
-
-			BoardStore.selectBoard(tempBoardState.selected);
-		}
+		statusSubject.next({
+			id: localState.selected.id,
+			status_ids: localState.selected.statuses.map((s) => s.id)
+		});
 	}
 
 	type CardEvent = CustomEvent & { detail: { items: TicketService.Ticket[] } };
 	function handleDndConsiderCards(cid: number, e: CardEvent) {
-		if (!boardState.selected) return;
-		const colIdx = boardState.selected.statuses?.findIndex((c) => c.id === cid);
-		boardState.selected.statuses[colIdx].tickets = e.detail.items;
-		boardState.selected.statuses = [...boardState.selected.statuses];
+		if (!localState.selected) return;
+		const colIdx = localState.selected.statuses?.findIndex((c) => c.id === cid);
+		localState.selected.statuses[colIdx].tickets = e.detail.items;
+		localState.selected.statuses = [...localState.selected.statuses];
 	}
 	async function handleDndFinalizeCards(cid: number, e: CardEvent) {
-		if (!boardState.selected) return;
-		const colIdx = boardState.selected.statuses.findIndex((c) => c.id === cid);
-		boardState.selected.statuses[colIdx].tickets = e.detail.items;
-		boardState.selected.statuses = [...boardState.selected.statuses];
+		if (!localState.selected) return;
+		const colIdx = localState.selected.statuses.findIndex((c) => c.id === cid);
+		localState.selected.statuses[colIdx].tickets = e.detail.items;
+		localState.selected.statuses = [...localState.selected.statuses];
 
 		console.log('handleDndFinalizeCards');
 		ticketSubject.next({
 			id: cid,
-			ticket_ids: boardState.selected.statuses[colIdx].tickets.map((t) => t.id)
+			ticket_ids: localState.selected.statuses[colIdx].tickets.map((t) => t.id)
 		});
 	}
 
 	function onSortTicketsInStatus(status: TicketService.Status) {
-		let idx = boardState.selected.statuses.findIndex((s) => s.id === status.id);
+		let idx = localState.selected.statuses.findIndex((s) => s.id === status.id);
 
 		if (idx === -1) return;
 
-		boardState.selected.statuses[idx] = status;
+		localState.selected.statuses[idx] = status;
 
 		ticketSubject.next({
 			id: status.id,
@@ -225,11 +223,11 @@
 			scrollbarYClasses="dark:[&>[data-melt-scroll-area-thumb]]:bg-primary-foreground"
 		>
 			<div class="flex flex-col w-full gap-2">
-				{#each boardState.boards as board (board.id)}
+				{#each localState.boards as board (board.id)}
 					<Button
 						variant="ghost"
-						class="justify-between py-2 hover:bg-opacity-10 hover:bg-accent-foreground group/sidemenu {boardState.selected &&
-						boardState.selected.id === board.id
+						class="justify-between py-2 hover:bg-opacity-10 hover:bg-accent-foreground group/sidemenu {localState.selected &&
+						localState.selected.id === board.id
 							? 'bg-accent-foreground bg-opacity-10 text-accent-foreground'
 							: ''}"
 						on:click={() => fetchBoardFullDetail(board)}
@@ -251,11 +249,11 @@
 	</div>
 	<div class="h-full col-span-10">
 		<ScrollArea orientation="horizontal" class="has-[>div>div>div]:h-full">
-			{#if boardState.selected}
+			{#if localState.selected}
 				<div
 					class="flex justify-start gap-4 p-4 overflow-x-auto overflow-y-hidden"
 					use:dndzone={{
-						items: boardState.selected.statuses,
+						items: localState.selected.statuses,
 						flipDurationMs,
 						type: 'columns',
 						dropTargetStyle: {}
@@ -263,7 +261,7 @@
 					on:consider={handleDndConsiderColumns}
 					on:finalize={handleDndFinalizeColumns}
 				>
-					{#each boardState.selected.statuses as status, i (status)}
+					{#each localState.selected.statuses as status, i (status)}
 						<div animate:flip={{ duration: flipDurationMs }}>
 							<ScrollArea
 								orientation="vertical"
@@ -277,7 +275,7 @@
 											on:click={() => {
 												DialogStore.create({
 													component: TicketSaveDialogContent,
-													params: { board_id: boardState?.selected?.id, status_id: status.id }
+													params: { board_id: localState?.selected?.id, status_id: status.id }
 												});
 											}}
 										>
@@ -317,7 +315,7 @@
 							on:click={() => {
 								DialogStore.create({
 									component: StatusCreateDialogContent,
-									params: { board_id: boardState?.selected?.id }
+									params: { board_id: localState?.selected?.id }
 								});
 							}}
 						>

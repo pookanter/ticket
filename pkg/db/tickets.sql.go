@@ -209,14 +209,8 @@ SELECT
 FROM
   tickets
 WHERE
-  (
-    status_id = coalesce(/*SLICE:status_ids*/?, status_id)
-    OR status_id IN (/*SLICE:status_ids*/?)
-  )
-  AND (
-    id = coalesce(/*SLICE:exclude_ids*/?, id)
-    OR id NOT IN (/*SLICE:exclude_ids*/?)
-  )
+  status_id = coalesce(/*SLICE:status_ids*/?, status_id)
+  OR status_id IN (/*SLICE:status_ids*/?)
 ORDER BY
   status_id ASC,
   (
@@ -233,7 +227,6 @@ ORDER BY
 
 type GetTicketsParams struct {
 	StatusIds          []uint32    `db:"status_ids" json:"status_ids"`
-	ExcludeIds         []uint64    `db:"exclude_ids" json:"exclude_ids"`
 	SortOrderDirection interface{} `db:"sort_order_direction" json:"sort_order_direction"`
 }
 
@@ -255,22 +248,6 @@ func (q *Queries) GetTickets(ctx context.Context, arg GetTicketsParams) ([]Ticke
 		query = strings.Replace(query, "/*SLICE:status_ids*/?", strings.Repeat(",?", len(arg.StatusIds))[1:], 1)
 	} else {
 		query = strings.Replace(query, "/*SLICE:status_ids*/?", "NULL", 1)
-	}
-	if len(arg.ExcludeIds) > 0 {
-		for _, v := range arg.ExcludeIds {
-			queryParams = append(queryParams, v)
-		}
-		query = strings.Replace(query, "/*SLICE:exclude_ids*/?", strings.Repeat(",?", len(arg.ExcludeIds))[1:], 1)
-	} else {
-		query = strings.Replace(query, "/*SLICE:exclude_ids*/?", "NULL", 1)
-	}
-	if len(arg.ExcludeIds) > 0 {
-		for _, v := range arg.ExcludeIds {
-			queryParams = append(queryParams, v)
-		}
-		query = strings.Replace(query, "/*SLICE:exclude_ids*/?", strings.Repeat(",?", len(arg.ExcludeIds))[1:], 1)
-	} else {
-		query = strings.Replace(query, "/*SLICE:exclude_ids*/?", "NULL", 1)
 	}
 	queryParams = append(queryParams, arg.SortOrderDirection)
 	queryParams = append(queryParams, arg.SortOrderDirection)
@@ -383,6 +360,85 @@ ORDER BY
 
 func (q *Queries) GetTicketsByStatusID(ctx context.Context, statusID uint32) ([]Ticket, error) {
 	rows, err := q.db.QueryContext(ctx, getTicketsByStatusID, statusID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Ticket{}
+	for rows.Next() {
+		var i Ticket
+		if err := rows.Scan(
+			&i.ID,
+			&i.StatusID,
+			&i.Title,
+			&i.Description,
+			&i.Contact,
+			&i.SortOrder,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTicketsExclude = `-- name: GetTicketsExclude :many
+SELECT
+  id, status_id, title, description, contact, sort_order, created_at, updated_at
+FROM
+  tickets
+WHERE
+  id = coalesce(/*SLICE:ids*/?, id)
+  OR id NOT IN (/*SLICE:ids*/?)
+ORDER BY
+  status_id ASC,
+  (
+    CASE
+      WHEN ? = 'asc' THEN sort_order
+    END
+  ) ASC,
+  (
+    CASE
+      WHEN ? = 'desc' THEN sort_order
+    END
+  ) DESC
+`
+
+type GetTicketsExcludeParams struct {
+	Ids                []uint64    `db:"ids" json:"ids"`
+	SortOrderDirection interface{} `db:"sort_order_direction" json:"sort_order_direction"`
+}
+
+func (q *Queries) GetTicketsExclude(ctx context.Context, arg GetTicketsExcludeParams) ([]Ticket, error) {
+	query := getTicketsExclude
+	var queryParams []interface{}
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	if len(arg.Ids) > 0 {
+		for _, v := range arg.Ids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:ids*/?", strings.Repeat(",?", len(arg.Ids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:ids*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.SortOrderDirection)
+	queryParams = append(queryParams, arg.SortOrderDirection)
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}

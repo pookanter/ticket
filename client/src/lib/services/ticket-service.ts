@@ -79,7 +79,7 @@ function updateStatusPartial(
 
 function updateStatusesSortOrder(
 	{ board_id }: { board_id: number },
-	data: { statuses: TicketService.Status[] }
+	data: { status_ids: number[] }
 ) {
 	return http().put<TicketService.Status[]>(
 		`/${TICKET_SERVICE}/boards/${board_id}/statuses/sort-orders`,
