@@ -27,6 +27,10 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install
 
-COPY --from=development /app/dist/authen ./authen
+COPY --from=development /app/dist/authen .
+COPY --from=development  /app/config config
+COPY --from=development  /app/certs certs
+
+RUN chmod +x authen
 
 CMD ["./authen"]

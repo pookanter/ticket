@@ -27,6 +27,10 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install
 
-COPY --from=development /app/dist/ticket ./ticket
+COPY --from=development /app/dist/ticket .
+COPY --from=development  /app/config config
+COPY --from=development  /app/certs certs
+
+RUN chmod +x ticket
 
 CMD ["./ticket"]

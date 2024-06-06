@@ -2,6 +2,7 @@
 	"name": "client",
 	"version": "0.0.1",
 	"private": true,
+	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
@@ -30,7 +31,6 @@
 		"typescript": "^5.4.5",
 		"vite": "^5.2.12"
 	},
-	"type": "module",
 	"dependencies": {
 		"axios": "^1.7.2",
 		"bits-ui": "^0.21.10",

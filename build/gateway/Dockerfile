@@ -27,6 +27,9 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install
 
-COPY --from=development /app/dist/gateway ./gateway
+COPY --from=development /app/dist/gateway .
+COPY --from=development  /app/config config
+
+RUN chmod +x gateway
 
 CMD ["./gateway"]

@@ -1,4 +1,4 @@
-FROM node:20.14.0-alpine AS development
+FROM node:20-alpine AS development
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN pnpm build
 
 CMD ["pnpm", "dev"]
 
-FROM node:20.14.0-alpine AS production
+FROM node:20-alpine AS production
 
 ARG timezone=Asia/Bangkok
 ENV LANG C.UTF-8
@@ -22,5 +22,6 @@ ENV TZ $timezone
 WORKDIR /app
 
 COPY --from=development /app/build build
+COPY --from=development /app/package.json .
 
 CMD [ "node", "build" ]
