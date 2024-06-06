@@ -32,6 +32,7 @@
 	import StatusSaveDialogContent from '$lib/components/status-save-dialog-content/status-save-dialog-content.svelte';
 	import { AuthStore } from '$lib/stores/auth';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index';
+	import StatusCard from '$lib/components/status-card/status-card.svelte';
 
 	const { ScrollArea } = Scroll;
 
@@ -193,23 +194,7 @@
 		});
 	}
 
-	function sortTicketsInstatus({
-		status,
-		column,
-		direction
-	}: {
-		status: TicketService.Status;
-		column: 'created_at' | 'updated_at';
-		direction: 'asc' | 'desc';
-	}) {
-		status.tickets = status.tickets.sort((a, b) => {
-			if (direction === 'asc') {
-				return new Date(a[column]).getTime() - new Date(b[column]).getTime();
-			} else {
-				return new Date(b[column]).getTime() - new Date(a[column]).getTime();
-			}
-		});
-
+	function onSortTicketsInStatus(status: TicketService.Status) {
 		let idx = boardState.selected.statuses.findIndex((s) => s.id === status.id);
 
 		if (idx === -1) return;
@@ -284,7 +269,46 @@
 								orientation="vertical"
 								class="h-[calc(100vh-(var(--header-height)+var(--footer-height))-2rem-1px)]"
 							>
-								<Card.Root class="p-2 w-80">
+								<StatusCard {status} {onSortTicketsInStatus}>
+									{#if status.tickets.length === 0}
+										<Button
+											variant="ghost"
+											class="flex items-center justify-start w-full h-auto p-1 rounded hover:bg-accent"
+											on:click={() => {
+												DialogStore.create({
+													component: TicketSaveDialogContent,
+													params: { board_id: boardState?.selected?.id, status_id: status.id }
+												});
+											}}
+										>
+											<PlusOutline class="size-4" />
+											<span class="ml-2">Add ticket</span>
+										</Button>
+									{/if}
+									<div
+										class="absolute top-0 left-0 flex flex-col w-full gap-2 border border-red-600 h-"
+										class:absolute={status.tickets.length === 0}
+										class:h-32={status.tickets.length === 0}
+										use:dndzone={{
+											items: status.tickets,
+											flipDurationMs,
+											dropTargetStyle: {}
+										}}
+										on:consider={(e) => handleDndConsiderCards(status.id, e)}
+										on:finalize={(e) => handleDndFinalizeCards(status.id, e)}
+									>
+										{#each status.tickets as ticket (ticket.id)}
+											<div
+												tabindex={ticket.id}
+												role="button"
+												animate:flip={{ duration: flipDurationMs }}
+											>
+												<TicketCard {ticket} board_id={status.board_id} />
+											</div>
+										{/each}
+									</div>
+								</StatusCard>
+								<!-- <Card.Root class="p-2 w-80">
 									<Card.Header class="px-2 py-2 pt-0 group">
 										<Card.Title>
 											<div class="flex items-center justify-between">
@@ -420,7 +444,7 @@
 											{/each}
 										</div>
 									</Card.Content>
-								</Card.Root>
+								</Card.Root> -->
 							</ScrollArea>
 						</div>
 					{/each}
