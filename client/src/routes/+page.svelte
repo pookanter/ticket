@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DotsHorizontalOutline, PlusOutline } from 'flowbite-svelte-icons';
+	import { DotsHorizontalOutline, PlusOutline, SortOutline } from 'flowbite-svelte-icons';
 	import * as Card from '$lib/components/ui/card/index';
 	import { flip } from 'svelte/animate';
 	import { dndzone } from 'svelte-dnd-action';
@@ -31,6 +31,7 @@
 	} from 'rxjs';
 	import StatusSaveDialogContent from '$lib/components/status-save-dialog-content/status-save-dialog-content.svelte';
 	import { AuthStore } from '$lib/stores/auth';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index';
 
 	const { ScrollArea } = Scroll;
 
@@ -192,14 +193,33 @@
 		});
 	}
 
-	enum Resource {
-		Board = 'board',
-		Status = 'status',
-		Ticket = 'ticket'
-	}
-	enum Method {
-		Create = 'create',
-		Update = 'update'
+	function sortTicketsInstatus({
+		status,
+		column,
+		direction
+	}: {
+		status: TicketService.Status;
+		column: 'created_at' | 'updated_at';
+		direction: 'asc' | 'desc';
+	}) {
+		status.tickets = status.tickets.sort((a, b) => {
+			if (direction === 'asc') {
+				return new Date(a[column]).getTime() - new Date(b[column]).getTime();
+			} else {
+				return new Date(b[column]).getTime() - new Date(a[column]).getTime();
+			}
+		});
+
+		let idx = boardState.selected.statuses.findIndex((s) => s.id === status.id);
+
+		if (idx === -1) return;
+
+		boardState.selected.statuses[idx] = status;
+
+		ticketSubject.next({
+			id: status.id,
+			ticket_ids: status.tickets.map((t) => t.id)
+		});
 	}
 </script>
 
@@ -282,6 +302,67 @@
 													>
 														<DotsHorizontalOutline class="size-4" />
 													</Button>
+													<DropdownMenu.Root>
+														<DropdownMenu.Trigger asChild let:builder>
+															<Button
+																builders={[builder]}
+																variant="ghost"
+																class="flex items-center justify-center invisible h-auto p-1 ml-2 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent group-hover:visible"
+															>
+																<SortOutline class="size-4" />
+															</Button>
+														</DropdownMenu.Trigger>
+														<DropdownMenu.Content class="w-10">
+															<DropdownMenu.Label>Sort tickets by</DropdownMenu.Label>
+															<DropdownMenu.Separator />
+															<DropdownMenu.Group>
+																<DropdownMenu.Item>
+																	<button
+																		on:click={() => {
+																			sortTicketsInstatus({
+																				status,
+																				column: 'created_at',
+																				direction: 'desc'
+																			});
+																		}}>Lastest created</button
+																	>
+																</DropdownMenu.Item>
+																<DropdownMenu.Item>
+																	<button
+																		on:click={() => {
+																			sortTicketsInstatus({
+																				status,
+																				column: 'created_at',
+																				direction: 'asc'
+																			});
+																		}}>Oldest created</button
+																	>
+																</DropdownMenu.Item>
+																<DropdownMenu.Item>
+																	<button
+																		on:click={() => {
+																			sortTicketsInstatus({
+																				status,
+																				column: 'updated_at',
+																				direction: 'desc'
+																			});
+																		}}>Lastest updated</button
+																	>
+																</DropdownMenu.Item>
+																<DropdownMenu.Item>
+																	<button
+																		on:click={() => {
+																			sortTicketsInstatus({
+																				status,
+																				column: 'updated_at',
+																				direction: 'asc'
+																			});
+																		}}>Oldest updated</button
+																	>
+																</DropdownMenu.Item>
+															</DropdownMenu.Group>
+														</DropdownMenu.Content>
+													</DropdownMenu.Root>
 													<Button
 														variant="ghost"
 														class="flex items-center justify-center h-auto p-1 ml-2 rounded cursor-pointer hover:text-accent-foreground hover:bg-accent"
@@ -316,7 +397,7 @@
 											</Button>
 										{/if}
 										<div
-											class="absolute top-0 left-0 flex flex-col w-full gap-2 border border-red-400"
+											class="absolute top-0 left-0 flex flex-col w-full gap-2"
 											class:absolute={status.tickets.length === 0}
 											class:h-20={status.tickets.length === 0}
 											class:mt-12={status.tickets.length === 0}
