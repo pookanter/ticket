@@ -44,22 +44,22 @@ dependencies:
 
 devDependencies:
   '@sveltejs/adapter-auto':
-    specifier: ^3.0.0
+    specifier: ^3.2.1
     version: 3.2.1(@sveltejs/kit@2.5.10)
   '@sveltejs/adapter-node':
     specifier: ^5.0.1
     version: 5.0.1(@sveltejs/kit@2.5.10)
   '@sveltejs/kit':
-    specifier: ^2.0.0
+    specifier: ^2.5.10
     version: 2.5.10(@sveltejs/vite-plugin-svelte@3.1.0)(svelte@4.2.17)(vite@5.2.12)
   '@sveltejs/vite-plugin-svelte':
-    specifier: ^3.0.0
+    specifier: ^3.1.0
     version: 3.1.0(svelte@4.2.17)(vite@5.2.12)
   '@types/lodash':
     specifier: ^4.17.4
     version: 4.17.4
   '@types/uuid':
-    specifier: ^9.0.1
+    specifier: ^9.0.8
     version: 9.0.8
   autoprefixer:
     specifier: ^10.4.19
@@ -71,28 +71,28 @@ devDependencies:
     specifier: ^8.4.38
     version: 8.4.38
   prettier:
-    specifier: ^3.1.1
+    specifier: ^3.2.5
     version: 3.2.5
   prettier-plugin-svelte:
-    specifier: ^3.1.2
+    specifier: ^3.2.3
     version: 3.2.3(prettier@3.2.5)(svelte@4.2.17)
   svelte:
-    specifier: ^4.2.7
+    specifier: ^4.2.17
     version: 4.2.17
   svelte-check:
-    specifier: ^3.6.0
+    specifier: ^3.7.1
     version: 3.7.1(postcss@8.4.38)(svelte@4.2.17)
   tailwindcss:
     specifier: ^3.4.3
     version: 3.4.3
   tslib:
-    specifier: ^2.4.1
+    specifier: ^2.6.2
     version: 2.6.2
   typescript:
-    specifier: ^5.0.0
+    specifier: ^5.4.5
     version: 5.4.5
   vite:
-    specifier: ^5.0.3
+    specifier: ^5.2.12
     version: 5.2.12
 
 packages:
