@@ -23,21 +23,26 @@
 				if (state.initializing) {
 					console.log('AuthStore.initializing...');
 					const token = AuthenService.getAuthorization();
-					const storeValue: AuthState = {
-						initializing: false,
-						user: null
-					};
 					if (token) {
 						try {
 							const { data: user } = await AuthenService.getMe();
+							AuthStore.update((state) => {
+								state.initializing = false;
+								state.user = user;
 
-							storeValue.user = user;
+								return state;
+							});
 						} catch (error) {
 							console.error(error);
 						}
-					}
+					} else {
+						AuthStore.update((state) => {
+							state.initializing = false;
+							state.user = null;
 
-					AuthStore.set(storeValue);
+							return state;
+						});
+					}
 				}
 
 				user = state.user;

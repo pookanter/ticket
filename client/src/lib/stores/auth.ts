@@ -14,7 +14,7 @@ const authStore = writable<AuthState>({
 
 function Use() {
 	return authStore.subscribe((value) => {
-		if (!value.initializing && value.user == null) {
+		if (!value.initializing && !value.user) {
 			console.log('redirect to login');
 			goto('/login');
 		}
