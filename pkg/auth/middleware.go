@@ -34,7 +34,7 @@ func Middleware(c Configurer) echo.MiddlewareFunc {
 
 			c.Set("claims", claims)
 
-			fmt.Println("Authrized")
+			fmt.Println("Authorized user: ", claims.UserID)
 
 			return next(c)
 		}

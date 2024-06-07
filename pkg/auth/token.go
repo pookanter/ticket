@@ -48,7 +48,7 @@ func (a *Auth) GenerateTokenString(tokenPayload TokenPayload, unixDuration int) 
 	claims := Claims{
 		tokenPayload.UserID,
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * time.Duration(unixDuration))),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(unixDuration))),
 		},
 	}
 
