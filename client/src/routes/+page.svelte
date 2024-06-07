@@ -32,13 +32,13 @@
 	import { AuthStore } from '$lib/stores/auth';
 	import StatusCard from '$lib/components/status-card/status-card.svelte';
 	import * as Select from '$lib/components/ui/select/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
 
 	const { ScrollArea } = Scroll;
 
 	let unsubscribers: Unsubscriber[] = [];
 	let localState = {
 		...BoardStore.defaultState(),
+		status_name: 'All status',
 		status_index: -1
 	};
 	const statusSubject = new Subject<{ id: number; status_ids: number[] }>();
@@ -232,7 +232,11 @@
 						localState.selected.id === board.id
 							? 'bg-accent-foreground bg-opacity-10 text-accent-foreground'
 							: ''}"
-						on:click={() => fetchBoardFullDetail(board)}
+						on:click={() => {
+							localState.status_index = -1;
+							localState.status_name = 'All status';
+							fetchBoardFullDetail(board);
+						}}
 					>
 						{board.title}
 						<Button
@@ -253,10 +257,11 @@
 		<div class="flex items-center justify-start w-full h-10">
 			<Select.Root
 				selected={{
-					label: 'All status',
+					label: localState.status_name,
 					value: localState.status_index
 				}}
 				onSelectedChange={(e) => {
+					localState.status_name = e.label;
 					localState.status_index = e.value;
 				}}
 			>
@@ -357,7 +362,7 @@
 				</div>
 			{/if}
 			{#if localState.status_index > -1}
-				<div class="flex justify-start gap-4 pl-4 overflow-x-hidden overflow-y-auto">
+				<div class="flex justify-start gap-4 px-4 overflow-x-hidden overflow-y-auto">
 					<div
 						class="absolute top-0 left-0 flex flex-col w-full gap-2"
 						class:absolute={localState.selected.statuses[localState.status_index].tickets.length ===
