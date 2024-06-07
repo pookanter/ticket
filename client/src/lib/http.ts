@@ -5,16 +5,20 @@ import {
 	filter,
 	firstValueFrom,
 	from,
+	of,
 	switchMap,
 	take,
+	takeUntil,
 	throwError
 } from 'rxjs';
 import { AuthenService } from './services/authen-service';
 import { env } from '$env/dynamic/public';
+import { get, merge } from 'lodash';
 
 const refreshTokenState = {
 	inProgress: false,
-	subject: new BehaviorSubject<unknown>(null)
+	subject: new BehaviorSubject<unknown>(null),
+	failed: new BehaviorSubject<unknown>(null)
 };
 
 function addAuthenToken(request: InternalAxiosRequestConfig<unknown>) {
@@ -60,6 +64,12 @@ export function http() {
 			if (axios.isAxiosError(error)) {
 				const originalRequest = error.config;
 
+				if (get(originalRequest, '_retry')) {
+					refreshTokenState.failed.next(true);
+
+					return Promise.reject(error);
+				}
+
 				if (error?.response?.status === 401 && originalRequest) {
 					if (refreshTokenState.inProgress) {
 						return firstValueFrom(
@@ -69,6 +79,7 @@ export function http() {
 								switchMap(() => {
 									return axiosInstance(addAuthenToken(originalRequest));
 								}),
+								takeUntil(refreshTokenState.failed),
 								catchError((err) => {
 									return throwError(() => err);
 								})
@@ -77,9 +88,9 @@ export function http() {
 					} else {
 						const refreshToken = AuthenService.getRefreshToken();
 						if (refreshToken) {
+							merge(originalRequest, { _retry: true });
 							refreshTokenState.inProgress = true;
 							refreshTokenState.subject.next(null);
-
 							return firstValueFrom(
 								from(AuthenService.refreshToken(refreshToken)).pipe(
 									switchMap((res) => {
@@ -91,7 +102,7 @@ export function http() {
 									}),
 									catchError((err) => {
 										refreshTokenState.inProgress = false;
-										return Promise.reject(err);
+										return throwError(() => err);
 									})
 								)
 							);

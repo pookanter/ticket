@@ -12,6 +12,7 @@
 	import { ModeWatcher, toggleMode } from 'mode-watcher';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { LogOutIcon, Moon, Sun } from 'lucide-svelte';
+	import { isAxiosError } from 'axios';
 
 	let unsubscribers: Unsubscriber[] = [];
 	let alertState = AlertStore.defaultState();
@@ -24,6 +25,7 @@
 					console.log('AuthStore.initializing...');
 					const token = AuthenService.getAuthorization();
 					if (token) {
+						console.log('AuthStore.getMe...');
 						try {
 							const { data: user } = await AuthenService.getMe();
 							AuthStore.update((state) => {
@@ -33,8 +35,20 @@
 								return state;
 							});
 						} catch (error) {
-							console.error(error);
+							if (isAxiosError(error) && error.response?.status === 401) {
+								AuthenService.removeAuthorization();
+							}
+
+							AlertStore.error(error);
+
+							AuthStore.update((state) => {
+								state.initializing = false;
+								state.user = null;
+
+								return state;
+							});
 						}
+						console.log('AuthStore.getMe.done');
 					} else {
 						AuthStore.update((state) => {
 							state.initializing = false;
