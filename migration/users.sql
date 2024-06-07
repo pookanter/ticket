@@ -43,3 +43,26 @@ SET
   updated_at = NOW()
 WHERE
   id = ?;
+
+-- name: GetLastInsertUser :one
+SELECT
+  *
+FROM
+  users
+WHERE
+  id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      users AS u
+    LIMIT
+      1
+  );
+
+-- name: GetLastInsertUserID :one
+SELECT
+  LAST_INSERT_ID()
+FROM
+  users
+LIMIT
+  1;

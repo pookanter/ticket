@@ -58,3 +58,11 @@ WHERE
     LIMIT
       1
   );
+
+-- name: GetLastInsertBoardID :one
+SELECT
+  LAST_INSERT_ID()
+FROM
+  boards
+LIMIT
+  1;

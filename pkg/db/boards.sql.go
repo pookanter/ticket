@@ -155,6 +155,22 @@ func (q *Queries) GetLastInsertBoard(ctx context.Context) (Board, error) {
 	return i, err
 }
 
+const getLastInsertBoardID = `-- name: GetLastInsertBoardID :one
+SELECT
+  LAST_INSERT_ID()
+FROM
+  boards
+LIMIT
+  1
+`
+
+func (q *Queries) GetLastInsertBoardID(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertBoardID)
+	var last_insert_id int64
+	err := row.Scan(&last_insert_id)
+	return last_insert_id, err
+}
+
 const updateBoard = `-- name: UpdateBoard :exec
 UPDATE
   boards

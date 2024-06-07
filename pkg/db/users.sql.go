@@ -85,6 +85,53 @@ func (q *Queries) FindUserByID(ctx context.Context, id uint64) (User, error) {
 	return i, err
 }
 
+const getLastInsertUser = `-- name: GetLastInsertUser :one
+SELECT
+  id, name, lastname, email, password, created_at, updated_at
+FROM
+  users
+WHERE
+  id = (
+    SELECT
+      LAST_INSERT_ID()
+    FROM
+      users AS u
+    LIMIT
+      1
+  )
+`
+
+func (q *Queries) GetLastInsertUser(ctx context.Context) (User, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertUser)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Lastname,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getLastInsertUserID = `-- name: GetLastInsertUserID :one
+SELECT
+  LAST_INSERT_ID()
+FROM
+  users
+LIMIT
+  1
+`
+
+func (q *Queries) GetLastInsertUserID(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getLastInsertUserID)
+	var last_insert_id int64
+	err := row.Scan(&last_insert_id)
+	return last_insert_id, err
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT
   id, name, lastname, email, password, created_at, updated_at

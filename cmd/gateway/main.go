@@ -73,8 +73,6 @@ func main() {
 					return c.JSON(http.StatusInternalServerError, "Internal Server Error")
 				}
 
-				fmt.Println("res.StatusCode():", res.StatusCode())
-
 				return c.JSONBlob(res.StatusCode(), res.Body())
 			}
 

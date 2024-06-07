@@ -3,7 +3,6 @@ package authorize
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net/http"
 	"ticket/pkg/apikit"
 	"ticket/pkg/auth"
@@ -12,17 +11,20 @@ import (
 
 	"github.com/guregu/null/v5"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/sync/errgroup"
 )
 
 type Handler struct {
-	DB        *db.Queries
+	DB        *sql.DB
+	Queries   *db.Queries
 	DBTimeOut time.Duration
 	Auth      *auth.Auth
 }
 
 func New(api *apikit.API) *Handler {
 	return &Handler{
-		DB:        db.New(api.DB),
+		DB:        api.DB,
+		Queries:   db.New(api.DB),
 		DBTimeOut: api.Config.DB().TimeOut,
 		Auth:      auth.New(api.Config),
 	}
@@ -47,7 +49,7 @@ func (h *Handler) SignIn(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), h.DBTimeOut)
 	defer cancel()
 
-	user, err := h.DB.FindUserByEmail(ctx, null.NewString(body.Email, true))
+	user, err := h.Queries.FindUserByEmail(ctx, null.NewString(body.Email, true))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "user not found")
@@ -98,12 +100,10 @@ func (h *Handler) SignUp(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), h.DBTimeOut)
 	defer cancel()
 
-	user, err := h.DB.FindUserByEmail(ctx, null.NewString(body.Email, true))
+	user, err := h.Queries.FindUserByEmail(ctx, null.NewString(body.Email, true))
 	if err != nil && err != sql.ErrNoRows {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
-	fmt.Printf("user: %+v\n", user)
 
 	if user.ID != 0 {
 		return echo.NewHTTPError(http.StatusConflict, "email already exists")
@@ -114,12 +114,70 @@ func (h *Handler) SignUp(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	err = h.DB.CreateUser(ctx, db.CreateUserParams{
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer tx.Rollback()
+	qtx := h.Queries.WithTx(tx)
+
+	err = qtx.CreateUser(ctx, db.CreateUserParams{
 		Name:     null.NewString(body.Name, true),
 		Lastname: null.NewString(body.Lastname, true),
 		Email:    null.NewString(body.Email, true),
 		Password: null.NewString(hash, true),
 	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	userID, err := qtx.GetLastInsertUserID(ctx)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	err = qtx.CreateBoard(ctx, db.CreateBoardParams{
+		UserID: uint64(userID),
+		Title:  null.NewString("My first board", true),
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	boardID, err := qtx.GetLastInsertBoardID(ctx)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	subctx, cancel := context.WithCancel(ctx)
+	e, subctx := errgroup.WithContext(subctx)
+	defer cancel()
+
+	statusTitles := []string{"pending", "accepted", "resolved", "rejected"}
+	for i, title := range statusTitles {
+		i, title := i, title
+		e.Go(func() error {
+			err = qtx.CreateStatus(subctx, db.CreateStatusParams{
+				BoardID:   uint32(boardID),
+				Title:     null.NewString(title, true),
+				SortOrder: uint32(i + 1),
+			})
+			if err != nil {
+				cancel()
+
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	err = e.Wait()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
