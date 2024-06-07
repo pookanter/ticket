@@ -3,37 +3,37 @@ services:
     build:
       context: .
       dockerfile: ./build/gateway/Dockerfile
-      # target: development
+      target: development
     ports:
       - "3999:3999"
-    # volumes:
-    #   - ./cmd/gateway:/app/cmd/gateway
-    #   - ./api/gateway:/app/api/gateway
-    #   - ./pkg:/app/pkg
+    volumes:
+      - ./cmd/gateway:/app/cmd/gateway
+      - ./api/gateway:/app/api/gateway
+      - ./pkg:/app/pkg
   authen:
     build:
       context: .
       dockerfile: ./build/authen/Dockerfile
-      # target: development
+      target: development
     ports:
       - "4000"
     volumes:
       - ./cmd/authen:/app/cmd/authen
       - ./api/authen:/app/api/authen
       - ./pkg:/app/pkg
-    # depends_on:
-    #   - mysql
+    depends_on:
+      - mysql
   ticket:
     build:
       context: .
       dockerfile: ./build/ticket/Dockerfile
-      # target: development
+      target: development
     ports:
       - "4001"
-    # volumes:
-    #   - ./cmd/ticket:/app/cmd/ticket
-    #   - ./api/ticket:/app/api/ticket
-    #   - ./pkg:/app/pkg
+    volumes:
+      - ./cmd/ticket:/app/cmd/ticket
+      - ./api/ticket:/app/api/ticket
+      - ./pkg:/app/pkg
     depends_on:
       - mysql
   mysql:
@@ -52,11 +52,11 @@ services:
     build:
       context: .
       dockerfile: ./client/Dockerfile
-      # target: developmentdocker
+      target: development
     environment:
       PORT: 3000
       PUBLIC_API_URL: http://localhost:3999
     ports:
       - "3000:3000"
-    # volumes:
-    #   - ./client:/app
+    volumes:
+      - ./client:/app

@@ -32,13 +32,14 @@
 	import { AuthStore } from '$lib/stores/auth';
 	import StatusCard from '$lib/components/status-card/status-card.svelte';
 	import * as Select from '$lib/components/ui/select/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
 
 	const { ScrollArea } = Scroll;
 
 	let unsubscribers: Unsubscriber[] = [];
 	let localState = {
 		...BoardStore.defaultState(),
-		selected_status: null as TicketService.Status | null
+		status_index: -1
 	};
 	const statusSubject = new Subject<{ id: number; status_ids: number[] }>();
 	const ticketSubject = new Subject<{
@@ -253,16 +254,10 @@
 			<Select.Root
 				selected={{
 					label: 'All status',
-					value: 0
+					value: localState.status_index
 				}}
 				onSelectedChange={(e) => {
-					if (e.value) {
-						localState.selected_status = localState.selected?.statuses.find(
-							(s) => s.id === e.value
-						);
-					} else {
-						localState.selected_status = null;
-					}
+					localState.status_index = e.value;
 				}}
 			>
 				<Select.Trigger class="w-[180px] max-h-8 ml-2">
@@ -270,18 +265,22 @@
 				</Select.Trigger>
 				<Select.Content>
 					<Select.Group>
-						{#each localState.selected.statuses as status}
-							<Select.Item value={status.id} label={status.title} class="cursor-pointer">
+						<Select.Item value={-1} label="All status" class="cursor-pointer">
+							All status
+						</Select.Item>
+						{#each localState.selected.statuses as status, i (status.id)}
+							<Select.Item value={i} label={status.title} class="cursor-pointer">
 								{status.title}
 							</Select.Item>
 						{/each}
 					</Select.Group>
 				</Select.Content>
-				<Select.Input name="favoriteFruit" />
+				<Select.Input name="filterStatus" />
 			</Select.Root>
 		</div>
-		<ScrollArea orientation="horizontal">
-			{#if localState.selected}
+
+		<ScrollArea orientation={localState.status_index > -1 ? 'vertical' : 'horizontal'}>
+			{#if localState.selected && localState.status_index == -1}
 				<div
 					class="flex justify-start gap-4 pl-4 overflow-x-auto overflow-y-hidden"
 					use:dndzone={{
@@ -354,6 +353,34 @@
 							<PlusOutline class="size-4" />
 							<span class="ml-2">Add status</span>
 						</button>
+					</div>
+				</div>
+			{/if}
+			{#if localState.status_index > -1}
+				<div class="flex justify-start gap-4 pl-4 overflow-x-hidden overflow-y-auto">
+					<div
+						class="absolute top-0 left-0 flex flex-col w-full gap-2"
+						class:absolute={localState.selected.statuses[localState.status_index].tickets.length ===
+							0}
+						class:h-32={localState.selected.statuses[localState.status_index].tickets.length === 0}
+						use:dndzone={{
+							items: localState.selected.statuses[localState.status_index].tickets,
+							flipDurationMs,
+							dropTargetStyle: {}
+						}}
+						on:consider={(e) =>
+							handleDndConsiderCards(localState.selected.statuses[localState.status_index].id, e)}
+						on:finalize={(e) =>
+							handleDndFinalizeCards(localState.selected.statuses[localState.status_index].id, e)}
+					>
+						{#each localState.selected.statuses[localState.status_index].tickets as ticket (ticket.id)}
+							<div tabindex={ticket.id} role="button" animate:flip={{ duration: flipDurationMs }}>
+								<TicketCard
+									{ticket}
+									board_id={localState.selected.statuses[localState.status_index].board_id}
+								/>
+							</div>
+						{/each}
 					</div>
 				</div>
 			{/if}
